@@ -1,11 +1,11 @@
 /*
  GBxCart RW - Console Interface
- Version: 1.0
+ Version: 1.1
  Author: Alex from insideGadgets (www.insidegadgets.com)
  Created: 7/11/2016
- Last Modified: 11/03/2017
+ Last Modified: 4/04/2017
  
- GBxCartRead allows you to dump your Gameboy/Gameboy Colour/Gameboy Advance games ROM, save the RAM and write to the RAM.
+ GBxCart RW allows you to dump your Gameboy/Gameboy Colour/Gameboy Advance games ROM, save the RAM and write to the RAM.
  
  */
 
@@ -25,7 +25,7 @@
 
 int main(int argc, char **argv) {
 	
-	printf("GBxCart RW v1.0 by insideGadgets\n");
+	printf("GBxCart RW v1.1 by insideGadgets\n");
 	printf("################################\n");
 	
 	read_config();
@@ -47,7 +47,9 @@ int main(int argc, char **argv) {
 				 "3. Write RAM to GB Cart\n"\
 				 "4. Specify Cart ROM\n"\
 				 "5. Specify Cart RAM\n"\
-				 "x. Exit\n");
+				 "6. Custom commands\n"\
+				 "7. Other options\n"\
+				 "x. Exit\n>");
 		char optionSelected = read_one_letter();
 		
 		// Get cartridge mode - Gameboy or Gameboy Advance
@@ -727,6 +729,243 @@ int main(int argc, char **argv) {
 			}
 		}
 		
+		// Custom commands	
+		else if (optionSelected == '6') {
+			RS232_cputs(cport_nr, "G");
+			Sleep(5);
+			
+			printf("\n--- Custom Commands ---\n"\
+					 "Enter the custom command from the list:\n"\
+					 "Type x to exit\n\n");
+			
+			while (1) {
+				printf(">");
+				
+				char readInput[10];
+				fgets(readInput, sizeof readInput, stdin);
+				//printf("%s, %i\n", readInput, strlen(readInput));
+				
+				if (readInput[0] == 'x') {
+					break;
+				}
+				
+				for (uint8_t x = 0; x < strlen(readInput); x++) {
+					if (readInput[x] >= 97 && readInput[x] <= 122 && readInput[x] != 120) {
+						readInput[x] -= 32;
+					}
+				}
+				//printf("%s, %i\n", readInput, strlen(readInput));
+				
+				
+				RS232_cputs(cport_nr, readInput);
+				
+				if (readInput[0] == 'I' || readInput[0] == 'O' || readInput[0] == 'L' || readInput[0] == 'H') {
+					RS232_SendByte(cport_nr, 0);
+				}
+				
+				if (readInput[0] == 'D') {
+					for (uint8_t x = 0; x < 20; x++) {
+						readBuffer[x] = 0;
+					}
+					
+					com_read_bytes(READ_BUFFER, 1);
+					if (readBuffer[0] <= 0x0F) {
+						printf("Read: 0x0%X\n", readBuffer[0]);
+					}
+					else {
+						printf("Read: 0x%X\n", readBuffer[0]);
+					}
+				}
+			}
+		}
+		
+		
+		// Other options
+		else if (optionSelected == '7') {
+			printf("\n--- Other options ---\n"\
+					 "1. Sachen ROM mapper\n"\
+					 "x. Exit\n>");
+			char otherOptionSelected = read_one_letter();
+			
+			// Sachen ROM mapper
+			if (otherOptionSelected == '1') {
+				printf("\n--- Sachen ROM mapper ---\n"\
+							"Used for mapping ROMs to 0x00 and decoding the Sachen header.\n"\
+							"Type x to exit");
+				
+				while (1) {
+					printf("\n\nEnter the ROM start location in Hex: 0x");
+					
+					// Address
+					char readInput[10];
+					readInput[0] = '0';
+					readInput[1] = 'x';
+					fgets(&readInput[2], sizeof readInput, stdin);
+					fflush(stdin);
+					
+					if (readInput[2] == 'x') {
+						break;
+					}
+					
+					int readAddress = (int) strtol(readInput, NULL, 16);
+					
+					// ROM size
+					printf("\nSelect the ROM size\n");
+					printf("1. 32KByte (no ROM banking)\n");
+					printf("2. 64KByte (4 banks)\n");
+					printf("3. 128KByte (8 banks)\n");
+					printf("4. 256KByte (16 banks)\n");
+					printf("5. 512KByte (32 banks)\n");
+					printf(">");
+					
+					char selection[5];
+					int selectionNumber;
+					fgets(selection, sizeof selection, stdin);
+					fflush(stdin);
+					
+					if (selection[0] == 'x') {
+						break;
+					}
+					
+					sscanf(selection, "%d", &selectionNumber);
+					
+					romSize = selectionNumber-1;
+					romBanks = 2; // Default 32K
+					if (romSize >= 1) { // Calculate rom size
+						romBanks = 2 << romSize;
+					}
+					int romBase = readAddress / 0x4000;
+					int romMask = 0xFF - (romSize * 2) - 1;
+					
+					if (romBase <= 0x0F) {
+						printf("\nSelecting ROM Base 0x0%X at Address: 0x0%X, Size: %iKByte, ROM Mask 0x%X\n", romBase, readAddress, (1<<romSize) * 32, romMask);
+					}
+					else {
+						printf("\nSelecting ROM Base 0x%X at Address: 0x%X, Size: %iKByte, ROM Mask 0x%X\n", romBase, readAddress, (1<<romSize) * 32, romMask);
+					}
+					
+					RS232_cputs(cport_nr, "G"); // Set Gameboy mode
+					Sleep(5);
+					
+					RS232_cputs(cport_nr, "M0"); // Disable CS/RD/WR/CS2-RST from going high after each command
+					Sleep(5);
+					
+					RS232_cputs(cport_nr, "OD0x80"); // Pulse Reset
+					RS232_SendByte(cport_nr, 0);
+					Sleep(5);
+					
+					RS232_cputs(cport_nr, "LD0x80");
+					RS232_SendByte(cport_nr, 0);
+					Sleep(5);
+					
+					RS232_cputs(cport_nr, "HD0x80");
+					RS232_SendByte(cport_nr, 0);
+					Sleep(5);
+					
+					
+					// Pulse A15 pin 0x60 times
+					RS232_cputs(cport_nr, "OA0x80");
+					RS232_SendByte(cport_nr, 0);
+					
+					for (uint8_t x = 0; x < 0x60; x++) {
+						RS232_cputs(cport_nr, "HA0x80");
+						RS232_SendByte(cport_nr, 0);
+						Sleep(5);
+						
+						RS232_cputs(cport_nr, "LA0x80");
+						RS232_SendByte(cport_nr, 0);
+						Sleep(5);
+					}
+					
+					RS232_cputs(cport_nr, "M1"); // Enable CS/RD/WR/CS2-RST goes high after each command
+					
+					
+					// Allow ROM bank/mask changes
+					set_bank(0x2000, 0x30);
+					Sleep(5);
+					
+					// Set ROM base bank
+					set_bank(0x0000, romBase);
+					Sleep(5);
+					
+					// Set ROM mask
+					set_bank(0x4000, romMask);
+					Sleep(5);
+					
+					// Apply changes
+					set_bank(0x2000, 0x00);
+					Sleep(5);
+					
+					printf("Done\n");
+					
+					
+					// Set ROM title
+					strncpy(gameTitle, "Sachen_", 7);
+					
+					char addressString[20];
+					sprintf(addressString, "0x%X", readAddress);
+					
+					char titleFilename[30];
+					strncpy(titleFilename, gameTitle, 20);
+					strncat(titleFilename, addressString, 8);
+					strncat(titleFilename, ".gb", 3);
+					
+					
+					// Read ROM
+					printf("\n--- Dump ROM ---\n");
+					printf("Dumping ROM to %s\n", titleFilename);
+					printf("[             25%%             50%%             75%%            100%%]\n[");
+					
+					// Create a new file
+					FILE *romFile = fopen(titleFilename, "wb");
+					
+					uint32_t readBytes = 0;
+					if (cartridgeMode == GB_MODE) {
+						// Set start and end address
+						currAddr = 0x0000;
+						endAddr = 0x7FFF;
+						
+						// Read ROM
+						for (uint8_t bank = 1; bank < romBanks; bank++) {				
+							if (cartridgeType >= 5) { // MBC2 and above
+								set_bank(0x2100, bank);
+							}
+							else { // MBC1
+								set_bank(0x6000, 0); // Set ROM Mode 
+								set_bank(0x4000, bank >> 5); // Set bits 5 & 6 (01100000) of ROM bank
+								set_bank(0x2000, bank & 0x1F); // Set bits 0 & 4 (00011111) of ROM bank
+							}
+							
+							if (bank > 1) { currAddr = 0x4000; }
+							
+							// Set start address and rom reading mode
+							set_number(currAddr, SET_START_ADDRESS);
+							set_mode(READ_ROM_RAM);
+							
+							// Read data
+							while (currAddr < endAddr) {
+								com_read_bytes(romFile, 64);
+								currAddr += 64;
+								readBytes += 64;
+								
+								// Request 64 bytes more
+								if (currAddr < endAddr) {
+									RS232_cputs(cport_nr, "1");
+								}
+								
+								// Print progress
+								print_progress_percent(readBytes, (romBanks * 16384) / 64);
+							}
+							RS232_cputs(cport_nr, "0"); // Stop reading ROM (as we will bank switch)
+						}
+						printf("]");
+					}
+					
+					fclose(romFile);
+					printf("\nFinished\n");
+				}
+			}
+		}
 		
 		else if (optionSelected == 'x') { // Exit
 			inLoop = false;
