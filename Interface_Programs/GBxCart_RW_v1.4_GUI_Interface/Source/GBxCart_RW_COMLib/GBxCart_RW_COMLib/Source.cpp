@@ -37,6 +37,8 @@ extern "C" {
 #define GB_MODE 1
 #define GBA_MODE 2
 
+#define READ_FIRMWARE_VERSION 'V'
+
 // GB/GBC defines/commands
 #define SET_START_ADDRESS 'A'
 #define READ_ROM_RAM 'R'
@@ -728,6 +730,30 @@ __declspec(dllexport) uint8_t read_cartridge_mode(void) {
 
 		if (rxBytes > 0) {
 			return buffer[0];
+		}
+	}
+
+	return 0;
+}
+
+// Read the firmware version
+__declspec(dllexport) uint8_t read_firmware_version(void) {
+	set_mode(READ_FIRMWARE_VERSION);
+
+	uint8_t buffer[2];
+	uint8_t rxBytes = 0;
+	uint8_t timeoutCounter = 0;
+	while (rxBytes < 1) {
+		rxBytes = RS232_PollComport(cport_nr, buffer, 1);
+
+		if (rxBytes > 0) {
+			return buffer[0];
+		}
+
+		Sleep(10);
+		timeoutCounter++;
+		if (timeoutCounter >= 25) { // After 250ms, timeout
+			return 0;
 		}
 	}
 
