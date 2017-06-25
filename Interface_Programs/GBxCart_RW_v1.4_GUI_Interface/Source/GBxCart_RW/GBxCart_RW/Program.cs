@@ -12,7 +12,7 @@ namespace GBxCart_RW
         /// The main entry point for the application.
         /// </summary>
         ///
-       
+
         [DllImport("GBxCart_RW_COMLib.dll", CallingConvention = CallingConvention.Cdecl)]
         public static extern int RS232_OpenComport(int comport_number, int baudrate, string mode);
 
@@ -60,7 +60,11 @@ namespace GBxCart_RW
 
         [DllImport("GBxCart_RW_COMLib.dll", CallingConvention = CallingConvention.Cdecl)]
         public static extern void gba_specify_ram_size(int memoryType, int flashType, int size);
+
+        [DllImport("GBxCart_RW_COMLib.dll", CallingConvention = CallingConvention.Cdecl)]
+        public static extern int read_firmware_version();
         
+
 
         [STAThread]
         static void Main()

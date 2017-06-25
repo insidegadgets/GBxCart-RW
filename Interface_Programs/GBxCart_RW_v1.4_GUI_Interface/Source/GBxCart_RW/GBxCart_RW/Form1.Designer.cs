@@ -19,7 +19,7 @@
             }
             base.Dispose(disposing);
         }
-        
+
         #region Windows Form Designer generated code
 
         /// <summary>
@@ -42,7 +42,7 @@
             this.comPortTextBox = new System.Windows.Forms.TextBox();
             this.label6 = new System.Windows.Forms.Label();
             this.label7 = new System.Windows.Forms.Label();
-            this.richTextBox1 = new System.Windows.Forms.RichTextBox();
+            this.headerTextBox = new System.Windows.Forms.RichTextBox();
             this.closeportbutton = new System.Windows.Forms.Button();
             this.label1 = new System.Windows.Forms.Label();
             this.readromlabel = new System.Windows.Forms.Label();
@@ -70,13 +70,17 @@
             this.label3 = new System.Windows.Forms.Label();
             this.romsizebox = new System.Windows.Forms.ComboBox();
             this.label2 = new System.Windows.Forms.Label();
+            this.modelabel = new System.Windows.Forms.Label();
+            this.modeText = new System.Windows.Forms.Label();
+            this.firmwareText = new System.Windows.Forms.Label();
+            this.firmwarelabel = new System.Windows.Forms.Label();
             this.gbacartinfopanel.SuspendLayout();
             this.gbcartinfopanel.SuspendLayout();
             this.SuspendLayout();
             // 
             // stopbutton
             // 
-            this.stopbutton.Location = new System.Drawing.Point(286, 182);
+            this.stopbutton.Location = new System.Drawing.Point(286, 201);
             this.stopbutton.Name = "stopbutton";
             this.stopbutton.Size = new System.Drawing.Size(75, 21);
             this.stopbutton.TabIndex = 23;
@@ -86,7 +90,7 @@
             // 
             // progressBar1
             // 
-            this.progressBar1.Location = new System.Drawing.Point(5, 182);
+            this.progressBar1.Location = new System.Drawing.Point(5, 201);
             this.progressBar1.Name = "progressBar1";
             this.progressBar1.Size = new System.Drawing.Size(275, 21);
             this.progressBar1.TabIndex = 24;
@@ -101,7 +105,7 @@
             // 
             // readheaderbutton
             // 
-            this.readheaderbutton.Location = new System.Drawing.Point(321, 65);
+            this.readheaderbutton.Location = new System.Drawing.Point(321, 84);
             this.readheaderbutton.Name = "readheaderbutton";
             this.readheaderbutton.Size = new System.Drawing.Size(90, 21);
             this.readheaderbutton.TabIndex = 30;
@@ -111,7 +115,7 @@
             // 
             // saverambutton
             // 
-            this.saverambutton.Location = new System.Drawing.Point(286, 119);
+            this.saverambutton.Location = new System.Drawing.Point(286, 138);
             this.saverambutton.Name = "saverambutton";
             this.saverambutton.Size = new System.Drawing.Size(75, 21);
             this.saverambutton.TabIndex = 31;
@@ -121,7 +125,7 @@
             // 
             // writerambutton
             // 
-            this.writerambutton.Location = new System.Drawing.Point(367, 119);
+            this.writerambutton.Location = new System.Drawing.Point(367, 138);
             this.writerambutton.Name = "writerambutton";
             this.writerambutton.Size = new System.Drawing.Size(75, 21);
             this.writerambutton.TabIndex = 32;
@@ -131,7 +135,7 @@
             // 
             // readrombutton
             // 
-            this.readrombutton.Location = new System.Drawing.Point(321, 92);
+            this.readrombutton.Location = new System.Drawing.Point(321, 111);
             this.readrombutton.Name = "readrombutton";
             this.readrombutton.Size = new System.Drawing.Size(90, 21);
             this.readrombutton.TabIndex = 33;
@@ -186,18 +190,18 @@
             this.label7.TabIndex = 46;
             this.label7.Text = "Baud";
             // 
-            // richTextBox1
+            // headerTextBox
             // 
-            this.richTextBox1.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.richTextBox1.Location = new System.Drawing.Point(5, 64);
-            this.richTextBox1.Name = "richTextBox1";
-            this.richTextBox1.Size = new System.Drawing.Size(275, 86);
-            this.richTextBox1.TabIndex = 47;
-            this.richTextBox1.Text = "";
+            this.headerTextBox.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.headerTextBox.Location = new System.Drawing.Point(5, 83);
+            this.headerTextBox.Name = "headerTextBox";
+            this.headerTextBox.Size = new System.Drawing.Size(275, 86);
+            this.headerTextBox.TabIndex = 47;
+            this.headerTextBox.Text = "";
             // 
             // closeportbutton
             // 
-            this.closeportbutton.Location = new System.Drawing.Point(321, 10);
+            this.closeportbutton.Location = new System.Drawing.Point(327, 10);
             this.closeportbutton.Name = "closeportbutton";
             this.closeportbutton.Size = new System.Drawing.Size(69, 21);
             this.closeportbutton.TabIndex = 48;
@@ -209,7 +213,7 @@
             // 
             this.label1.AutoSize = true;
             this.label1.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label1.Location = new System.Drawing.Point(120, 48);
+            this.label1.Location = new System.Drawing.Point(120, 67);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(48, 13);
             this.label1.TabIndex = 49;
@@ -219,7 +223,7 @@
             // 
             this.readromlabel.AutoSize = true;
             this.readromlabel.BackColor = System.Drawing.Color.Transparent;
-            this.readromlabel.Location = new System.Drawing.Point(92, 166);
+            this.readromlabel.Location = new System.Drawing.Point(92, 185);
             this.readromlabel.Name = "readromlabel";
             this.readromlabel.Size = new System.Drawing.Size(84, 13);
             this.readromlabel.TabIndex = 51;
@@ -230,7 +234,7 @@
             // 
             this.saveramlabel.AutoSize = true;
             this.saveramlabel.BackColor = System.Drawing.Color.Transparent;
-            this.saveramlabel.Location = new System.Drawing.Point(92, 166);
+            this.saveramlabel.Location = new System.Drawing.Point(92, 185);
             this.saveramlabel.Name = "saveramlabel";
             this.saveramlabel.Size = new System.Drawing.Size(76, 13);
             this.saveramlabel.TabIndex = 52;
@@ -241,7 +245,7 @@
             // 
             this.writeramlabel.AutoSize = true;
             this.writeramlabel.BackColor = System.Drawing.Color.Transparent;
-            this.writeramlabel.Location = new System.Drawing.Point(92, 166);
+            this.writeramlabel.Location = new System.Drawing.Point(92, 185);
             this.writeramlabel.Name = "writeramlabel";
             this.writeramlabel.Size = new System.Drawing.Size(76, 13);
             this.writeramlabel.TabIndex = 53;
@@ -250,7 +254,7 @@
             // 
             // cartinfobutton
             // 
-            this.cartinfobutton.Location = new System.Drawing.Point(315, 146);
+            this.cartinfobutton.Location = new System.Drawing.Point(315, 165);
             this.cartinfobutton.Name = "cartinfobutton";
             this.cartinfobutton.Size = new System.Drawing.Size(101, 21);
             this.cartinfobutton.TabIndex = 54;
@@ -272,7 +276,7 @@
             this.gbacartinfopanel.Controls.Add(this.label8);
             this.gbacartinfopanel.Controls.Add(this.gbaromsizebox);
             this.gbacartinfopanel.Controls.Add(this.label9);
-            this.gbacartinfopanel.Location = new System.Drawing.Point(5, 48);
+            this.gbacartinfopanel.Location = new System.Drawing.Point(5, 67);
             this.gbacartinfopanel.Name = "gbacartinfopanel";
             this.gbacartinfopanel.Size = new System.Drawing.Size(437, 155);
             this.gbacartinfopanel.TabIndex = 56;
@@ -419,7 +423,7 @@
             this.gbcartinfopanel.Controls.Add(this.label3);
             this.gbcartinfopanel.Controls.Add(this.romsizebox);
             this.gbcartinfopanel.Controls.Add(this.label2);
-            this.gbcartinfopanel.Location = new System.Drawing.Point(5, 38);
+            this.gbcartinfopanel.Location = new System.Drawing.Point(5, 50);
             this.gbcartinfopanel.Name = "gbcartinfopanel";
             this.gbcartinfopanel.Size = new System.Drawing.Size(437, 172);
             this.gbcartinfopanel.TabIndex = 66;
@@ -509,11 +513,59 @@
             this.label2.TabIndex = 63;
             this.label2.Text = "Specify GB Cart Info";
             // 
+            // modelabel
+            // 
+            this.modelabel.AutoSize = true;
+            this.modelabel.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.modelabel.Location = new System.Drawing.Point(2, 37);
+            this.modelabel.Name = "modelabel";
+            this.modelabel.Size = new System.Drawing.Size(42, 13);
+            this.modelabel.TabIndex = 67;
+            this.modelabel.Text = "Mode:";
+            this.modelabel.Click += new System.EventHandler(this.label11_Click);
+            // 
+            // modeText
+            // 
+            this.modeText.AutoSize = true;
+            this.modeText.BackColor = System.Drawing.Color.Transparent;
+            this.modeText.Location = new System.Drawing.Point(44, 37);
+            this.modeText.Name = "modeText";
+            this.modeText.Size = new System.Drawing.Size(49, 13);
+            this.modeText.TabIndex = 68;
+            this.modeText.Text = "GB/GBC";
+            this.modeText.Visible = false;
+            // 
+            // firmwareText
+            // 
+            this.firmwareText.AutoSize = true;
+            this.firmwareText.BackColor = System.Drawing.Color.Transparent;
+            this.firmwareText.Location = new System.Drawing.Point(181, 37);
+            this.firmwareText.Name = "firmwareText";
+            this.firmwareText.Size = new System.Drawing.Size(0, 13);
+            this.firmwareText.TabIndex = 70;
+            this.firmwareText.Visible = false;
+            this.firmwareText.Click += new System.EventHandler(this.label11_Click_1);
+            // 
+            // firmwarelabel
+            // 
+            this.firmwarelabel.AutoSize = true;
+            this.firmwarelabel.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.firmwarelabel.Location = new System.Drawing.Point(120, 37);
+            this.firmwarelabel.Name = "firmwarelabel";
+            this.firmwarelabel.Size = new System.Drawing.Size(61, 13);
+            this.firmwarelabel.TabIndex = 69;
+            this.firmwarelabel.Text = "Firmware:";
+            this.firmwarelabel.Click += new System.EventHandler(this.label12_Click);
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(449, 213);
+            this.ClientSize = new System.Drawing.Size(449, 229);
+            this.Controls.Add(this.firmwareText);
+            this.Controls.Add(this.firmwarelabel);
+            this.Controls.Add(this.modeText);
+            this.Controls.Add(this.modelabel);
             this.Controls.Add(this.gbcartinfopanel);
             this.Controls.Add(this.gbacartinfopanel);
             this.Controls.Add(this.cartinfobutton);
@@ -522,7 +574,7 @@
             this.Controls.Add(this.readromlabel);
             this.Controls.Add(this.label1);
             this.Controls.Add(this.closeportbutton);
-            this.Controls.Add(this.richTextBox1);
+            this.Controls.Add(this.headerTextBox);
             this.Controls.Add(this.label7);
             this.Controls.Add(this.label6);
             this.Controls.Add(this.comPortTextBox);
@@ -537,7 +589,8 @@
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "Form1";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-            this.Text = "GBxCart RW v1.3 by insideGadgets";
+            this.Text = "GBxCart RW v1.4 by insideGadgets";
+            this.Load += new System.EventHandler(this.Form1_Load);
             this.gbacartinfopanel.ResumeLayout(false);
             this.gbacartinfopanel.PerformLayout();
             this.gbcartinfopanel.ResumeLayout(false);
@@ -561,7 +614,7 @@
         private System.Windows.Forms.TextBox comPortTextBox;
         private System.Windows.Forms.Label label6;
         private System.Windows.Forms.Label label7;
-        private System.Windows.Forms.RichTextBox richTextBox1;
+        private System.Windows.Forms.RichTextBox headerTextBox;
         private System.Windows.Forms.Button closeportbutton;
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.Label readromlabel;
@@ -589,6 +642,10 @@
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.ComboBox gbaflashtypebox;
         private System.Windows.Forms.Label flashtypetext;
+        private System.Windows.Forms.Label modelabel;
+        private System.Windows.Forms.Label modeText;
+        private System.Windows.Forms.Label firmwareText;
+        private System.Windows.Forms.Label firmwarelabel;
     }
 }
 
