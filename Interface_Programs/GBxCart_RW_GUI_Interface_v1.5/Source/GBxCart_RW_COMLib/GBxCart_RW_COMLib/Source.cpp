@@ -1,10 +1,10 @@
 /*
 
 GBxCart RW - GUI COM Interface
-Version : 1.1
+Version : 1.5
 Author : Alex from insideGadgets(www.insidegadgets.com)
 Created : 7 / 11 / 2016
-Last Modified : 4 / 04 / 2017
+Last Modified : 13 / 08 / 2017
 
 GBxCart RW allows you to dump your Gameboy / Gameboy Colour / Gameboy Advance games ROM, save the RAM and write to the RAM.
 
@@ -15,6 +15,11 @@ GBxCart RW allows you to dump your Gameboy / Gameboy Colour / Gameboy Advance ga
 #include <windows.h>
 
 extern "C" {
+
+extern void RS232_cputs(int comport_number, const char *text);
+extern int RS232_SendByte(int comport_number, unsigned char byte);
+extern int RS232_PollComport(int comport_number, unsigned char *buf, int size);
+extern int RS232_SendBuf(int comport_number, unsigned char *buf, int size);
 
 #define LOW 0
 #define HIGH 1
@@ -78,7 +83,11 @@ extern "C" {
 #define GBA_FLASH_WRITE_ATMEL 'a'
 
 #define RESET_COMMON_LINES 'M'
-#define READ_BUILD_VERSION 'V'
+#define READ_FIRMWARE_VERSION 'V'
+#define READ_PCB_VERSION 'h'
+
+#define PCB_1_0 1
+#define PCB_1_1 2
 
 // Common vars
 #define READ_BUFFER 0
@@ -87,6 +96,7 @@ int cport_nr = 7, // /dev/ttyS7 (COM8 on windows)
 bdrate = 1000000; // 1,000,000 baud
 
 uint8_t gbxcartFirmwareVersion = 0;
+uint8_t gbxcartPcbVersion = 0;
 uint8_t readBuffer[65];
 char gameTitle[17];
 uint16_t cartridgeType = 0;
@@ -117,367 +127,14 @@ uint8_t nintendoLogoGBA[] = { 0x24, 0xFF, 0xAE, 0x51, 0x69, 0x9A, 0xA2, 0x21, 0x
 	0x78, 0x00, 0x90, 0xCB, 0x88, 0x11, 0x3A, 0x94, 0x65, 0xC0, 0x7C, 0x63, 0x87, 0xF0, 0x3C, 0xAF,
 	0xD6, 0x25, 0xE4, 0x8B, 0x38, 0x0A, 0xAC, 0x72, 0x21, 0xD4, 0xF8, 0x07 };
 
-
-// RS232 library license
-
-/*
-***************************************************************************
-*
-* Author: Teunis van Beelen
-*
-* Copyright (C) 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016 Teunis van Beelen
-*
-* Email: teuniz@gmail.com
-*
-***************************************************************************
-*
-* This program is free software: you can redistribute it and/or modify
-* it under the terms of the GNU General Public License as published by
-* the Free Software Foundation, either version 3 of the License, or
-* (at your option) any later version.
-*
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*
-***************************************************************************
-*/
-
-/* Last revision: July 10, 2016 */
-
-/* For more info and how to use this library, visit: http://www.teuniz.net/RS-232/ */
-
-	#define RS232_PORTNR  16
-
-	HANDLE Cport[RS232_PORTNR];
-
-	char *comports[RS232_PORTNR] = { "\\\\.\\COM1",  "\\\\.\\COM2",  "\\\\.\\COM3",  "\\\\.\\COM4",
-		"\\\\.\\COM5",  "\\\\.\\COM6",  "\\\\.\\COM7",  "\\\\.\\COM8",
-		"\\\\.\\COM9",  "\\\\.\\COM10", "\\\\.\\COM11", "\\\\.\\COM12",
-		"\\\\.\\COM13", "\\\\.\\COM14", "\\\\.\\COM15", "\\\\.\\COM16" };
-
-	char mode_str[128];
-	
-	__declspec(dllexport) int RS232_OpenComport(int comport_number, int baudrate, const char *mode)
-	{
-		if ((comport_number >= RS232_PORTNR) || (comport_number<0))
-		{
-			printf("illegal comport number\n");
-			return(1);
-		}
-
-		switch (baudrate)
-		{
-		case     110: strcpy(mode_str, "baud=110");
-			break;
-		case     300: strcpy(mode_str, "baud=300");
-			break;
-		case     600: strcpy(mode_str, "baud=600");
-			break;
-		case    1200: strcpy(mode_str, "baud=1200");
-			break;
-		case    2400: strcpy(mode_str, "baud=2400");
-			break;
-		case    4800: strcpy(mode_str, "baud=4800");
-			break;
-		case    9600: strcpy(mode_str, "baud=9600");
-			break;
-		case   19200: strcpy(mode_str, "baud=19200");
-			break;
-		case   38400: strcpy(mode_str, "baud=38400");
-			break;
-		case   57600: strcpy(mode_str, "baud=57600");
-			break;
-		case  115200: strcpy(mode_str, "baud=115200");
-			break;
-		case  128000: strcpy(mode_str, "baud=128000");
-			break;
-		case  256000: strcpy(mode_str, "baud=256000");
-			break;
-		case  500000: strcpy(mode_str, "baud=500000");
-			break;
-		case 1000000: strcpy(mode_str, "baud=1000000");
-			break;
-		default: printf("invalid baudrate\n");
-			return(1);
-			break;
-		}
-
-		if (strlen(mode) != 3)
-		{
-			printf("invalid mode \"%s\"\n", mode);
-			return(1);
-		}
-
-		switch (mode[0])
-		{
-		case '8': strcat(mode_str, " data=8");
-			break;
-		case '7': strcat(mode_str, " data=7");
-			break;
-		case '6': strcat(mode_str, " data=6");
-			break;
-		case '5': strcat(mode_str, " data=5");
-			break;
-		default: printf("invalid number of data-bits '%c'\n", mode[0]);
-			return(1);
-			break;
-		}
-
-		switch (mode[1])
-		{
-		case 'N':
-		case 'n': strcat(mode_str, " parity=n");
-			break;
-		case 'E':
-		case 'e': strcat(mode_str, " parity=e");
-			break;
-		case 'O':
-		case 'o': strcat(mode_str, " parity=o");
-			break;
-		default: printf("invalid parity '%c'\n", mode[1]);
-			return(1);
-			break;
-		}
-
-		switch (mode[2])
-		{
-		case '1': strcat(mode_str, " stop=1");
-			break;
-		case '2': strcat(mode_str, " stop=2");
-			break;
-		default: printf("invalid number of stop bits '%c'\n", mode[2]);
-			return(1);
-			break;
-		}
-
-		strcat(mode_str, " dtr=on rts=on");
-
-		/*
-		http://msdn.microsoft.com/en-us/library/windows/desktop/aa363145%28v=vs.85%29.aspx
-
-		http://technet.microsoft.com/en-us/library/cc732236.aspx
-		*/
-
-		Cport[comport_number] = CreateFileA(comports[comport_number],
-			GENERIC_READ | GENERIC_WRITE,
-			0,                          /* no share  */
-			NULL,                       /* no security */
-			OPEN_EXISTING,
-			0,                          /* no threads */
-			NULL);                      /* no templates */
-
-		if (Cport[comport_number] == INVALID_HANDLE_VALUE)
-		{
-			printf("unable to open comport\n");
-			return(1);
-		}
-
-		DCB port_settings;
-		memset(&port_settings, 0, sizeof(port_settings));  /* clear the new struct  */
-		port_settings.DCBlength = sizeof(port_settings);
-
-		if (!BuildCommDCBA(mode_str, &port_settings))
-		{
-			printf("unable to set comport dcb settings\n");
-			CloseHandle(Cport[comport_number]);
-			return(1);
-		}
-
-		if (!SetCommState(Cport[comport_number], &port_settings))
-		{
-			printf("unable to set comport cfg settings\n");
-			CloseHandle(Cport[comport_number]);
-			return(1);
-		}
-
-		COMMTIMEOUTS Cptimeouts;
-
-		Cptimeouts.ReadIntervalTimeout = MAXDWORD;
-		Cptimeouts.ReadTotalTimeoutMultiplier = 0;
-		Cptimeouts.ReadTotalTimeoutConstant = 0;
-		Cptimeouts.WriteTotalTimeoutMultiplier = 0;
-		Cptimeouts.WriteTotalTimeoutConstant = 0;
-
-		if (!SetCommTimeouts(Cport[comport_number], &Cptimeouts))
-		{
-			printf("unable to set comport time-out settings\n");
-			CloseHandle(Cport[comport_number]);
-			return(1);
-		}
-
-		return(0);
-	}
-	
-	int RS232_PollComport(int comport_number, unsigned char *buf, int size)
-	{
-		int n;
-
-		/* added the void pointer cast, otherwise gcc will complain about */
-		/* "warning: dereferencing type-punned pointer will break strict aliasing rules" */
-
-		ReadFile(Cport[comport_number], buf, size, (LPDWORD)((void *)&n), NULL);
-
-		return(n);
-	}
-
-
-	int RS232_SendByte(int comport_number, unsigned char byte)
-	{
-		int n;
-
-		WriteFile(Cport[comport_number], &byte, 1, (LPDWORD)((void *)&n), NULL);
-
-		if (n<0)  return(1);
-
-		return(0);
-	}
-
-
-	int RS232_SendBuf(int comport_number, unsigned char *buf, int size)
-	{
-		int n;
-
-		if (WriteFile(Cport[comport_number], buf, size, (LPDWORD)((void *)&n), NULL))
-		{
-			return(n);
-		}
-
-		return(-1);
-	}
-
-
-	__declspec(dllexport) void RS232_CloseComport(int comport_number)
-	{
-		CloseHandle(Cport[comport_number]);
-	}
-
-	/*
-	http://msdn.microsoft.com/en-us/library/windows/desktop/aa363258%28v=vs.85%29.aspx
-	*/
-
-	int RS232_IsDCDEnabled(int comport_number)
-	{
-		int status;
-
-		GetCommModemStatus(Cport[comport_number], (LPDWORD)((void *)&status));
-
-		if (status&MS_RLSD_ON) return(1);
-		else return(0);
-	}
-
-
-	int RS232_IsCTSEnabled(int comport_number)
-	{
-		int status;
-
-		GetCommModemStatus(Cport[comport_number], (LPDWORD)((void *)&status));
-
-		if (status&MS_CTS_ON) return(1);
-		else return(0);
-	}
-
-
-	int RS232_IsDSREnabled(int comport_number)
-	{
-		int status;
-
-		GetCommModemStatus(Cport[comport_number], (LPDWORD)((void *)&status));
-
-		if (status&MS_DSR_ON) return(1);
-		else return(0);
-	}
-
-
-	void RS232_enableDTR(int comport_number)
-	{
-		EscapeCommFunction(Cport[comport_number], SETDTR);
-	}
-
-
-	void RS232_disableDTR(int comport_number)
-	{
-		EscapeCommFunction(Cport[comport_number], CLRDTR);
-	}
-
-
-	void RS232_enableRTS(int comport_number)
-	{
-		EscapeCommFunction(Cport[comport_number], SETRTS);
-	}
-
-
-	void RS232_disableRTS(int comport_number)
-	{
-		EscapeCommFunction(Cport[comport_number], CLRRTS);
-	}
-
-	/*
-	https://msdn.microsoft.com/en-us/library/windows/desktop/aa363428%28v=vs.85%29.aspx
-	*/
-
-	void RS232_flushRX(int comport_number)
-	{
-		PurgeComm(Cport[comport_number], PURGE_RXCLEAR | PURGE_RXABORT);
-	}
-
-
-	void RS232_flushTX(int comport_number)
-	{
-		PurgeComm(Cport[comport_number], PURGE_TXCLEAR | PURGE_TXABORT);
-	}
-
-
-	void RS232_flushRXTX(int comport_number)
-	{
-		PurgeComm(Cport[comport_number], PURGE_RXCLEAR | PURGE_RXABORT);
-		PurgeComm(Cport[comport_number], PURGE_TXCLEAR | PURGE_TXABORT);
-	}
-
-
-	void RS232_cputs(int comport_number, const char *text)  /* sends a string to serial port */
-	{
-		while (*text != 0)   RS232_SendByte(comport_number, *(text++));
-	}
-
-
-	/* return index in comports matching to device name or -1 if not found */
-	int RS232_GetPortnr(const char *devname)
-	{
-		int i;
-
-		char str[32];
-
-		strcpy(str, "\\\\.\\");
-
-		strncat(str, devname, 16);
-		str[31] = 0;
-
-		for (i = 0; i<RS232_PORTNR; i++)
-		{
-			if (!strcmp(comports[i], str))
-			{
-				return i;
-			}
-		}
-
-		return -1;  /* device not found */
-	}
-
-
 __declspec(dllexport) int read_config(int type) {
 	FILE* configfile = fopen("config.ini", "rb");
-	char* buffer;
-	if (configfile != NULL) {
-		// Allocate memory 
-		buffer = (char*)malloc(sizeof(char) * 2);
+	char buffer[100];
 
+	if (configfile != NULL) {
 		// Copy the file into the buffer, we only read 2 characters
 		fread(buffer, 1, 2, configfile);
+		buffer[2] = 0;
 
 		uint8_t numbersFound = 0;
 		for (uint8_t x = 0; x < 2; x++) {
@@ -496,6 +153,7 @@ __declspec(dllexport) int read_config(int type) {
 
 		// Read the baud rate
 		fread(buffer, 1, 7, configfile);
+		buffer[7] = 0;
 
 		for (uint8_t x = 0; x < 7; x++) {
 			if (buffer[x] >= 48 && buffer[x] <= 57) {
@@ -766,11 +424,18 @@ uint8_t request_value(uint8_t command) {
 
 	uint8_t buffer[2];
 	uint8_t rxBytes = 0;
+	uint8_t timeoutCounter = 0;
 	while (rxBytes < 1) {
 		rxBytes = RS232_PollComport(cport_nr, buffer, 1);
 
 		if (rxBytes > 0) {
 			return buffer[0];
+		}
+
+		Sleep(10);
+		timeoutCounter++;
+		if (timeoutCounter >= 25) { // After 250ms, timeout
+			return 0;
 		}
 	}
 
@@ -983,6 +648,7 @@ __declspec(dllexport) char* read_gb_header(int &headerlength) {
 	
 	sprintf(headerText, "Game title: %s\nMBC type: %s\nROM size: %s\nRAM size: %s\nLogo check: %s", gameTitle, cartridgeTypeText, romSizeText, ramSizeText, logoCheckText);
 	headerlength = strlen(headerText);
+	
 	return headerText;
 }
 
@@ -992,8 +658,6 @@ __declspec(dllexport) char* read_gb_header(int &headerlength) {
 // Check the rom size by reading 64 bytes from different addresses and checking if they are all 0x00. There can be some ROMs 
 // that do have valid 0x00 data, so we check 32 different addresses in a 4MB chunk, if 30 or more are all 0x00 then we've reached the end.
 uint8_t gba_check_rom_size(void) {
-	//set_mode(GBA_MODE);
-
 	uint32_t fourMbBoundary = 0x3FFFC0;
 	uint32_t currAddr = 0x1FFC0;
 	uint8_t romZeroTotal = 0;
@@ -1091,16 +755,79 @@ uint8_t gba_test_sram_flash_write(void) {
 	else { // Flash likely present, test by reading the flash ID
 		printf("Flash found\n");
 
-		set_mode(GBA_FLASH_READ_ID);
+		set_mode(GBA_FLASH_READ_ID); // Read Flash ID and exit Flash ID mode
+
+		uint8_t idBuffer[2];
 		com_read_bytes(READ_BUFFER, 2);
+		memcpy(&idBuffer, readBuffer, 2);
+
+		// Some particular flash memories don't seem to exit the ID mode properly, check if that's the case by reading the first byte 
+		// from 0x00h to see if it matches any Flash IDs. If so, exit the ID mode a different way and slowly.
+
+		// Read from 0x00
+		set_number(0x00, SET_START_ADDRESS);
+		set_mode(GBA_READ_SRAM);
+		com_read_bytes(READ_BUFFER, 64);
+		memcpy(&readBackBuffer, readBuffer, 64);
+		RS232_cputs(cport_nr, "0"); // Stop read
+
+		// Exit the ID mode a different way and slowly
+		if (readBackBuffer[0] == 0x1F || readBackBuffer[0] == 0xBF || readBackBuffer[0] == 0xC2 ||
+			readBackBuffer[0] == 0x32 || readBackBuffer[0] == 0x62) {
+
+			RS232_cputs(cport_nr, "G"); // Set Gameboy mode
+			Sleep(5);
+
+			RS232_cputs(cport_nr, "M0"); // Disable CS/RD/WR/CS2-RST from going high after each command
+			Sleep(5);
+
+			RS232_cputs(cport_nr, "OC0xFF"); // Set output lines
+			RS232_SendByte(cport_nr, 0);
+			Sleep(5);
+
+			RS232_cputs(cport_nr, "HC0xF0"); // Set byte
+			RS232_SendByte(cport_nr, 0);
+			Sleep(5);
+
+			// V1.1 PCB
+			if (gbxcartPcbVersion == PCB_1_1) {
+				RS232_cputs(cport_nr, "LD0x40"); // WE low
+				RS232_SendByte(cport_nr, 0);
+				Sleep(5);
+
+				RS232_cputs(cport_nr, "LE0x04"); // CS2 low
+				RS232_SendByte(cport_nr, 0);
+				Sleep(5);
+
+				RS232_cputs(cport_nr, "HD0x40"); // WE high
+				RS232_SendByte(cport_nr, 0);
+				Sleep(5);
+
+				RS232_cputs(cport_nr, "HE0x04"); // CS2 high
+				RS232_SendByte(cport_nr, 0);
+				Sleep(5);
+			}
+			else { // V1.0 PCB
+				RS232_cputs(cport_nr, "LD0x90"); // WR, CS2 low
+				RS232_SendByte(cport_nr, 0);
+				Sleep(5);
+
+				RS232_cputs(cport_nr, "HD0x90"); // WR, CS2 high
+				RS232_SendByte(cport_nr, 0);
+				Sleep(5);
+			}
+
+			Sleep(50);
+			RS232_cputs(cport_nr, "M1"); // Enable CS/RD/WR/CS2-RST goes high after each command
+		}
 
 		// Check if it's Atmel Flash
-		if (readBuffer[0] == 0x1F) {
+		if (idBuffer[0] == 0x1F) {
 			return FLASH_FOUND_ATMEL;
 		}
 		// Check other manufacturers 
-		else if (readBuffer[0] == 0xBF || readBuffer[0] == 0xC2 ||
-			readBuffer[0] == 0x32 || readBuffer[0] == 0x62) {
+		else if (idBuffer[0] == 0xBF || idBuffer[0] == 0xC2 ||
+			idBuffer[0] == 0x32 || idBuffer[0] == 0x62) {
 			return FLASH_FOUND;
 		}
 
@@ -1129,7 +856,7 @@ uint8_t gba_check_sram_flash(void) {
 		com_read_bytes(READ_BUFFER, 64);
 		RS232_cputs(cport_nr, "0"); // Stop read
 
-									// Check for 0x00 byte
+		// Check for 0x00 byte
 		for (uint8_t c = 0; c < 64; c++) {
 			if (readBuffer[c] == 0) {
 				zeroTotal++;
@@ -1180,7 +907,6 @@ uint8_t gba_check_sram_flash(void) {
 	if (duplicateCount >= 2000) {
 		return SRAM_FLASH_256KBIT;
 	}
-
 
 	// Check if it's SRAM or Flash at this stage, maximum for SRAM is 512Kbit
 	hasFlashSave = gba_test_sram_flash_write();
@@ -1344,6 +1070,8 @@ uint8_t gba_check_eeprom(void) {
 __declspec(dllexport) char* read_gba_header(int &headerlength) {
 	set_mode('0'); // Break out of any loops on ATmega
 
+	gbxcartPcbVersion = request_value(READ_PCB_VERSION);
+
 	char* headerText;
 	headerText = (char*)malloc(500);
 
@@ -1412,8 +1140,15 @@ __declspec(dllexport) char* read_gba_header(int &headerlength) {
 	sprintf(headerText + strlen(headerText), "ROM size: %iMByte\n", romSize);
 	romEndAddr = ((1024 * 1024) * romSize);
 
-	printf("SRAM/Flash size: ");
-	sprintf(headerText + strlen(headerText), "SRAM / Flash size: ");
+	if (hasFlashSave >= FLASH_FOUND) {
+		printf("Flash size: ");
+		sprintf(headerText + strlen(headerText), "Flash size: ");
+	}
+	else {
+		printf("SRAM/Flash size: ");
+		sprintf(headerText + strlen(headerText), "SRAM/Flash size: ");
+	}
+
 	if (ramSize == 0) {
 		ramEndAddress = 0;
 		printf("None\n");
@@ -1591,10 +1326,10 @@ __declspec(dllexport) int check_if_file_exists() {
 
 // Read RAM
 __declspec(dllexport) void read_ram(uint32_t &progress, uint8_t &cancelOperation) {
-cartridgeMode = read_cartridge_mode();
-gbxcartFirmwareVersion = request_value(READ_BUILD_VERSION);
+	cartridgeMode = read_cartridge_mode();
+	gbxcartFirmwareVersion = request_value(READ_FIRMWARE_VERSION);
 
-printf("\n--- Save RAM to PC---\n");
+	printf("\n--- Save RAM to PC---\n");
 
 	if (cartridgeMode == GB_MODE) {
 		// Does cartridge have RAM
@@ -1745,7 +1480,7 @@ printf("\n--- Save RAM to PC---\n");
 				uint32_t readBytes = 0;
 				for (uint8_t bank = 0; bank < ramBanks; bank++) {
 					// Flash, switch bank 1
-					if (bank == 1) {
+					if (hasFlashSave >= FLASH_FOUND && bank == 1) {
 						set_number(1, GBA_FLASH_SET_BANK);
 					}
 					
@@ -1765,20 +1500,28 @@ printf("\n--- Save RAM to PC---\n");
 							RS232_cputs(cport_nr, "1");
 						}
 
-						print_progress_percent(progress, readBytes, ramBanks * ramEndAddress);
+						print_progress_percent(progress, readBytes, ramBanks * endAddr);
 
 						if (cancelOperation == 1) {
 							break;
 						}
 					}
+
+					RS232_cputs(cport_nr, "0"); // End read (for this bank if Flash)
+
 					if (cancelOperation == 1) {
+						// Flash, switch back to bank 0
+						if (hasFlashSave >= FLASH_FOUND) {
+							set_number(0, GBA_FLASH_SET_BANK);
+						}
+						
 						break;
 					}
+				}
 
-					// Flash, switch back to bank 0
-					if (hasFlashSave >= 1) {
-						set_number(0, GBA_FLASH_SET_BANK);
-					}
+				// Flash, switch back to bank 0
+				if (hasFlashSave >= FLASH_FOUND) {
+					set_number(0, GBA_FLASH_SET_BANK);
 				}
 			}
 
@@ -1813,10 +1556,10 @@ printf("\n--- Save RAM to PC---\n");
 						break;
 					}
 				}
+				RS232_cputs(cport_nr, "0"); // Stop reading
 			}
-			printf("]");
-			RS232_cputs(cport_nr, "0"); // Stop reading
-			fclose(ramFile);
+			fclose(ramFile); 
+			printf("]");			
 			printf("\nFinished\n");
 		
 		}
@@ -1907,7 +1650,7 @@ __declspec(dllexport) void write_ram(uint32_t &progress, uint8_t &cancelOperatio
 						hasFlashSave = gba_test_sram_flash_write();
 					}
 
-					if (hasFlashSave > 1) {
+					if (hasFlashSave >= FLASH_FOUND) {
 						printf("Going to write to RAM (Flash) from %s", titleFilename);
 					}
 					else {
@@ -1919,7 +1662,7 @@ __declspec(dllexport) void write_ram(uint32_t &progress, uint8_t &cancelOperatio
 				}
 
 				if (eepromSize == EEPROM_NONE) {
-					if (hasFlashSave > 1) {
+					if (hasFlashSave >= FLASH_FOUND) {
 						printf("\nWriting to RAM (Flash) from %s", titleFilename);
 					}
 					else {
@@ -2022,7 +1765,8 @@ __declspec(dllexport) void write_ram(uint32_t &progress, uint8_t &cancelOperatio
 								currAddr += 64;
 								readBytes += 64;
 
-								print_progress_percent(progress, readBytes, endAddr);
+								print_progress_percent(progress, readBytes, ramBanks * endAddr);
+
 								com_wait_for_ack(); // Wait for write complete
 
 								if (cancelOperation == 1) {

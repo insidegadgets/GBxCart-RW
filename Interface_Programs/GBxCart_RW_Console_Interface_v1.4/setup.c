@@ -1,9 +1,9 @@
 /*
  GBxCart RW - Console Interface
- Version: 1.3
+ Version: 1.4
  Author: Alex from insideGadgets (www.insidegadgets.com)
  Created: 7/11/2016
- Last Modified: 8/05/2017
+ Last Modified: 13/08/2017
  
  */
 
@@ -67,12 +67,17 @@ bdrate = 1000000; // 1,000,000 baud
 #define SET_OUTPUT_HIGH 'H'
 #define READ_INPUT 'D'
 #define RESET_COMMON_LINES 'M'
-#define READ_BUILD_VERSION 'V'
+#define READ_FIRMWARE_VERSION 'V'
+#define READ_PCB_VERSION 'h'
+
+#define PCB_1_0 1
+#define PCB_1_1 2
 
 // Common vars
 #define READ_BUFFER 0
 
 uint8_t gbxcartFirmwareVersion = 0;
+uint8_t gbxcartPcbVersion = 0;
 uint8_t readBuffer[65];
 
 char gameTitle[17];
@@ -108,13 +113,12 @@ uint8_t nintendoLogoGBA[] = {0x24, 0xFF, 0xAE, 0x51, 0x69, 0x9A, 0xA2, 0x21, 0x3
 // Read the config.ini file for the COM port to use and baud rate
 void read_config(void) {
 	FILE* configfile = fopen ( "config.ini" , "rb" );
-	char* buffer;
+	char buffer[100];
+	
 	if (configfile != NULL) {
-		// Allocate memory 
-		buffer = (char*) malloc (sizeof(char) * 2);
-		
 		// Copy the file into the buffer, we only read 2 characters
 		fread (buffer, 1, 2, configfile);
+		buffer[2] = 0;
 		
 		uint8_t numbersFound = 0;
 		for (uint8_t x = 0; x < 2; x++) {
@@ -133,6 +137,7 @@ void read_config(void) {
 		
 		// Read the baud rate
 		fread (buffer, 1, 7, configfile);
+		buffer[7] = 0;
 		
 		for (uint8_t x = 0; x < 7; x++) {
 			if (buffer[x] >= 48 && buffer[x] <= 57) {
@@ -144,9 +149,16 @@ void read_config(void) {
 			bdrate = atoi(buffer);
 		}
 		
-		fclose (configfile);
-		free (buffer);
+		fclose(configfile);
 	}
+}
+
+void delay_ms(uint16_t ms) {
+	#if defined (_WIN32)
+		Sleep(ms);
+	#else
+		usleep(1000 * ms);
+	#endif
 }
 
 // Read one letter from stdin
@@ -260,11 +272,19 @@ uint8_t request_value (uint8_t command) {
 	
 	uint8_t buffer[2];
 	uint8_t rxBytes = 0;
+	uint8_t timeoutCounter = 0;
+	
 	while (rxBytes < 1) {
 		rxBytes = RS232_PollComport(cport_nr, buffer, 1);
 		
 		if (rxBytes > 0) {
 			return buffer[0];
+		}
+		
+		delay_ms(10);
+		timeoutCounter++;
+		if (timeoutCounter >= 25) { // After 250ms, timeout
+			return 0;
 		}
 	}
 	
@@ -568,16 +588,79 @@ uint8_t gba_test_sram_flash_write (void) {
 	else { // Flash likely present, test by reading the flash ID
 		printf("Flash found\n");
 		
-		set_mode(GBA_FLASH_READ_ID);
+		set_mode(GBA_FLASH_READ_ID); // Read Flash ID and exit Flash ID mode
+		
+		uint8_t idBuffer[2];
 		com_read_bytes(READ_BUFFER, 2);
+		memcpy(&idBuffer, readBuffer, 2);
+		
+		// Some particular flash memories don't seem to exit the ID mode properly, check if that's the case by reading the first byte 
+		// from 0x00h to see if it matches any Flash IDs. If so, exit the ID mode a different way and slowly.
+		
+		// Read from 0x00
+		set_number(0x00, SET_START_ADDRESS);
+		set_mode(GBA_READ_SRAM);
+		com_read_bytes(READ_BUFFER, 64);
+		memcpy(&readBackBuffer, readBuffer, 64);
+		RS232_cputs(cport_nr, "0"); // Stop read
+		
+		// Exit the ID mode a different way and slowly
+		if (readBackBuffer[0] == 0x1F || readBackBuffer[0] == 0xBF || readBackBuffer[0] == 0xC2 ||
+			 readBackBuffer[0] == 0x32 || readBackBuffer[0] == 0x62) {
+			
+			RS232_cputs(cport_nr, "G"); // Set Gameboy mode
+			delay_ms(5);
+			
+			RS232_cputs(cport_nr, "M0"); // Disable CS/RD/WR/CS2-RST from going high after each command
+			delay_ms(5);
+			
+			RS232_cputs(cport_nr, "OC0xFF"); // Set output lines
+			RS232_SendByte(cport_nr, 0);
+			delay_ms(5);
+			
+			RS232_cputs(cport_nr, "HC0xF0"); // Set byte
+			RS232_SendByte(cport_nr, 0);
+			delay_ms(5);
+			
+			// V1.1 PCB
+			if (gbxcartPcbVersion == PCB_1_1) {
+				RS232_cputs(cport_nr, "LD0x40"); // WE low
+				RS232_SendByte(cport_nr, 0);
+				delay_ms(5);
+				
+				RS232_cputs(cport_nr, "LE0x04"); // CS2 low
+				RS232_SendByte(cport_nr, 0);
+				delay_ms(5);
+				
+				RS232_cputs(cport_nr, "HD0x40"); // WE high
+				RS232_SendByte(cport_nr, 0);
+				delay_ms(5);
+				
+				RS232_cputs(cport_nr, "HE0x04"); // CS2 high
+				RS232_SendByte(cport_nr, 0);
+				delay_ms(5);
+			}
+			else { // V1.0 PCB
+				RS232_cputs(cport_nr, "LD0x90"); // WR, CS2 low
+				RS232_SendByte(cport_nr, 0);
+				delay_ms(5);
+				
+				RS232_cputs(cport_nr, "HD0x90"); // WR, CS2 high
+				RS232_SendByte(cport_nr, 0);
+				delay_ms(5);
+			}
+			
+			delay_ms(50);
+			RS232_cputs(cport_nr, "M1"); // Enable CS/RD/WR/CS2-RST goes high after each command
+		}
 		
 		// Check if it's Atmel Flash
-		if (readBuffer[0] == 0x1F) {
+		if (idBuffer[0] == 0x1F) {
 			return FLASH_FOUND_ATMEL;
 		}
 		// Check other manufacturers 
-		else if (readBuffer[0] == 0xBF || readBuffer[0] == 0xC2 || 
-					readBuffer[0] == 0x32 || readBuffer[0] == 0x62) {
+		else if (idBuffer[0] == 0xBF || idBuffer[0] == 0xC2 || 
+					idBuffer[0] == 0x32 || idBuffer[0] == 0x62) {
 			return FLASH_FOUND;
 		}
 		
@@ -666,7 +749,7 @@ uint8_t gba_check_sram_flash (void) {
 		return SRAM_FLASH_512KBIT;
 	}
 	
-	// Test 512Kbit or 1Mbit Flash, read first 64 bytes on bank 1 then bank 2 and compare
+	// Test 512Kbit or 1Mbit Flash, read first 64 bytes on bank 0 then bank 1 and compare
 	else {
 		duplicateCount = 0;
 		
@@ -818,6 +901,46 @@ uint8_t gba_check_eeprom (void) {
 	}	
 }
 
+// Read GBA game title (used for reading title when ROM mapping)
+void gba_read_gametitle(void) {
+	currAddr = 0x0000;
+	endAddr = 0x00BF;
+	set_number(currAddr, SET_START_ADDRESS);
+	set_mode(GBA_READ_ROM);
+	
+	uint8_t startRomBuffer[385];
+	while (currAddr < endAddr) {
+		com_read_bytes(READ_BUFFER, 64);
+		memcpy(&startRomBuffer[currAddr], readBuffer, 64);
+		currAddr += 64;
+		
+		if (currAddr < endAddr) {
+			RS232_cputs(cport_nr, "1");
+		}
+	}
+	RS232_cputs(cport_nr, "0"); // Stop read
+	
+	// Blank out game title
+	for (uint8_t b = 0; b < 16; b++) {
+		gameTitle[b] = 0;
+	}
+	// Read cartridge title and check for non-printable text
+	for (uint16_t titleAddress = 0xA0; titleAddress <= 0xAB; titleAddress++) {
+		char headerChar = startRomBuffer[titleAddress];
+		if ((headerChar >= 0x30 && headerChar <= 0x57) || // 0-9
+			 (headerChar >= 0x41 && headerChar <= 0x5A) || // A-Z
+			 (headerChar >= 0x61 && headerChar <= 0x7A) || // a-z
+			 (headerChar == 0x2E) || // .
+			 (headerChar == 0x20)) { // Space
+			gameTitle[(titleAddress-0xA0)] = headerChar;
+		}
+		else {
+			gameTitle[(titleAddress-0xA0)] = '\0';
+			break;
+		}
+	}
+}
+
 // Read the first 192 bytes of ROM, read the title, check and test for ROM, SRAM, EEPROM and Flash
 void read_gba_header (void) {
 	currAddr = 0x0000;
@@ -892,7 +1015,16 @@ void read_gba_header (void) {
 	printf ("\nROM size: %iMByte\n", romSize);
 	romEndAddr = ((1024 * 1024) * romSize);
 	
-	printf ("SRAM/Flash size: ");
+	if (hasFlashSave >= 2) {
+		printf("Flash size: ");
+	}
+	else if (hasFlashSave == NO_FLASH) {
+		printf("SRAM size: ");
+	}
+	else {
+		printf("SRAM/Flash size: ");
+	}
+	
 	if (ramSize == 0) {
 		ramEndAddress = 0;
 		printf ("None\n");
