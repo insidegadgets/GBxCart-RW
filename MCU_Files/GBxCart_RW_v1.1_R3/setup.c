@@ -1,10 +1,10 @@
 /*
  GBxCart RW
  PCB version: 1.1
- Firmware version: R2
+ Firmware version: R3
  Author: Alex from insideGadgets (www.insidegadgets.com)
  Created: 7/11/2016
- Last Modified: 8/05/2017
+ Last Modified: 26/08/2017
  
  */
  
@@ -33,6 +33,7 @@
 #define RD_PIN PD5
 #define CS_MREQ_PIN PD4
 #define CS2_PIN PE2
+#define AUDIO_PIN PE1
 
 #define wrPin_high	PORTD |= (1<<WR_PIN);
 #define wrPin_low		PORTD &= ~(1<<WR_PIN);
@@ -42,6 +43,8 @@
 #define cs_mreqPin_low		PORTD &= ~(1<<CS_MREQ_PIN);
 #define cs2Pin_high		PORTE |= (1<<CS2_PIN);
 #define cs2Pin_low		PORTE &= ~(1<<CS2_PIN);
+#define audioPin_high		PORTE |= (1<<AUDIO_PIN);
+#define audioPin_low		PORTE &= ~(1<<AUDIO_PIN);
 
 #define GB_MODE 1
 #define GBA_MODE 2
@@ -133,6 +136,13 @@
 #define RESET_COMMON_LINES 'M'
 #define READ_FIRMWARE_VERSION 'V'
 #define READ_PCB_VERSION 'h'
+
+#define GB_FLASH_WRITE_BYTE_AUDIO 'F'
+#define GB_FLASH_WRITE_64BYTE_AUDIO 'U'
+
+#define RESET_AVR '*'
+#define RESET_VALUE 0x7E5E1
+
 
 char receivedBuffer[129];
 char receivedChar;
@@ -307,6 +317,7 @@ uint8_t gba_read_ram_8bit_data(uint16_t address) {
 	
 	asm volatile("nop"); // Delay a little (minimum needed is 2)
 	asm volatile("nop");
+	
 	uint8_t data = GBA_PIN_RAM_DATA7_0; // Read data
 	
 	cs2Pin_high;
@@ -570,8 +581,40 @@ void flash_write_sector(uint16_t sector) {
 	_delay_ms(20); // Wait sector program time
 }
 
+
+
+// ---------- FLASH CARTS ----------
+
+// Set the address and data for the write byte cycle to the flash (pulsing audio pin)
+void audio_flash_write_bus_cycle(uint16_t address, uint8_t data) {
+	GBA_DDR_RAM_DATA7_0 = 0xFF; // Set data pins as outputs
+	set_16bit_address(address);
+	GBA_PORT_RAM_DATA7_0 = data;
+	
+	audioPin_low; // WE low
+	asm volatile("nop");
+	asm volatile("nop");
+	asm volatile("nop");
+	audioPin_high; // WE high
+}
+
+// Write a single byte to the Flash address. Takes 20us to program Flash.
+void audio_flash_write_byte(uint16_t address, uint8_t data) {
+	audio_flash_write_bus_cycle(0x555, 0xAA);
+	audio_flash_write_bus_cycle(0x2AA, 0x55);
+	audio_flash_write_bus_cycle(0x555, 0xA0);
+	audio_flash_write_bus_cycle(address, data);
+	_delay_us(20); // Wait byte program time
+}
+
+
 // Setup
 void setup(void) {
+	// Turn off watchdog
+	MCUCSR &= ~(1<<WDRF);
+	WDTCR = (1<<WDCE) | (1<<WDE);
+	WDTCR = 0;
+	
 	// Reset common lines
 	rd_wr_csmreq_cs2_reset();
 	

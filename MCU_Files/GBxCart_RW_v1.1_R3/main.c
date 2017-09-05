@@ -1,17 +1,27 @@
 /*
  GBxCart RW
  PCB version: 1.1
- Firmware version: R2
+ Firmware version: R3
  Author: Alex from insideGadgets (www.insidegadgets.com)
  Created: 7/11/2016
- Last Modified: 8/05/2017
+ Last Modified: 26/08/2017
  
  GBxCart RW allows you to dump your Gameboy/Gameboy Colour/Gameboy Advance games ROM, save the RAM and write to the RAM.
  
  The ATmega8515L talks to the cartridge and interfaces with the CH340G serial to USB converter with the PC.
  
- Remember to change your fuse bits so the ATmega8515L uses an external 8MHz crystal, divide clock by 8 is off
- avrdude -c usbasp -p atmega8515 -U lfuse:w:0xef:m -U hfuse:w:0xd9:m
+ 
+ Set fuse bits: External 8MHz crystal, divide clock by 8 is off, boot loader is on (512 bytes), BOD is on (2.7V)
+ avrdude -p atmega8515 -c usbasp -U lfuse:w:0xaf:m -U hfuse:w:0xda:m
+ 
+ Program the TinySafeBoot boot loader (modified ASM code, watchdog reset will act as a hardware reset so you can re-program the ATmega)
+ avrdude -p atmega8515 -c usbasp -U flash:w:GBxCart_RW_v1.1_R3\tsb\tsb_m8515_d0d1_resetwdt.hex
+ 
+ Program GBxCart RW through TinySafeBoot
+ tsb com16:57600 fw GBxCart_RW_v1.1_R3\main.hex
+ 
+ Set TinySafeBoot delay time to 25 (T 25)
+ tsb com16:9600 T 25
  
  */
 
@@ -21,7 +31,7 @@
 // SCK PB7 (3)		MOSI PB5 (1)	MISO PB6 (2)	RST (4)		RXD PD0 (5)			TXD PD1 (7)
 // 
 // Gameboy / Gameboy Colour
-// A0-A7 PB0-7 (40-44, 1-3) 		A8-A15 PA0-7 (37-30)			D0-D7 PC0-7 (18-25)
+// A0-A7 PB0-7 (40-44, 1-3) 		A8-A15 PA0-7 (37-30)			D0-D7 PC0-7 (18-25)		Audio PE1 (27)
 // 
 // Gameboy Advance
 // AD0-AD7 PB0-7 (40-44, 1-3) 	AD8-AD15 PA0-7 (37-30)		A16-23 / D0-D7 PC0-7 (19-26)
@@ -29,7 +39,7 @@
 
 #define F_CPU 8000000 // 8 MHz
 #define PCB_VERSION 2
-#define FIRMWARE_VERSION 2
+#define FIRMWARE_VERSION 3
 
 #include <avr/io.h>
 #include <avr/wdt.h>
@@ -286,7 +296,7 @@ int main(void) {
 		
 		// ---------- EEPROM ----------
 		// Set EEPROM size
-		if (receivedChar == GBA_SET_EEPROM_SIZE) {
+		else if (receivedChar == GBA_SET_EEPROM_SIZE) {
 			usart_read_chars(); // Read size
 			eepromSize = strtol(receivedBuffer, NULL, 16); // Convert size to dec
 		}
@@ -332,6 +342,42 @@ int main(void) {
 			PORTD &= ~(1<<ACTIVITY_LED);
 			gba_mode(); // Set back
 		}
+		
+		
+		// ---------- FLASH CARTS ----------
+		
+		// Write address, one byte and pulse audio pin
+		else if (receivedChar == GB_FLASH_WRITE_BYTE_AUDIO) {
+			usart_read_chars(); // Read address
+			uint16_t flashAddress = strtol(receivedBuffer, NULL, 16); // Convert address string in hex to dec
+			
+			receivedChar = USART_Receive(); // Wait for byte
+			if (receivedChar == GB_FLASH_WRITE_BYTE_AUDIO) {
+				usart_read_chars(); // Read data
+				uint8_t flashByte = strtol(receivedBuffer, NULL, 16); // Convert data byte in hex to dec
+				
+				PORTD |= (1<<ACTIVITY_LED);
+				audio_flash_write_bus_cycle(flashAddress, flashByte);
+				PORTD &= ~(1<<ACTIVITY_LED);
+				
+				USART_Transmit('1'); // Send back acknowledgement
+			}
+		}
+		
+		// Write 64 bytes to Flash address one byte write at a time (and increment), pulse audio pin
+		else if (receivedChar == GB_FLASH_WRITE_64BYTE_AUDIO) {
+			usart_read_bytes(64);
+			
+			PORTD |= (1<<ACTIVITY_LED);
+			for (uint8_t x = 0; x < 64; x++) {
+				audio_flash_write_byte(address, receivedBuffer[x]);
+				address++;
+			}
+			USART_Transmit('1'); // Send back acknowledgement
+			
+			PORTD &= ~(1<<ACTIVITY_LED);
+		}
+		
 		
 		
 		// ---------- General commands ----------
@@ -472,6 +518,25 @@ int main(void) {
 		// Send back the firmware version number
 		else if (receivedChar == READ_FIRMWARE_VERSION) {
 			USART_Transmit(FIRMWARE_VERSION);
+		}
+		
+		// Reset the AVR if it matches the number
+		else if (receivedChar == RESET_AVR) {
+			usart_read_chars();
+			uint32_t resetValue = strtol(receivedBuffer, NULL, 16);
+			if (resetValue == RESET_VALUE) {
+				// Clear watchdog flag
+				MCUCSR &= ~(1<<WDRF);
+				
+				// Start timed sequence
+				WDTCR = (1<<WDCE) | (1<<WDE);
+				
+				// Reset in 250 ms
+				WDTCR = (1<<WDP2) | (1<<WDE);
+				
+				// Wait for reset
+				_delay_loop_2(65535);
+			}
 		}
 	}
 }

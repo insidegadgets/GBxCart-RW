@@ -43,6 +43,25 @@
 # MCU name
 MCU = atmega8515
 
+# MCU fuses
+MCU_FUSES = -U lfuse:w:0xaf:m -U hfuse:w:0xda:m
+
+
+# COM Port
+COM_PORT = 16
+
+# TSB settings
+TSB_SETTINGS = com$(COM_PORT):9600 T 25
+
+# TSB program
+TSB_PROGRAM = com$(COM_PORT):57600 fw
+
+# TSB boot loader
+TSB_BOOTLOADER = -U flash:w:tsb\tsb_m8515_d0d1_resetwdt.hex
+
+# TSB WDT
+TSB_WATCHDOGRESET = tsb\gbxcart_rw_wdt_reset_v1.0.exe $(COM_PORT)
+
 
 # Processor frequency.
 #     This will define a symbol, F_CPU, in all source code files equal to the 
@@ -353,6 +372,8 @@ REMOVEDIR = rm -rf
 COPY = cp
 WINSHELL = cmd
 
+TSB = tsb/tsb.exe
+
 
 # Define Messages
 # English
@@ -584,6 +605,27 @@ $(OBJDIR)/%.o : %.S
 # Create preprocessed source for use in sending a bug report.
 %.i : %.c
 	$(CC) -E -mmcu=$(MCU) -I. $(CFLAGS) $< -o $@ 
+
+
+
+# Write the device fuses  
+fuse: 
+	$(AVRDUDE) $(AVRDUDE_FLAGS) $(MCU_FUSES)
+
+# Write the TSB settings
+tsbsettings: 
+	$(TSB_WATCHDOGRESET)
+	$(TSB) $(TSB_SETTINGS)
+
+# Program the TSB bootloader
+tsbbootloader: 
+	$(AVRDUDE) $(AVRDUDE_FLAGS) $(TSB_BOOTLOADER)
+
+# Upload new firmware via TSB
+tsbprogram: $(TARGET).hex
+	$(TSB_WATCHDOGRESET)
+	$(TSB) $(TSB_PROGRAM) $(TARGET).hex
+
 
 
 # Target: clean project.
