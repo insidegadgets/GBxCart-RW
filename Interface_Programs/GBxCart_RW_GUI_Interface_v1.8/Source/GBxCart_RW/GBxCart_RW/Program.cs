@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Forms;
-using System.Runtime.InteropServices;     // DLL support
+using System.Runtime.InteropServices; // DLL support
 
 namespace GBxCart_RW
 {
@@ -71,7 +71,10 @@ namespace GBxCart_RW
 
         [DllImport(dllLocation, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         public static extern void write_rom(string fileName, int flashCartType, ref UInt32 length, ref int cancelOperation);
-        
+
+        [DllImport(dllLocation, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void erase_ram(ref UInt32 length, ref int cancelOperation);
+
 
 
         [STAThread]

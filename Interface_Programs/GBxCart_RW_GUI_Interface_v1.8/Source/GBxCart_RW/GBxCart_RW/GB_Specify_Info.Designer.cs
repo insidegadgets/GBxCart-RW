@@ -61,7 +61,7 @@
             // 
             this.cartinfocancelbutton.DialogResult = System.Windows.Forms.DialogResult.Cancel;
             this.cartinfocancelbutton.Font = new System.Drawing.Font("Segoe UI", 9F);
-            this.cartinfocancelbutton.Location = new System.Drawing.Point(191, 144);
+            this.cartinfocancelbutton.Location = new System.Drawing.Point(195, 141);
             this.cartinfocancelbutton.Name = "cartinfocancelbutton";
             this.cartinfocancelbutton.Size = new System.Drawing.Size(67, 22);
             this.cartinfocancelbutton.TabIndex = 78;
@@ -71,7 +71,7 @@
             // cartinfoapplybutton
             // 
             this.cartinfoapplybutton.Font = new System.Drawing.Font("Segoe UI", 9F);
-            this.cartinfoapplybutton.Location = new System.Drawing.Point(69, 143);
+            this.cartinfoapplybutton.Location = new System.Drawing.Point(88, 141);
             this.cartinfoapplybutton.Name = "cartinfoapplybutton";
             this.cartinfoapplybutton.Size = new System.Drawing.Size(67, 22);
             this.cartinfoapplybutton.TabIndex = 77;
@@ -139,7 +139,7 @@
             // 
             this.label2.AutoSize = true;
             this.label2.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold);
-            this.label2.Location = new System.Drawing.Point(106, 9);
+            this.label2.Location = new System.Drawing.Point(115, 9);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(120, 15);
             this.label2.TabIndex = 72;
@@ -163,8 +163,10 @@
             this.Controls.Add(this.romsizebox);
             this.Controls.Add(this.label2);
             this.Name = "GB_Specify_Info";
+            this.ShowIcon = false;
+            this.ShowInTaskbar = false;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
-            this.Text = "GB_Specify_Info";
+            this.Text = " ";
             this.ResumeLayout(false);
             this.PerformLayout();
 

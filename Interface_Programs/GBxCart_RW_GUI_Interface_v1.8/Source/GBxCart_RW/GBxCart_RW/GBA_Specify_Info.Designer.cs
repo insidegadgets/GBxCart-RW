@@ -101,7 +101,7 @@
             // 
             this.gbacancelbutton.DialogResult = System.Windows.Forms.DialogResult.Cancel;
             this.gbacancelbutton.Font = new System.Drawing.Font("Segoe UI", 9F);
-            this.gbacancelbutton.Location = new System.Drawing.Point(209, 136);
+            this.gbacancelbutton.Location = new System.Drawing.Point(206, 136);
             this.gbacancelbutton.Name = "gbacancelbutton";
             this.gbacancelbutton.Size = new System.Drawing.Size(67, 23);
             this.gbacancelbutton.TabIndex = 74;
@@ -112,7 +112,7 @@
             // 
             this.gbaapplybutton.DialogResult = System.Windows.Forms.DialogResult.Cancel;
             this.gbaapplybutton.Font = new System.Drawing.Font("Segoe UI", 9F);
-            this.gbaapplybutton.Location = new System.Drawing.Point(87, 135);
+            this.gbaapplybutton.Location = new System.Drawing.Point(91, 136);
             this.gbaapplybutton.Name = "gbaapplybutton";
             this.gbaapplybutton.Size = new System.Drawing.Size(67, 23);
             this.gbaapplybutton.TabIndex = 73;
@@ -197,8 +197,10 @@
             this.Controls.Add(this.gbaromsizebox);
             this.Controls.Add(this.label9);
             this.Name = "GBA_Specify_Info";
+            this.ShowIcon = false;
+            this.ShowInTaskbar = false;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
-            this.Text = "GBA_Specify_Info";
+            this.Text = " ";
             this.ResumeLayout(false);
             this.PerformLayout();
 

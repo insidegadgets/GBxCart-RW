@@ -1,9 +1,9 @@
 /*
  GBxCart RW - Console Interface
- Version: 1.6
+ Version: 1.7
  Author: Alex from insideGadgets (www.insidegadgets.com)
  Created: 7/11/2016
- Last Modified: 26/08/2017
+ Last Modified: 3/09/2017
  
  */
 
@@ -83,6 +83,7 @@ bdrate = 1000000; // 1,000,000 baud
 uint8_t gbxcartFirmwareVersion = 0;
 uint8_t gbxcartPcbVersion = 0;
 uint8_t readBuffer[65];
+uint8_t writeBuffer[128];
 
 char gameTitle[17];
 uint16_t cartridgeType = 0;
@@ -157,6 +158,82 @@ void read_config(void) {
 	}
 }
 
+
+// Load a file which contains the cartridge RAM settings (only needed if Erase RAM option was used, only applies to GBA games)
+void load_cart_ram_info(void) {
+	char titleFilename[30];
+	strncpy(titleFilename, gameTitle, 20);
+	strncat(titleFilename, ".si", 4);
+
+	// Create a new file
+	FILE *infoFile = fopen(titleFilename, "rb");
+	if (infoFile != NULL) {
+		fseek(infoFile, 0, SEEK_END);
+		long fileSize = ftell(infoFile);
+		fseek(infoFile, 0, SEEK_SET);
+		
+		char buffer[100];
+		fread(buffer, 1, fileSize, infoFile);
+		
+		int tokenNo = 0;
+		char *token = strtok(buffer, ",");
+		while (token != NULL) {
+			if (tokenNo == 0) {
+				ramSize = atoi(token);
+			}
+			else if (tokenNo == 1) {
+				eepromSize = atoi(token);
+			}
+			else if (tokenNo == 2) {
+				hasFlashSave = atoi(token);
+			}
+			
+			//printf("tok = %i\n", atoi(token));
+			tokenNo++;
+			token = strtok(NULL, ",");
+		}
+
+		fclose(infoFile);
+	}
+}
+
+// Write a file which contains the cartridge RAM settings before it's wiped using Erase RAM (Only applies to GBA games)
+void write_cart_ram_info(void) {
+	char titleFilename[30];
+	strncpy(titleFilename, gameTitle, 20);
+	strncat(titleFilename, ".si", 4);
+	
+	// Check if file exists, if not, write the ram info
+	FILE *infoFileRead = fopen(titleFilename, "rb");
+	if (infoFileRead == NULL) {
+		
+		// Create a new file
+		FILE *infoFile = fopen(titleFilename, "wb");
+		if (infoFile != NULL) {
+			char ramSizeBuffer[10];
+			itoa(ramSize, ramSizeBuffer, 10);
+			
+			char eepromSizeBuffer[10];
+			itoa(eepromSize, eepromSizeBuffer, 10);
+			
+			char hasFlashSaveBuffer[10];
+			itoa(hasFlashSave, hasFlashSaveBuffer, 10);
+			
+			fwrite(ramSizeBuffer, 1, strlen(ramSizeBuffer), infoFile);
+			fwrite(",", 1, 1, infoFile);
+			fwrite(eepromSizeBuffer, 1, strlen(eepromSizeBuffer), infoFile);
+			fwrite(",", 1, 1, infoFile);
+			fwrite(hasFlashSaveBuffer, 1, strlen(hasFlashSaveBuffer), infoFile);
+			fwrite(",", 1, 1, infoFile);
+			
+			fclose(infoFile);
+		}
+	}
+	else {
+		fclose(infoFileRead);
+	}
+}
+
 void delay_ms(uint16_t ms) {
 	#if defined (_WIN32)
 		Sleep(ms);
@@ -227,13 +304,19 @@ void com_read_bytes (FILE *file, uint8_t count) {
 	}
 }
 
-// Read 1-128 bytes from the file and write it the COM port with the command given
-void com_write_bytes_from_file (uint8_t command, FILE *file, uint8_t count) {
+// Read 1-128 bytes from the file (or buffer) and write it the COM port with the command given
+void com_write_bytes_from_file(uint8_t command, FILE *file, uint8_t count) {
 	uint8_t buffer[129];
-	
 	buffer[0] = command;
-	fread(&buffer[1], 1, count, file);
-	RS232_SendBuf(cport_nr, buffer, (count+1)); // command + 1-128 bytes
+
+	if (file == NULL) {
+		memcpy(&buffer[1], writeBuffer, count);
+	}
+	else {
+		fread(&buffer[1], 1, count, file);
+	}
+
+	RS232_SendBuf(cport_nr, buffer, (count + 1)); // command + 1-128 bytes
 }
 
 // Send a single command byte
@@ -362,6 +445,7 @@ void read_gb_header (void) {
 			 (headerChar >= 0x41 && headerChar <= 0x5A) || // A-Z
 			 (headerChar >= 0x61 && headerChar <= 0x7A) || // a-z
 			 (headerChar == 0x2E) || // .
+			 (headerChar == 0x5F) || // _
 			 (headerChar == 0x20)) { // Space
 			gameTitle[(titleAddress-0x0134)] = headerChar;
 		}
@@ -843,9 +927,7 @@ uint8_t gba_check_eeprom (void) {
 			if (readBuffer[x] == 0 || readBuffer[x] == 0xFF) {
 				zeroTotal++;
 			}
-			printf ("0x%X, ", readBuffer[x]);
 		}
-		printf("\n");
 		
 		currAddr += 8;
 		
@@ -855,8 +937,6 @@ uint8_t gba_check_eeprom (void) {
 		}
 	}
 	RS232_cputs(cport_nr, "0"); // Stop read
-	
-	printf("repeat %i\n", repeatedCount);
 	
 	if (zeroTotal >= 512) { // Blank, likely no EEPROM
 		return EEPROM_NONE;
@@ -951,6 +1031,7 @@ void gba_read_gametitle(void) {
 			 (headerChar >= 0x41 && headerChar <= 0x5A) || // A-Z
 			 (headerChar >= 0x61 && headerChar <= 0x7A) || // a-z
 			 (headerChar == 0x2E) || // .
+			 (headerChar == 0x5F) || // _
 			 (headerChar == 0x20)) { // Space
 			gameTitle[(titleAddress-0xA0)] = headerChar;
 		}
@@ -991,6 +1072,7 @@ void read_gba_header (void) {
 			 (headerChar >= 0x41 && headerChar <= 0x5A) || // A-Z
 			 (headerChar >= 0x61 && headerChar <= 0x7A) || // a-z
 			 (headerChar == 0x2E) || // .
+			 (headerChar == 0x5F) || // _
 			 (headerChar == 0x20)) { // Space
 			gameTitle[(titleAddress-0xA0)] = headerChar;
 		}
@@ -1034,6 +1116,9 @@ void read_gba_header (void) {
 	else {
 		eepromSize = 0;
 	}
+	
+	// If file exists, we know the ram has been erased before, so read memory info from this file
+	load_cart_ram_info();
 	
 	// Print out
 	printf ("\nROM size: %iMByte\n", romSize);

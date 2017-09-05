@@ -1,10 +1,10 @@
 ﻿/*
 
 GBxCart RW - GUI  Interface
-Version : 1.1
+Version : 1.8
 Author : Alex from insideGadgets(www.insidegadgets.com)
 Created : 7 / 11 / 2016
-Last Modified : 4 / 04 / 2017
+Last Modified : 2 / 09 / 2017
 
 GBxCart RW allows you to dump your Gameboy / Gameboy Colour / Gameboy Advance games ROM, save the RAM and write to the RAM.
 
@@ -20,7 +20,7 @@ using System.Text;
 using System.Windows.Forms;
 using System.Threading;
 using System.IO;
-using System.Runtime.InteropServices;     // DLL support
+using System.Runtime.InteropServices;  // DLL support
 using System.IO.Ports;
 using System.Net;
 using System.Reflection;
@@ -38,6 +38,7 @@ namespace GBxCart_RW
         const int WRITERAM = 3;
         const int READHEADER = 4;
         const int WRITEROM = 5;
+        const int ERASERAM = 6;
 
         public const int PCB_1_0 = 1;
         public const int PCB_1_1 = 2;
@@ -70,6 +71,11 @@ namespace GBxCart_RW
 
             comPortTextBox.Text = Convert.ToString(Program.read_config(1));
             baudtextBox.Text = Convert.ToString(Program.read_config(2));
+            statuslabel.Text = "";
+        }
+
+        private void Form1_Load(object sender, EventArgs e) {
+
         }
 
         // Progress bar
@@ -89,15 +95,13 @@ namespace GBxCart_RW
         }
 
         // Update the progress bar
-        void backgroundWorker1_ProgressChanged(object sender, ProgressChangedEventArgs e)
-        {
+        void backgroundWorker1_ProgressChanged(object sender, ProgressChangedEventArgs e) {
             // The progress percentage is a property of e
             progressBar1.Value = e.ProgressPercentage;
         }
         
         // Perform the reading/writing/header read in the background
-        void backgroundWorker2_DoWork(object sender, DoWorkEventArgs e)
-        {
+        void backgroundWorker2_DoWork(object sender, DoWorkEventArgs e) {
             while (true) {
 
                 // Before doing any operations, check if we are still connected and read the mode we are in
@@ -136,9 +140,8 @@ namespace GBxCart_RW
                                 comPortTextBox.BackColor = Color.FromArgb(255, 255, 255);
                             }));
                             
-                            readromlabel.Invoke((MethodInvoker)(() => {
-                                readromlabel.Text = "Device disconnected";
-                                readromlabel.Visible = true;
+                            statuslabel.Invoke((MethodInvoker)(() => {
+                                statuslabel.Text = "Device disconnected"; 
                             }));
 
                             break;
@@ -152,13 +155,13 @@ namespace GBxCart_RW
                     System.Threading.Thread.Sleep(500);
 
                     if (cancelOperation == 0) {
-                        readromlabel.Invoke((MethodInvoker)(() => {
-                            readromlabel.Text = "Reading ROM... Finished";
+                        statuslabel.Invoke((MethodInvoker)(() => {
+                            statuslabel.Text = "Reading ROM... Finished";
                         }));
                     }
                     else {
-                        readromlabel.Invoke((MethodInvoker)(() => {
-                            readromlabel.Text = "Reading ROM... Cancelled";
+                        statuslabel.Invoke((MethodInvoker)(() => {
+                            statuslabel.Text = "Reading ROM... Cancelled";
                         }));
                     }
                 }
@@ -168,13 +171,13 @@ namespace GBxCart_RW
                     System.Threading.Thread.Sleep(500);
 
                     if (cancelOperation == 0) {
-                        saveramlabel.Invoke((MethodInvoker)(() => {
-                            saveramlabel.Text = "Saving RAM...... Finished";
+                        statuslabel.Invoke((MethodInvoker)(() => {
+                            statuslabel.Text = "Saving RAM...... Finished";
                         }));
                     }
                     else {
-                        saveramlabel.Invoke((MethodInvoker)(() => {
-                            saveramlabel.Text = "Saving RAM...... Cancelled";
+                        statuslabel.Invoke((MethodInvoker)(() => {
+                            statuslabel.Text = "Saving RAM...... Cancelled";
                         }));
                     }
                 }
@@ -184,13 +187,13 @@ namespace GBxCart_RW
                     System.Threading.Thread.Sleep(500);
 
                     if (cancelOperation == 0) {
-                        writeramlabel.Invoke((MethodInvoker)(() => {
-                            writeramlabel.Text = "Writing RAM...... Finished";
+                        statuslabel.Invoke((MethodInvoker)(() => {
+                            statuslabel.Text = "Writing RAM...... Finished";
                         }));
                     }
                     else {
-                        writeramlabel.Invoke((MethodInvoker)(() => {
-                            writeramlabel.Text = "Writing RAM...... Cancelled";
+                        statuslabel.Invoke((MethodInvoker)(() => {
+                            statuslabel.Text = "Writing RAM...... Cancelled";
                         }));
                     }
                 }
@@ -200,13 +203,29 @@ namespace GBxCart_RW
                     System.Threading.Thread.Sleep(500);
 
                     if (cancelOperation == 0) {
-                        readromlabel.Invoke((MethodInvoker)(() => {
-                            readromlabel.Text = "Writing ROM...... Finished";
+                        statuslabel.Invoke((MethodInvoker)(() => {
+                            statuslabel.Text = "Writing ROM...... Finished";
                         }));
                     }
                     else {
-                        readromlabel.Invoke((MethodInvoker)(() => {
-                            readromlabel.Text = "Writing ROM...... Cancelled";
+                        statuslabel.Invoke((MethodInvoker)(() => {
+                            statuslabel.Text = "Writing ROM...... Cancelled";
+                        }));
+                    }
+                }
+                else if (commandReceived == ERASERAM) { // Erase RAM
+                    Program.erase_ram(ref progress, ref cancelOperation);
+                    commandReceived = 0;
+                    System.Threading.Thread.Sleep(500);
+
+                    if (cancelOperation == 0) {
+                        statuslabel.Invoke((MethodInvoker)(() => {
+                            statuslabel.Text = "Erasing RAM...... Finished";
+                        }));
+                    }
+                    else {
+                        statuslabel.Invoke((MethodInvoker)(() => {
+                            statuslabel.Text = "Erasing RAM...... Cancelled";
                         }));
                     }
                 }
@@ -239,35 +258,8 @@ namespace GBxCart_RW
                 System.Threading.Thread.Sleep(100);
             }
         }
+     
 
-
-        // Stop button
-        private void stopbutton_Click(object sender, EventArgs e) {
-            commandReceived = 0;
-            cancelOperation = 1;
-
-            System.Threading.Thread.Sleep(250);
-
-            int comPortInt = Convert.ToInt32(comPortTextBox.Text);
-            int baudInt = Convert.ToInt32(baudtextBox.Text);
-            comPortInt--;
-
-            Program.RS232_CloseComport(comPortInt);
-            Program.RS232_OpenComport(comPortInt, baudInt, "8N1");
-        }
-
-        // Read header button
-        private void readheaderbutton_Click(object sender, EventArgs e) {
-            if (comConnected == true && commandReceived == 0) {
-                progress = 0;
-                backgroundWorker1.ReportProgress(0);
-
-                commandReceived = READHEADER;
-                readromlabel.Visible = false;
-                saveramlabel.Visible = false;
-                writeramlabel.Visible = false;
-            }
-        }
         
         // Open port button
         private void openportbutton_Click(object sender, EventArgs e) {
@@ -275,6 +267,7 @@ namespace GBxCart_RW
             Int32 baudInt = Convert.ToInt32(baudtextBox.Text);
             comPortInt--;
             headerTextBox.Text = "";
+            statuslabel.Text = "";
 
             // If port open, close it, we will open it again below
             if (comConnected == true) {
@@ -292,9 +285,7 @@ namespace GBxCart_RW
                 headerRead = false;
                 progress = 0;
                 backgroundWorker1.ReportProgress(0);
-                readromlabel.Visible = false;
-                saveramlabel.Visible = false;
-                writeramlabel.Visible = false;
+                
 
                 Program.update_config(comPortInt, baudInt);
                 
@@ -327,7 +318,8 @@ namespace GBxCart_RW
                 int comPortInt = Convert.ToInt32(comPortTextBox.Text);
                 comPortInt--;
                 headerTextBox.Text = "";
-                
+                statuslabel.Text = "";
+
                 Program.RS232_CloseComport(comPortInt);
                 comPortTextBox.BackColor = Color.FromArgb(255, 255, 255);
                 comConnected = false;
@@ -336,25 +328,47 @@ namespace GBxCart_RW
             headerRead = false;
             progress = 0;
             backgroundWorker1.ReportProgress(0);
-            readromlabel.Visible = false;
-            saveramlabel.Visible = false;
-            writeramlabel.Visible = false;
+            
             modeText.Visible = false;
             firmwareText.Visible = false;
         }
 
+        // Stop button
+        private void stopbutton_Click(object sender, EventArgs e) {
+            commandReceived = 0;
+            cancelOperation = 1;
+
+            System.Threading.Thread.Sleep(250);
+
+            int comPortInt = Convert.ToInt32(comPortTextBox.Text);
+            int baudInt = Convert.ToInt32(baudtextBox.Text);
+            comPortInt--;
+
+            Program.RS232_CloseComport(comPortInt);
+            Program.RS232_OpenComport(comPortInt, baudInt, "8N1");
+        }
+
+
+
+        // Read header button
+        private void readheaderbutton_Click(object sender, EventArgs e) {
+            if (comConnected == true && commandReceived == 0) {
+                progress = 0;
+                backgroundWorker1.ReportProgress(0);
+
+                commandReceived = READHEADER;
+                statuslabel.Text = "";
+            }
+        }
+
         // Read rom button
-        private void readrombutton_Click(object sender, EventArgs e)
-        {
+        private void readrombutton_Click(object sender, EventArgs e) {
             if (comConnected == true && headerRead == true && commandReceived == 0) {
                 progress = 0;
                 backgroundWorker1.ReportProgress(0);
 
                 commandReceived = READROM;
-                readromlabel.Visible = true;
-                readromlabel.Text = "Reading ROM...";
-                saveramlabel.Visible = false;
-                writeramlabel.Visible = false;
+                statuslabel.Text = "Reading ROM...";
             }
         }
 
@@ -365,29 +379,18 @@ namespace GBxCart_RW
                 backgroundWorker1.ReportProgress(0);
                 
                 if (Program.check_if_file_exists() == 1) {
-                    DialogResult dialogResult = MessageBox.Show("*** This will erase the save game from your PC ***\nPress Yes to continue or No to abort.", "Confirm Save", MessageBoxButtons.YesNo);
+                    DialogResult dialogResult = MessageBox.Show("This will erase the save game from your PC.\nPress Yes to continue or No to abort.", "Confirm Save", MessageBoxButtons.YesNo);
                     if (dialogResult == DialogResult.Yes) {
                         commandReceived = SAVERAM;
-
-                        saveramlabel.Visible = true;
-                        saveramlabel.Text = "Saving RAM...";
-                        readromlabel.Visible = false;
-                        writeramlabel.Visible = false;
+                        statuslabel.Text = "Saving RAM...";
                     }
                     else if (dialogResult == DialogResult.No) {
-                        saveramlabel.Visible = true;
-                        saveramlabel.Text = "Saving RAM cancelled";
-                        readromlabel.Visible = false;
-                        writeramlabel.Visible = false;
+                        statuslabel.Text = "Saving RAM cancelled";
                     }
                 }
                 else {
                     commandReceived = SAVERAM;
-
-                    saveramlabel.Visible = true;
-                    saveramlabel.Text = "Saving RAM...";
-                    readromlabel.Visible = false;
-                    writeramlabel.Visible = false;
+                    statuslabel.Text = "Saving RAM...";
                 }
             }
         }
@@ -399,89 +402,38 @@ namespace GBxCart_RW
                 backgroundWorker1.ReportProgress(0);
 
                 if (Program.check_if_file_exists() == 1) {
-                    DialogResult dialogResult = MessageBox.Show("*** This will erase the save game from your Gameboy/Gameboy Advance Cartridge ***\nPress Yes to continue or No to abort.", "Confirm Write", MessageBoxButtons.YesNo);
+                    DialogResult dialogResult = MessageBox.Show("This will erase the save game from your Gameboy / Gameboy Advance cart\nPress Yes to continue or No to abort.", "Confirm Write", MessageBoxButtons.YesNo);
                     if (dialogResult == DialogResult.Yes) {
                         commandReceived = WRITERAM;
-                        writeramlabel.Visible = true;
-                        writeramlabel.Text = "Writing RAM...";
-                        readromlabel.Visible = false;
-                        saveramlabel.Visible = false;
+                        statuslabel.Text = "Writing RAM...";
                     }
                     else if (dialogResult == DialogResult.No) {
-                        writeramlabel.Text = "Write RAM cancelled";
-                        writeramlabel.Visible = true;
-                        readromlabel.Visible = false;
-                        saveramlabel.Visible = false;
+                        statuslabel.Text = "Write RAM cancelled";
                     }
                 }
                 else {
-                    writeramlabel.Text = "Save file not found.";
-                    writeramlabel.Visible = true;
-                    readromlabel.Visible = false;
-                    saveramlabel.Visible = false;
+                    statuslabel.Text = "Save file not found.";
                 }
             }
         }
-        
 
-        // Gameboy cart info button
-        private void cartinfobutton_Click(object sender, EventArgs e) {
-            if (comConnected == true && headerRead == true && Program.read_cartridge_mode() == GB_CART) {
-                GB_Specify_Info gbSpecifyInfoForm = new GB_Specify_Info();
-                gbSpecifyInfoForm.ShowDialog();
-
-                // Update header
-                headerTextBox.Invoke((MethodInvoker)(() => {
-                    headerTextBox.Text = headerTokens[0] + "\n" + headerTokens[1] + "\n" + headerTokens[2] + "\n" + headerTokens[3] + "\n" + headerTokens[4];
-                }));
-            }
-            else if (comConnected == true && headerRead == true && Program.read_cartridge_mode() == GBA_CART) {
-                GBA_Specify_Info gbaSpecifyInfoForm = new GBA_Specify_Info();
-                gbaSpecifyInfoForm.ShowDialog();
-
-                // Update header
-                headerTextBox.Invoke((MethodInvoker)(() => {
-                    headerTextBox.Text = headerTokens[0] + "\n" + headerTokens[1] + "\n" + headerTokens[2] + "\n" + headerTokens[3] + "\n" + headerTokens[4];
-                }));
-            }
-        }
-        
-        
-        private void Form1_Load(object sender, EventArgs e) {
-
-        }
-
-        private void label11_Click(object sender, EventArgs e) {
-
-        }
-
-        private void label12_Click(object sender, EventArgs e) {
-            
-        }
-        
-        
-        private void romsizebox_SelectedIndexChanged(object sender, EventArgs e) {
-
-        }
-
-        private void cartTypeBox_SelectedIndexChanged(object sender, EventArgs e) {
-
-        }
-
+        // Write ROM button
         private void writerombutton_Click(object sender, EventArgs e) {
             if (comConnected == true && headerRead == true && writeRomSelected == true && commandReceived == 0) {
                 progress = 0;
                 backgroundWorker1.ReportProgress(0);
 
                 commandReceived = WRITEROM;
-                readromlabel.Visible = true;
-                readromlabel.Text = "Writing ROM...";
-                saveramlabel.Visible = false;
-                writeramlabel.Visible = false;
+                statuslabel.Text = "Writing ROM...";
             }
         }
+        
 
-        private void saveAsDefaultToolStripMenuItem_Click(object sender, EventArgs e) {
+
+        // --------------------- CART MENU ------------------
+
+        // GB/GBA cart info
+        private void specifyCartInfoMenuItem_Click(object sender, EventArgs e) {
             // Read header if not read yet
             if (comConnected == true && headerRead == false) {
                 if (commandReceived == 0) {
@@ -489,15 +441,10 @@ namespace GBxCart_RW
                     backgroundWorker1.ReportProgress(0);
 
                     commandReceived = READHEADER;
-                    readromlabel.Visible = false;
-                    saveramlabel.Visible = false;
-                    writeramlabel.Visible = false;
-
                     headerRead = true;
                 }
             }
-
-
+            
             if (comConnected == true && headerRead == true && Program.read_cartridge_mode() == GB_CART) {
                 GB_Specify_Info gbSpecifyInfoForm = new GB_Specify_Info();
                 gbSpecifyInfoForm.ShowDialog();
@@ -518,8 +465,9 @@ namespace GBxCart_RW
             }
         }
 
-        private void resetDefaultToolStripMenuItem_Click(object sender, EventArgs e) {
-            if (comConnected == true && headerRead == true) {
+        // Select ROM file to Write
+        private void selectRomFiletoWriteMenuItem_Click(object sender, EventArgs e) {
+            if (comConnected == true && headerRead == true && writeRomCartType >= 1) {
                 int gbxcartPcbVersion = Program.request_value(READ_PCB_VERSION);
                 if (gbxcartPcbVersion == PCB_1_0) {
                     System.Windows.Forms.MessageBox.Show("PCB v1.0 is not supported for this function.");
@@ -545,13 +493,37 @@ namespace GBxCart_RW
                     }
                 }
             }
+            else {
+                System.Windows.Forms.MessageBox.Show("Please specify a Flash cart first in Specify Cart.");
+            }
         }
 
+        // Erase RAM button
+        private void eraseRAMToolStripMenuItem_Click(object sender, EventArgs e) {
+            if (comConnected == true && headerRead == true && commandReceived == 0) {
+                progress = 0;
+                backgroundWorker1.ReportProgress(0);
+
+                DialogResult dialogResult = MessageBox.Show("This will erase the save game from your Gameboy / Gameboy Advance cart.\nPress Yes to continue or No to abort.", "Confirm Save", MessageBoxButtons.YesNo);
+                if (dialogResult == DialogResult.Yes) {
+                    commandReceived = ERASERAM;
+                    statuslabel.Text = "Erasing RAM...";
+                }
+            }
+            else {
+                System.Windows.Forms.MessageBox.Show("Please read the Header first.");
+            }
+        }
+
+        // --------------------- HELP MENU ------------------
+
+        // Check for updates
         private void checkForUpdatesToolStripMenuItem_Click(object sender, EventArgs e) {
             UpdateCheck updateCheckForm = new UpdateCheck();
             updateCheckForm.ShowDialog();
         }
 
+        // Manual - open in browser
         private void manualToolStripMenuItem_Click(object sender, EventArgs e) {
             System.Diagnostics.Process.Start("http://www.insidegadgets.com/updates/GBxCart_RW_Manual.pdf");
         }

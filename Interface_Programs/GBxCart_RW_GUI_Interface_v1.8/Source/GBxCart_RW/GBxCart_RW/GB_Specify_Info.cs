@@ -9,14 +9,9 @@ using System.Windows.Forms;
 
 namespace GBxCart_RW {
     public partial class GB_Specify_Info : Form {
-        
-        //string[] FormheaderTokens;
-        //int cartType;
 
         public GB_Specify_Info() {
             InitializeComponent();
-            //FormheaderTokens = Form1.headerTokens;
-            //cartType = Form1.writeRomCartType;
         }
 
         private void cartinfoapplybutton_Click(object sender, EventArgs e) {

@@ -45,20 +45,19 @@
             this.headerTextBox = new System.Windows.Forms.RichTextBox();
             this.closeportbutton = new System.Windows.Forms.Button();
             this.label1 = new System.Windows.Forms.Label();
-            this.readromlabel = new System.Windows.Forms.Label();
-            this.saveramlabel = new System.Windows.Forms.Label();
-            this.writeramlabel = new System.Windows.Forms.Label();
+            this.statuslabel = new System.Windows.Forms.Label();
             this.modelabel = new System.Windows.Forms.Label();
             this.modeText = new System.Windows.Forms.Label();
             this.firmwareText = new System.Windows.Forms.Label();
             this.firmwarelabel = new System.Windows.Forms.Label();
             this.menuStrip1 = new System.Windows.Forms.MenuStrip();
             this.fileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.saveAsDefaultToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.resetDefaultToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.SpecifyCartInfoMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.selectRomFiletoWriteMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.eraseRAMMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.helpToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.manualToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.checkForUpdatesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.manualMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.checkForUpdatesMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.openFileDialog1 = new System.Windows.Forms.OpenFileDialog();
             this.writerombutton = new System.Windows.Forms.Button();
             this.menuStrip1.SuspendLayout();
@@ -93,7 +92,7 @@
             // readheaderbutton
             // 
             this.readheaderbutton.Font = new System.Drawing.Font("Segoe UI", 9F);
-            this.readheaderbutton.Location = new System.Drawing.Point(321, 105);
+            this.readheaderbutton.Location = new System.Drawing.Point(330, 105);
             this.readheaderbutton.Name = "readheaderbutton";
             this.readheaderbutton.Size = new System.Drawing.Size(90, 23);
             this.readheaderbutton.TabIndex = 30;
@@ -106,20 +105,20 @@
             this.saverambutton.Font = new System.Drawing.Font("Segoe UI", 9F);
             this.saverambutton.Location = new System.Drawing.Point(286, 162);
             this.saverambutton.Name = "saverambutton";
-            this.saverambutton.Size = new System.Drawing.Size(75, 23);
+            this.saverambutton.Size = new System.Drawing.Size(86, 23);
             this.saverambutton.TabIndex = 31;
-            this.saverambutton.Text = "Save RAM";
+            this.saverambutton.Text = "Backup Save";
             this.saverambutton.UseVisualStyleBackColor = true;
             this.saverambutton.Click += new System.EventHandler(this.saverambutton_Click);
             // 
             // writerambutton
             // 
             this.writerambutton.Font = new System.Drawing.Font("Segoe UI", 9F);
-            this.writerambutton.Location = new System.Drawing.Point(367, 162);
+            this.writerambutton.Location = new System.Drawing.Point(378, 162);
             this.writerambutton.Name = "writerambutton";
-            this.writerambutton.Size = new System.Drawing.Size(75, 23);
+            this.writerambutton.Size = new System.Drawing.Size(86, 23);
             this.writerambutton.TabIndex = 32;
-            this.writerambutton.Text = "Write RAM";
+            this.writerambutton.Text = "Restore Save";
             this.writerambutton.UseVisualStyleBackColor = true;
             this.writerambutton.Click += new System.EventHandler(this.writerambutton_Click);
             // 
@@ -128,7 +127,7 @@
             this.readrombutton.Font = new System.Drawing.Font("Segoe UI", 9F);
             this.readrombutton.Location = new System.Drawing.Point(286, 134);
             this.readrombutton.Name = "readrombutton";
-            this.readrombutton.Size = new System.Drawing.Size(75, 23);
+            this.readrombutton.Size = new System.Drawing.Size(86, 23);
             this.readrombutton.TabIndex = 33;
             this.readrombutton.Text = "Read ROM";
             this.readrombutton.UseVisualStyleBackColor = true;
@@ -214,41 +213,16 @@
             this.label1.TabIndex = 49;
             this.label1.Text = "Header";
             // 
-            // readromlabel
+            // statuslabel
             // 
-            this.readromlabel.AutoSize = true;
-            this.readromlabel.BackColor = System.Drawing.Color.Transparent;
-            this.readromlabel.Font = new System.Drawing.Font("Segoe UI", 9F);
-            this.readromlabel.Location = new System.Drawing.Point(92, 202);
-            this.readromlabel.Name = "readromlabel";
-            this.readromlabel.Size = new System.Drawing.Size(89, 15);
-            this.readromlabel.TabIndex = 51;
-            this.readromlabel.Text = "Reading ROM...";
-            this.readromlabel.Visible = false;
-            // 
-            // saveramlabel
-            // 
-            this.saveramlabel.AutoSize = true;
-            this.saveramlabel.BackColor = System.Drawing.Color.Transparent;
-            this.saveramlabel.Font = new System.Drawing.Font("Segoe UI", 9F);
-            this.saveramlabel.Location = new System.Drawing.Point(92, 202);
-            this.saveramlabel.Name = "saveramlabel";
-            this.saveramlabel.Size = new System.Drawing.Size(80, 15);
-            this.saveramlabel.TabIndex = 52;
-            this.saveramlabel.Text = "Saving RAM...";
-            this.saveramlabel.Visible = false;
-            // 
-            // writeramlabel
-            // 
-            this.writeramlabel.AutoSize = true;
-            this.writeramlabel.BackColor = System.Drawing.Color.Transparent;
-            this.writeramlabel.Font = new System.Drawing.Font("Segoe UI", 9F);
-            this.writeramlabel.Location = new System.Drawing.Point(92, 200);
-            this.writeramlabel.Name = "writeramlabel";
-            this.writeramlabel.Size = new System.Drawing.Size(84, 15);
-            this.writeramlabel.TabIndex = 53;
-            this.writeramlabel.Text = "Writing RAM...";
-            this.writeramlabel.Visible = false;
+            this.statuslabel.AutoSize = true;
+            this.statuslabel.BackColor = System.Drawing.Color.Transparent;
+            this.statuslabel.Font = new System.Drawing.Font("Segoe UI", 9F);
+            this.statuslabel.Location = new System.Drawing.Point(92, 200);
+            this.statuslabel.Name = "statuslabel";
+            this.statuslabel.Size = new System.Drawing.Size(65, 15);
+            this.statuslabel.TabIndex = 53;
+            this.statuslabel.Text = "Status here";
             // 
             // modelabel
             // 
@@ -259,7 +233,6 @@
             this.modelabel.Size = new System.Drawing.Size(42, 15);
             this.modelabel.TabIndex = 67;
             this.modelabel.Text = "Mode:";
-            this.modelabel.Click += new System.EventHandler(this.label11_Click);
             // 
             // modeText
             // 
@@ -294,7 +267,6 @@
             this.firmwarelabel.Size = new System.Drawing.Size(63, 15);
             this.firmwarelabel.TabIndex = 69;
             this.firmwarelabel.Text = "Firmware:";
-            this.firmwarelabel.Click += new System.EventHandler(this.label12_Click);
             // 
             // menuStrip1
             // 
@@ -304,55 +276,63 @@
             this.helpToolStripMenuItem});
             this.menuStrip1.Location = new System.Drawing.Point(0, 0);
             this.menuStrip1.Name = "menuStrip1";
-            this.menuStrip1.Size = new System.Drawing.Size(449, 24);
+            this.menuStrip1.Size = new System.Drawing.Size(470, 24);
             this.menuStrip1.TabIndex = 71;
             this.menuStrip1.Text = "menuStrip1";
             // 
             // fileToolStripMenuItem
             // 
             this.fileToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.saveAsDefaultToolStripMenuItem,
-            this.resetDefaultToolStripMenuItem});
+            this.SpecifyCartInfoMenuItem,
+            this.selectRomFiletoWriteMenuItem,
+            this.eraseRAMMenuItem});
             this.fileToolStripMenuItem.Name = "fileToolStripMenuItem";
-            this.fileToolStripMenuItem.Size = new System.Drawing.Size(86, 20);
-            this.fileToolStripMenuItem.Text = "Cart Settings";
+            this.fileToolStripMenuItem.Size = new System.Drawing.Size(41, 20);
+            this.fileToolStripMenuItem.Text = "Cart";
             // 
-            // saveAsDefaultToolStripMenuItem
+            // SpecifyCartInfoMenuItem
             // 
-            this.saveAsDefaultToolStripMenuItem.Name = "saveAsDefaultToolStripMenuItem";
-            this.saveAsDefaultToolStripMenuItem.Size = new System.Drawing.Size(201, 22);
-            this.saveAsDefaultToolStripMenuItem.Text = "Specify Cart Info";
-            this.saveAsDefaultToolStripMenuItem.Click += new System.EventHandler(this.saveAsDefaultToolStripMenuItem_Click);
+            this.SpecifyCartInfoMenuItem.Name = "SpecifyCartInfoMenuItem";
+            this.SpecifyCartInfoMenuItem.Size = new System.Drawing.Size(201, 22);
+            this.SpecifyCartInfoMenuItem.Text = "Specify Cart Info";
+            this.SpecifyCartInfoMenuItem.Click += new System.EventHandler(this.specifyCartInfoMenuItem_Click);
             // 
-            // resetDefaultToolStripMenuItem
+            // selectRomFiletoWriteMenuItem
             // 
-            this.resetDefaultToolStripMenuItem.Name = "resetDefaultToolStripMenuItem";
-            this.resetDefaultToolStripMenuItem.Size = new System.Drawing.Size(201, 22);
-            this.resetDefaultToolStripMenuItem.Text = "Select ROM File to Write";
-            this.resetDefaultToolStripMenuItem.Click += new System.EventHandler(this.resetDefaultToolStripMenuItem_Click);
+            this.selectRomFiletoWriteMenuItem.Name = "selectRomFiletoWriteMenuItem";
+            this.selectRomFiletoWriteMenuItem.Size = new System.Drawing.Size(201, 22);
+            this.selectRomFiletoWriteMenuItem.Text = "Select ROM File to Write";
+            this.selectRomFiletoWriteMenuItem.Click += new System.EventHandler(this.selectRomFiletoWriteMenuItem_Click);
+            // 
+            // eraseRAMMenuItem
+            // 
+            this.eraseRAMMenuItem.Name = "eraseRAMMenuItem";
+            this.eraseRAMMenuItem.Size = new System.Drawing.Size(201, 22);
+            this.eraseRAMMenuItem.Text = "Erase Save";
+            this.eraseRAMMenuItem.Click += new System.EventHandler(this.eraseRAMToolStripMenuItem_Click);
             // 
             // helpToolStripMenuItem
             // 
             this.helpToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.manualToolStripMenuItem,
-            this.checkForUpdatesToolStripMenuItem});
+            this.manualMenuItem,
+            this.checkForUpdatesMenuItem});
             this.helpToolStripMenuItem.Name = "helpToolStripMenuItem";
             this.helpToolStripMenuItem.Size = new System.Drawing.Size(44, 20);
             this.helpToolStripMenuItem.Text = "Help";
             // 
-            // manualToolStripMenuItem
+            // manualMenuItem
             // 
-            this.manualToolStripMenuItem.Name = "manualToolStripMenuItem";
-            this.manualToolStripMenuItem.Size = new System.Drawing.Size(171, 22);
-            this.manualToolStripMenuItem.Text = "View Manual";
-            this.manualToolStripMenuItem.Click += new System.EventHandler(this.manualToolStripMenuItem_Click);
+            this.manualMenuItem.Name = "manualMenuItem";
+            this.manualMenuItem.Size = new System.Drawing.Size(171, 22);
+            this.manualMenuItem.Text = "View Manual";
+            this.manualMenuItem.Click += new System.EventHandler(this.manualToolStripMenuItem_Click);
             // 
-            // checkForUpdatesToolStripMenuItem
+            // checkForUpdatesMenuItem
             // 
-            this.checkForUpdatesToolStripMenuItem.Name = "checkForUpdatesToolStripMenuItem";
-            this.checkForUpdatesToolStripMenuItem.Size = new System.Drawing.Size(171, 22);
-            this.checkForUpdatesToolStripMenuItem.Text = "Check for Updates";
-            this.checkForUpdatesToolStripMenuItem.Click += new System.EventHandler(this.checkForUpdatesToolStripMenuItem_Click);
+            this.checkForUpdatesMenuItem.Name = "checkForUpdatesMenuItem";
+            this.checkForUpdatesMenuItem.Size = new System.Drawing.Size(171, 22);
+            this.checkForUpdatesMenuItem.Text = "Check for Updates";
+            this.checkForUpdatesMenuItem.Click += new System.EventHandler(this.checkForUpdatesToolStripMenuItem_Click);
             // 
             // openFileDialog1
             // 
@@ -364,9 +344,9 @@
             this.writerombutton.Cursor = System.Windows.Forms.Cursors.Default;
             this.writerombutton.Font = new System.Drawing.Font("Segoe UI", 9F);
             this.writerombutton.ForeColor = System.Drawing.SystemColors.GrayText;
-            this.writerombutton.Location = new System.Drawing.Point(367, 134);
+            this.writerombutton.Location = new System.Drawing.Point(378, 134);
             this.writerombutton.Name = "writerombutton";
-            this.writerombutton.Size = new System.Drawing.Size(75, 23);
+            this.writerombutton.Size = new System.Drawing.Size(86, 23);
             this.writerombutton.TabIndex = 72;
             this.writerombutton.Text = "Write ROM";
             this.writerombutton.UseVisualStyleBackColor = true;
@@ -376,15 +356,13 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(449, 254);
+            this.ClientSize = new System.Drawing.Size(470, 254);
             this.Controls.Add(this.writerombutton);
             this.Controls.Add(this.firmwareText);
             this.Controls.Add(this.firmwarelabel);
             this.Controls.Add(this.modeText);
             this.Controls.Add(this.modelabel);
-            this.Controls.Add(this.writeramlabel);
-            this.Controls.Add(this.saveramlabel);
-            this.Controls.Add(this.readromlabel);
+            this.Controls.Add(this.statuslabel);
             this.Controls.Add(this.label1);
             this.Controls.Add(this.closeportbutton);
             this.Controls.Add(this.headerTextBox);
@@ -403,7 +381,7 @@
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "Form1";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-            this.Text = "GBxCart RW v1.7 by insideGadgets";
+            this.Text = "GBxCart RW v1.8 by insideGadgets";
             this.Load += new System.EventHandler(this.Form1_Load);
             this.menuStrip1.ResumeLayout(false);
             this.menuStrip1.PerformLayout();
@@ -429,9 +407,7 @@
         private System.Windows.Forms.RichTextBox headerTextBox;
         private System.Windows.Forms.Button closeportbutton;
         private System.Windows.Forms.Label label1;
-        private System.Windows.Forms.Label readromlabel;
-        private System.Windows.Forms.Label saveramlabel;
-        private System.Windows.Forms.Label writeramlabel;
+        private System.Windows.Forms.Label statuslabel;
         private System.Windows.Forms.Label modelabel;
         private System.Windows.Forms.Label modeText;
         private System.Windows.Forms.Label firmwareText;
@@ -439,12 +415,13 @@
         private System.Windows.Forms.MenuStrip menuStrip1;
         private System.Windows.Forms.ToolStripMenuItem fileToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem helpToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem checkForUpdatesToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem saveAsDefaultToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem resetDefaultToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem checkForUpdatesMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem SpecifyCartInfoMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem selectRomFiletoWriteMenuItem;
         private System.Windows.Forms.OpenFileDialog openFileDialog1;
         private System.Windows.Forms.Button writerombutton;
-        private System.Windows.Forms.ToolStripMenuItem manualToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem manualMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem eraseRAMMenuItem;
     }
 }
 

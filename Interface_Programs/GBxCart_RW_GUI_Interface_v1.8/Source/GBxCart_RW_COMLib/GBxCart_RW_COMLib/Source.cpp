@@ -1,10 +1,10 @@
 /*
 
 GBxCart RW - GUI COM Interface
-Version : 1.5
+Version : 1.8
 Author : Alex from insideGadgets(www.insidegadgets.com)
 Created : 7 / 11 / 2016
-Last Modified : 13 / 08 / 2017
+Last Modified : 5 / 9 / 2017
 
 GBxCart RW allows you to dump your Gameboy / Gameboy Colour / Gameboy Advance games ROM, save the RAM and write to the RAM.
 
@@ -101,6 +101,7 @@ bdrate = 1000000; // 1,000,000 baud
 uint8_t gbxcartFirmwareVersion = 0;
 uint8_t gbxcartPcbVersion = 0;
 uint8_t readBuffer[65];
+uint8_t writeBuffer[128];
 char gameTitle[17];
 uint16_t cartridgeType = 0;
 uint32_t currAddr = 0x0000;
@@ -130,6 +131,7 @@ uint8_t nintendoLogoGBA[] = { 0x24, 0xFF, 0xAE, 0x51, 0x69, 0x9A, 0xA2, 0x21, 0x
 	0x78, 0x00, 0x90, 0xCB, 0x88, 0x11, 0x3A, 0x94, 0x65, 0xC0, 0x7C, 0x63, 0x87, 0xF0, 0x3C, 0xAF,
 	0xD6, 0x25, 0xE4, 0x8B, 0x38, 0x0A, 0xAC, 0x72, 0x21, 0xD4, 0xF8, 0x07 };
 
+// Read config file for com port and baud rate
 __declspec(dllexport) int read_config(int type) {
 	FILE* configfile = fopen("config.ini", "rb");
 	char buffer[100];
@@ -181,6 +183,7 @@ __declspec(dllexport) int read_config(int type) {
 	return 0;
 }
 
+// Update config file if com port or baudrate is changed
 __declspec(dllexport) void update_config(int comport, INT32 baudrate) {
 	cport_nr = comport;
 	bdrate = baudrate;
@@ -200,6 +203,81 @@ __declspec(dllexport) void update_config(int comport, INT32 baudrate) {
 		fwrite("\r\n", 1, 2, configfile);
 
 		fclose(configfile);
+	}
+}
+
+// Load a file which contains the cartridge RAM settings (only needed if Erase RAM option was used, only applies to GBA games)
+void load_cart_ram_info(void) {
+	char titleFilename[30];
+	strncpy(titleFilename, gameTitle, 20);
+	strncat(titleFilename, ".si", 4);
+
+	// Create a new file
+	FILE *infoFile = fopen(titleFilename, "rb");
+	if (infoFile != NULL) {
+		fseek(infoFile, 0, SEEK_END);
+		long fileSize = ftell(infoFile);
+		fseek(infoFile, 0, SEEK_SET);
+
+		char buffer[100];
+		fread(buffer, 1, fileSize, infoFile);
+
+		int tokenNo = 0;
+		char *token = strtok(buffer, ",");
+		while (token != NULL) {
+			if (tokenNo == 0) {
+				ramSize = atoi(token);
+			}
+			else if (tokenNo == 1) {
+				eepromSize = atoi(token);
+			}
+			else if (tokenNo == 2) {
+				hasFlashSave = atoi(token);
+			}
+			
+			//printf("tok = %i\n", atoi(token));
+			tokenNo++;
+			token = strtok(NULL, ",");
+		}
+
+		fclose(infoFile);
+	}
+}
+
+// Write a file which contains the cartridge RAM settings before it's wiped using Erase RAM (Only applies to GBA games)
+void write_cart_ram_info(void) {
+	char titleFilename[30];
+	strncpy(titleFilename, gameTitle, 20);
+	strncat(titleFilename, ".si", 4);
+	
+	// Check if file exists, if not, write the ram info
+	FILE *infoFileRead = fopen(titleFilename, "rb");
+	if (infoFileRead == NULL) {
+		
+		// Create a new file
+		FILE *infoFile = fopen(titleFilename, "wb");
+		if (infoFile != NULL) {
+			char ramSizeBuffer[10];
+			_itoa(ramSize, ramSizeBuffer, 10);
+
+			char eepromSizeBuffer[10];
+			_itoa(eepromSize, eepromSizeBuffer, 10);
+
+			char hasFlashSaveBuffer[10];
+			_itoa(hasFlashSave, hasFlashSaveBuffer, 10);
+
+			fwrite(ramSizeBuffer, 1, strlen(ramSizeBuffer), infoFile);
+			fwrite(",", 1, 1, infoFile);
+			fwrite(eepromSizeBuffer, 1, strlen(eepromSizeBuffer), infoFile);
+			fwrite(",", 1, 1, infoFile);
+			fwrite(hasFlashSaveBuffer, 1, strlen(hasFlashSaveBuffer), infoFile);
+			fwrite(",", 1, 1, infoFile);
+
+			fclose(infoFile);
+		}
+	}
+	else {
+		fclose(infoFileRead);
 	}
 }
 
@@ -250,6 +328,7 @@ __declspec(dllexport) void gba_specify_ram_size(int memoryType, int flashType, i
 			}
 		}
 
+		ramSize = size;
 		if (size == 0) {
 			ramEndAddress = 0;
 		}
@@ -267,19 +346,19 @@ __declspec(dllexport) void gba_specify_ram_size(int memoryType, int flashType, i
 		}
 	}
 	else if (memoryType == 3) {
+		ramSize = size; 
+		eepromEndAddress = 0x00;
+		eepromSize = EEPROM_NONE;
+		hasFlashSave = NO_FLASH;
+		ramEndAddress = 0;
+
 		if (size == 1) {
-			eepromEndAddress = 0;
-			eepromSize = EEPROM_NONE;
-			hasFlashSave = NO_FLASH;
-			ramEndAddress = 0;
-		}
-		else if (size == 2) {
 			eepromEndAddress = 0x200;
 			eepromSize = EEPROM_4KBIT;
 			hasFlashSave = NO_FLASH;
 			ramEndAddress = 0;
 		}
-		else if (size == 3) {
+		else if (size == 2) {
 			eepromEndAddress = 0x2000;
 			eepromSize = EEPROM_64KBIT;
 			hasFlashSave = NO_FLASH;
@@ -354,12 +433,18 @@ void com_read_bytes(FILE *file, uint8_t count) {
 	}
 }
 
-// Read 1-128 bytes from the file and write it the COM port with the command given
+// Read 1-128 bytes from the file (or buffer) and write it the COM port with the command given
 void com_write_bytes_from_file(uint8_t command, FILE *file, uint8_t count) {
 	uint8_t buffer[129];
-
 	buffer[0] = command;
-	fread(&buffer[1], 1, count, file);
+
+	if (file == NULL) {
+		memcpy(&buffer[1], writeBuffer, count);
+	}
+	else {
+		fread(&buffer[1], 1, count, file);
+	}
+
 	RS232_SendBuf(cport_nr, buffer, (count + 1)); // command + 1-128 bytes
 }
 
@@ -515,6 +600,8 @@ __declspec(dllexport) char* read_gb_header(int &headerlength) {
 		if ((headerChar >= 0x30 && headerChar <= 0x57) || // 0-9
 			(headerChar >= 0x41 && headerChar <= 0x5A) || // A-Z
 			(headerChar >= 0x61 && headerChar <= 0x7A) || // a-z
+			(headerChar == 0x2E) || // .
+			(headerChar == 0x5F) || // _
 			(headerChar == 0x20)) { // space
 			gameTitle[(titleAddress - 0x0134)] = headerChar;
 		}
@@ -1116,6 +1203,7 @@ __declspec(dllexport) char* read_gba_header(int &headerlength) {
 			(headerChar >= 0x41 && headerChar <= 0x5A) || // A-Z
 			(headerChar >= 0x61 && headerChar <= 0x7A) || // a-z
 			(headerChar == 0x2E) || // .
+			(headerChar == 0x5F) || // _
 			(headerChar == 0x20)) { // Space
 			gameTitle[(titleAddress - 0xA0)] = headerChar;
 		}
@@ -1151,6 +1239,9 @@ __declspec(dllexport) char* read_gba_header(int &headerlength) {
 	else {
 		eepromSize = 0;
 	}
+
+	// If file exists, we know the ram has been erased before, so read memory info from this file
+	load_cart_ram_info();
 
 	// Print out
 	printf("\nROM size: %iMByte\n", romSize);
@@ -1219,7 +1310,7 @@ __declspec(dllexport) char* read_gba_header(int &headerlength) {
 		printf("Failed\n");
 		sprintf(headerText + strlen(headerText), "Failed");
 	}
-	
+
 	headerlength = strlen(headerText);
 	return headerText;
 }
@@ -1497,7 +1588,7 @@ __declspec(dllexport) void read_ram(uint32_t &progress, uint8_t &cancelOperation
 				uint32_t readBytes = 0;
 				for (uint8_t bank = 0; bank < ramBanks; bank++) {
 					// Flash, switch bank 1
-					if (hasFlashSave >= FLASH_FOUND && bank == 1) {
+					if (bank == 1) {
 						set_number(1, GBA_FLASH_SET_BANK);
 					}
 					
@@ -1526,19 +1617,13 @@ __declspec(dllexport) void read_ram(uint32_t &progress, uint8_t &cancelOperation
 
 					RS232_cputs(cport_nr, "0"); // End read (for this bank if Flash)
 
+					// Flash, switch back to bank 0
+					if (bank == 1) {
+						set_number(0, GBA_FLASH_SET_BANK);
+					}
 					if (cancelOperation == 1) {
-						// Flash, switch back to bank 0
-						if (hasFlashSave >= FLASH_FOUND) {
-							set_number(0, GBA_FLASH_SET_BANK);
-						}
-						
 						break;
 					}
-				}
-
-				// Flash, switch back to bank 0
-				if (hasFlashSave >= FLASH_FOUND) {
-					set_number(0, GBA_FLASH_SET_BANK);
 				}
 			}
 
@@ -1776,7 +1861,7 @@ __declspec(dllexport) void write_ram(uint32_t &progress, uint8_t &cancelOperatio
 									flash_4k_sector_erase(sector);
 									sector++;
 									com_wait_for_ack(); // Wait 25ms for sector erase
-									
+
 									// Wait for first byte to be 0xFF, that's when we know the sector has been erased
 									readBuffer[0] = 0;
 									while (readBuffer[0] != 0xFF) {
@@ -1785,7 +1870,7 @@ __declspec(dllexport) void write_ram(uint32_t &progress, uint8_t &cancelOperatio
 
 										com_read_bytes(READ_BUFFER, 64);
 										RS232_cputs(cport_nr, "0"); // End read
-										
+
 										if (readBuffer[0] != 0xFF) {
 											Sleep(5);
 										}
@@ -1809,8 +1894,9 @@ __declspec(dllexport) void write_ram(uint32_t &progress, uint8_t &cancelOperatio
 							}
 						}
 
-						set_number(0, GBA_FLASH_SET_BANK); // Set bank 0 again
-
+						if (bank == 1) {
+							set_number(0, GBA_FLASH_SET_BANK); // Set bank 0 again
+						}
 						if (cancelOperation == 1) {
 							break;
 						}
@@ -1833,7 +1919,188 @@ __declspec(dllexport) void write_ram(uint32_t &progress, uint8_t &cancelOperatio
 }
 
 
+// Erase memory
+__declspec(dllexport) void erase_ram(uint32_t &progress, uint8_t &cancelOperation) {	
+	// Default for SRAM
+	for (uint8_t x = 0; x < 128; x++) {
+		writeBuffer[x] = 0x00;
+	}
 
+	cartridgeMode = read_cartridge_mode();
+	if (cartridgeMode == GB_MODE) {
+		// Does cartridge have RAM
+		if (ramEndAddress > 0) {
+			mbc2_fix();
+			if (cartridgeType <= 4) { // MBC1
+				set_bank(0x6000, 1); // Set RAM Mode
+			}
+			set_bank(0x0000, 0x0A); // Initialise MBC
+
+			// Erase RAM
+			uint32_t readBytes = 0;
+			for (uint8_t bank = 0; bank < ramBanks; bank++) {
+				uint16_t ramAddress = 0xA000;
+				set_bank(0x4000, bank);
+				set_number(0xA000, SET_START_ADDRESS); // Set start address again
+
+				while (ramAddress < ramEndAddress) {
+					com_write_bytes_from_file(WRITE_RAM, NULL, 64);
+					ramAddress += 64;
+					readBytes += 64;
+
+					// Print progress
+					print_progress_percent(progress, readBytes, (ramBanks * (ramEndAddress - 0xA000 + 1)));
+
+					com_wait_for_ack();
+
+					if (cancelOperation == 1) {
+						break;
+					}
+				}
+				if (cancelOperation == 1) {
+					break;
+				}
+			}
+
+			set_bank(0x0000, 0x00); // Disable RAM
+		}
+	}
+	else { // GBA mode
+		// Does cartridge have RAM
+		if (ramEndAddress > 0 || eepromEndAddress > 0) {
+			// Check if it's SRAM or Flash (if we haven't checked before)
+			if (eepromSize == 0 && hasFlashSave == NOT_CHECKED) {
+				hasFlashSave = gba_test_sram_flash_write();
+			}
+			
+			// Before erasing, make a .info file with the memory details as we won't be able to automatically detect it anymore
+			// Check if file already exists
+			write_cart_ram_info();
+
+			// SRAM
+			if (hasFlashSave == NO_FLASH && eepromSize == EEPROM_NONE) {
+				// Set start and end address
+				currAddr = 0x0000;
+				endAddr = ramEndAddress;
+				set_number(currAddr, SET_START_ADDRESS);
+
+				// Write
+				uint32_t readBytes = 0;
+				while (currAddr < endAddr) {
+					com_write_bytes_from_file(GBA_WRITE_SRAM, NULL, 64);
+					currAddr += 64;
+					readBytes += 64;
+
+					print_progress_percent(progress, readBytes, ramEndAddress);
+					com_wait_for_ack();
+
+					if (cancelOperation == 1) {
+						break;
+					}
+				}
+			}
+
+			// EEPROM
+			else if (eepromSize != EEPROM_NONE) {
+				set_number(eepromSize, GBA_SET_EEPROM_SIZE);
+
+				// Set start and end address
+				currAddr = 0x000;
+				endAddr = eepromEndAddress;
+				set_number(currAddr, SET_START_ADDRESS);
+
+				// Write
+				uint32_t readBytes = 0;
+				while (currAddr < endAddr) {
+					com_write_bytes_from_file(GBA_WRITE_EEPROM, NULL, 8);
+					currAddr += 8;
+					readBytes += 8;
+
+					print_progress_percent(progress, readBytes, endAddr);
+
+					// Wait for ATmega to process write (~320us) and for EEPROM to write data (6ms)
+					com_wait_for_ack();
+
+					if (cancelOperation == 1) {
+						break;
+					}
+				}
+			}
+
+			// Flash
+			else if (hasFlashSave != NO_FLASH) {
+				uint32_t readBytes = 0;
+				for (uint8_t bank = 0; bank < ramBanks; bank++) {
+					// Set start and end address
+					currAddr = 0x0000;
+					endAddr = ramEndAddress;
+					set_number(currAddr, SET_START_ADDRESS);
+
+					// Program flash in 128 bytes at a time
+					if (hasFlashSave == FLASH_FOUND_ATMEL) {
+						while (currAddr < endAddr) {
+							com_write_bytes_from_file(GBA_FLASH_WRITE_ATMEL, NULL, 128);
+							currAddr += 128;
+							readBytes += 128;
+
+							print_progress_percent(progress, readBytes, ramBanks * endAddr);
+							com_wait_for_ack(); // Wait for write complete
+
+							if (cancelOperation == 1) {
+								break;
+							}
+						}
+					}
+					else {
+						if (bank == 1) {
+							set_number(1, GBA_FLASH_SET_BANK); // Set bank 1
+						}
+						
+						uint8_t sector = 0;
+						while (currAddr < endAddr) {
+							if (currAddr % 4096 == 0) {
+								flash_4k_sector_erase(sector);
+								sector++;
+								com_wait_for_ack(); // Wait 25ms for sector erase
+
+								// Wait for first byte to be 0xFF, that's when we know the sector has been erased
+								readBuffer[0] = 0;
+								while (readBuffer[0] != 0xFF) {
+									set_number(currAddr, SET_START_ADDRESS);
+									set_mode(GBA_READ_SRAM);
+
+									com_read_bytes(READ_BUFFER, 64);
+									RS232_cputs(cport_nr, "0"); // End read
+
+									if (readBuffer[0] != 0xFF) {
+										Sleep(5);
+									}
+								}
+							}
+
+							currAddr += 64;
+							readBytes += 64;
+
+							print_progress_percent(progress, readBytes, ramBanks * endAddr);
+
+							if (cancelOperation == 1) {
+								break;
+							}
+						}
+					}
+
+					if (bank == 1) {
+						set_number(0, GBA_FLASH_SET_BANK); // Set bank 0 again
+					}
+
+					if (cancelOperation == 1) {
+						break;
+					}
+				}
+			}
+		}
+	}
+}
 
 // ---------- GB Cart Flasher functions ----------
 

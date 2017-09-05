@@ -1,9 +1,9 @@
 /*
  GBxCart RW - Console Interface
- Version: 1.6
+ Version: 1.7
  Author: Alex from insideGadgets (www.insidegadgets.com)
  Created: 7/11/2016
- Last Modified: 26/08/2017
+ Last Modified: 3/09/2017
  
  GBxCart RW allows you to dump your Gameboy/Gameboy Colour/Gameboy Advance games ROM, save the RAM and write to the RAM.
  
@@ -26,7 +26,7 @@
 
 int main(int argc, char **argv) {
 	
-	printf("GBxCart RW v1.6 by insideGadgets\n");
+	printf("GBxCart RW v1.7 by insideGadgets\n");
 	printf("################################\n");
 	
 	read_config();
@@ -43,13 +43,14 @@ int main(int argc, char **argv) {
 	while (inLoop == true) {
 		printf("\nPlease select an option:\n"\
 				 "0. Read Header\n"\
-				 "1. Dump ROM\n"\
-				 "2. Save RAM to PC\n"\
-				 "3. Write RAM to Cartridge\n"\
-				 "4. Specify Cart ROM\n"\
-				 "5. Specify Cart RAM\n"\
-				 "6. Custom commands\n"\
-				 "7. Other options\n"\
+				 "1. Read ROM\n"\
+				 "2. Backup Save (Cart to PC)\n"\
+				 "3. Restore Save (PC to Cart)\n"\
+				 "4. Erase Save from Cart\n"\
+				 "5. Specify Cart ROM\n"\
+				 "6. Specify Cart RAM\n"\
+				 "7. Custom commands\n"\
+				 "8. Other options\n"\
 				 "x. Exit\n>"); 
 		char optionSelected = read_one_letter();
 		
@@ -76,7 +77,7 @@ int main(int argc, char **argv) {
 		
 		// Dump ROM		
 		else if (optionSelected == '1') {
-			printf("\n--- Dump ROM ---\n");
+			printf("\n--- Read ROM ---\n");
 			
 			char titleFilename[30];
 			strncpy(titleFilename, gameTitle, 20);
@@ -86,7 +87,7 @@ int main(int argc, char **argv) {
 			else {
 				strncat(titleFilename, ".gba", 4);
 			}
-			printf("Dumping ROM to %s\n", titleFilename);
+			printf("Reading ROM to %s\n", titleFilename);
 			printf("[             25%%             50%%             75%%            100%%]\n[");
 			
 			// Create a new file
@@ -164,7 +165,7 @@ int main(int argc, char **argv) {
 		
 		// Save RAM
 		else if (optionSelected == '2') {
-			printf("\n--- Save RAM to PC---\n");
+			printf("\n--- Backup save from Cartridge to PC---\n");
 			
 			if (cartridgeMode == GB_MODE) {
 				// Does cartridge have RAM
@@ -187,7 +188,7 @@ int main(int argc, char **argv) {
 					}
 					
 					if (confirmWrite == 'y') {
-						printf("Saving RAM to %s\n", titleFilename);
+						printf("Backing up save to %s\n", titleFilename);
 						printf("[             25%%             50%%             75%%            100%%]\n[");
 						
 						// Create a new file
@@ -342,7 +343,7 @@ int main(int argc, char **argv) {
 						
 						// SRAM/Flash
 						if (ramEndAddress > 0) {
-							printf("Saving RAM (SRAM/Flash) to %s\n", titleFilename);
+							printf("Backing up save (SRAM/Flash) to %s\n", titleFilename);
 							printf("[             25%%             50%%             75%%            100%%]\n[");
 							
 							// Read RAM
@@ -373,17 +374,17 @@ int main(int argc, char **argv) {
 								}
 								
 								RS232_cputs(cport_nr, "0"); // End read (for bank if flash)
-							}
-							
-							// Flash, switch back to bank 0
-							if (hasFlashSave >= FLASH_FOUND) {
-								set_number(0, GBA_FLASH_SET_BANK);
+								
+								// Flash, switch back to bank 0
+								if (hasFlashSave >= FLASH_FOUND && bank == 1) {
+									set_number(0, GBA_FLASH_SET_BANK);
+								}
 							}
 						}
 						
 						// EEPROM
 						else {
-							printf("Saving RAM (EEPROM) to %s\n", titleFilename);
+							printf("Backing up save (EEPROM) to %s\n", titleFilename);
 							printf("[             25%%             50%%             75%%            100%%]\n[");
 							
 							set_number(eepromSize, GBA_SET_EEPROM_SIZE);
@@ -429,7 +430,7 @@ int main(int argc, char **argv) {
 		
 		// Write RAM
 		else if (optionSelected == '3') {
-			printf("\n--- Write RAM to GB Cart ---\n");
+			printf("\n--- Restore save from PC to Cartridge ---\n");
 			
 			if (cartridgeMode == GB_MODE) {
 				// Does cartridge have RAM
@@ -441,13 +442,13 @@ int main(int argc, char **argv) {
 					// Open file
 					FILE *ramFile = fopen(titleFilename, "rb");
 					if (ramFile != NULL) {
-						printf("Going to write to RAM from %s...", titleFilename);
+						printf("Going to write save from %s...", titleFilename);
 						printf("\n\n*** This will erase the save game from your Gameboy Cartridge ***");
 						printf("\nPress y to continue or any other key to abort.\n");
 						
 						char confirmWrite = read_one_letter();
 						if (confirmWrite == 'y') {
-							printf("\nWriting to RAM from %s\n", titleFilename);
+							printf("\nRestoring save from %s\n", titleFilename);
 							printf("[             25%%             50%%             75%%            100%%]\n[");
 							
 							mbc2_fix();
@@ -518,14 +519,14 @@ int main(int argc, char **argv) {
 							}
 							
 							if (hasFlashSave >= FLASH_FOUND) {
-								printf("Going to write to RAM (Flash) from %s", titleFilename);
+								printf("Going to write save to Flash from %s", titleFilename);
 							}
 							else {
-								printf("Going to write to RAM (SRAM) from %s", titleFilename);
+								printf("Going to write save to SRAM from %s", titleFilename);
 							}
 						}
 						else {			
-							printf("Going to write to RAM (EEPROM) from %s", titleFilename);
+							printf("Going to write save to EEPROM from %s", titleFilename);
 						}
 						
 						printf("\n\n*** This will erase the save game from your Gameboy Advance Cartridge ***");
@@ -535,14 +536,14 @@ int main(int argc, char **argv) {
 						if (confirmWrite == 'y') {
 							if (eepromSize == EEPROM_NONE) {
 								if (hasFlashSave >= FLASH_FOUND) {
-									printf("\nWriting to RAM (Flash) from %s", titleFilename);
+									printf("\nWriting Save to Flash from %s", titleFilename);
 								}
 								else {
-									printf("\nWriting to RAM (SRAM) from %s", titleFilename);
+									printf("\nWriting Save to SRAM from %s", titleFilename);
 								}
 							}
 							else {
-								printf("\nWriting to RAM (EEPROM) from %s", titleFilename);
+								printf("\nWriting Save to EEPROM from %s", titleFilename);
 							}
 							printf("\n[             25%%             50%%             75%%            100%%]\n[");
 							
@@ -648,7 +649,9 @@ int main(int argc, char **argv) {
 										}
 									}
 									
-									set_number(0, GBA_FLASH_SET_BANK); // Set bank 0 again
+									if (bank == 1) {
+										set_number(0, GBA_FLASH_SET_BANK); // Set bank 0 again
+									}
 								}
 							}
 							printf("]");
@@ -671,8 +674,192 @@ int main(int argc, char **argv) {
 		}
 		
 		
-		// Specify cart info
+		// Erase save
 		else if (optionSelected == '4') {
+			printf("\n--- Erase save from Cart ---\n");
+			printf("*** This will erase the save game from your Gameboy/Gameboy Advance Cart ***");
+			printf("\nPress y to continue or any other key to abort.\n");
+			
+			char confirmWrite = read_one_letter();
+			if (confirmWrite == 'y') {
+				// Default for SRAM
+				for (uint8_t x = 0; x < 128; x++) {
+					writeBuffer[x] = 0x00;
+				}
+				
+				cartridgeMode = read_cartridge_mode();
+				if (cartridgeMode == GB_MODE) {
+					printf("\nErasing save from Cart");
+					printf("\n[             25%%             50%%             75%%            100%%]\n[");
+					
+					// Does cartridge have RAM
+					if (ramEndAddress > 0) {
+						mbc2_fix();
+						if (cartridgeType <= 4) { // MBC1
+							set_bank(0x6000, 1); // Set RAM Mode
+						}
+						set_bank(0x0000, 0x0A); // Initialise MBC
+						
+						// Erase RAM
+						uint32_t readBytes = 0;
+						for (uint8_t bank = 0; bank < ramBanks; bank++) {
+							uint16_t ramAddress = 0xA000;
+							set_bank(0x4000, bank);
+							set_number(0xA000, SET_START_ADDRESS); // Set start address again
+							
+							while (ramAddress < ramEndAddress) {
+								com_write_bytes_from_file(WRITE_RAM, NULL, 64);
+								ramAddress += 64;
+								readBytes += 64;
+								
+								// Print progress
+								if (ramEndAddress == 0xA1FF) {
+									print_progress_percent(readBytes, 64);
+								}
+								else if (ramEndAddress == 0xA7FF) {
+									print_progress_percent(readBytes / 4, 64);
+								}
+								else {
+									print_progress_percent(readBytes, (ramBanks * (ramEndAddress - 0xA000 + 1)) / 64);
+								}
+								
+								com_wait_for_ack();
+							}
+						}
+						printf("]");
+						set_bank(0x0000, 0x00); // Disable RAM
+						
+						printf("\nFinished\n");
+					}
+				}
+				else { // GBA mode
+					// Does cartridge have RAM
+					if (ramEndAddress > 0 || eepromEndAddress > 0) {
+						// Check if it's SRAM or Flash (if we haven't checked before)
+						if (eepromSize == 0 && hasFlashSave == NOT_CHECKED) {
+							hasFlashSave = gba_test_sram_flash_write();
+						}
+						
+						// Before erasing, make a .info file with the memory details as we won't be able to automatically detect it anymore
+						// Check if file already exists
+						write_cart_ram_info();
+						
+						printf("\nErasing save from Cart");
+						printf("\n[             25%%             50%%             75%%            100%%]\n[");
+						
+						// SRAM
+						if (hasFlashSave == NO_FLASH && eepromSize == EEPROM_NONE) {
+							// Set start and end address
+							currAddr = 0x0000;
+							endAddr = ramEndAddress;
+							set_number(currAddr, SET_START_ADDRESS);
+							
+							// Write
+							uint32_t readBytes = 0;
+							while (currAddr < endAddr) {
+								com_write_bytes_from_file(GBA_WRITE_SRAM, NULL, 64);
+								currAddr += 64;
+								readBytes += 64;
+								
+								print_progress_percent(readBytes, ramEndAddress / 64);
+								com_wait_for_ack();
+							}
+						}
+						
+						// EEPROM
+						else if (eepromSize != EEPROM_NONE) {
+							set_number(eepromSize, GBA_SET_EEPROM_SIZE);
+							
+							// Set start and end address
+							currAddr = 0x000;
+							endAddr = eepromEndAddress;
+							set_number(currAddr, SET_START_ADDRESS);
+							
+							// Write
+							uint32_t readBytes = 0;
+							while (currAddr < endAddr) {
+								com_write_bytes_from_file(GBA_WRITE_EEPROM, NULL, 8);
+								currAddr += 8;
+								readBytes += 8;
+								
+								print_progress_percent(readBytes, endAddr / 64);
+								
+								// Wait for ATmega to process write (~320us) and for EEPROM to write data (6ms)
+								com_wait_for_ack();
+							}
+						}
+						
+						// Flash
+						else if (hasFlashSave != NO_FLASH) {
+							uint32_t readBytes = 0;
+							for (uint8_t bank = 0; bank < ramBanks; bank++) {
+								// Set start and end address
+								currAddr = 0x0000;
+								endAddr = ramEndAddress;
+								set_number(currAddr, SET_START_ADDRESS);
+								
+								// Program flash in 128 bytes at a time
+								if (hasFlashSave == FLASH_FOUND_ATMEL) {
+									while (currAddr < endAddr) {
+										com_write_bytes_from_file(GBA_FLASH_WRITE_ATMEL, NULL, 128);
+										currAddr += 128;
+										readBytes += 128;
+										
+										print_progress_percent(readBytes, (ramBanks * endAddr) / 64);
+										com_wait_for_ack(); // Wait for write complete	
+									}
+								}
+								else {
+									if (bank == 1) {
+										set_number(1, GBA_FLASH_SET_BANK); // Set bank 1
+									}
+									
+									uint8_t sector = 0;
+									while (currAddr < endAddr) {
+										if (currAddr % 4096 == 0) {
+											flash_4k_sector_erase(sector);
+											sector++;
+											com_wait_for_ack(); // Wait 25ms for sector erase
+											
+											// Wait for first byte to be 0xFF, that's when we know the sector has been erased
+											readBuffer[0] = 0;
+											while (readBuffer[0] != 0xFF) {
+												set_number(currAddr, SET_START_ADDRESS);
+												set_mode(GBA_READ_SRAM);
+												
+												com_read_bytes(READ_BUFFER, 64);
+												RS232_cputs(cport_nr, "0"); // End read
+												
+												if (readBuffer[0] != 0xFF) {
+													Sleep(5);
+												}
+											}
+										}
+										
+										com_write_bytes_from_file(GBA_FLASH_WRITE_BYTE, NULL, 64);
+										currAddr += 64;
+										readBytes += 64;
+										
+										print_progress_percent(readBytes, (ramBanks * endAddr) / 64);
+										com_wait_for_ack(); // Wait for write complete
+									}
+								}
+								
+								if (bank == 1) {
+									set_number(0, GBA_FLASH_SET_BANK); // Set bank 0 again
+								}
+							}
+						}
+						printf("]");
+						printf("\nFinished\n");
+					}
+				}
+			}
+		}
+		
+		
+		// Specify cart info
+		else if (optionSelected == '5') {
 			printf("\n--- Specify ROM size ---\n");
 			
 			if (cartridgeMode == GB_MODE) {
@@ -715,7 +902,7 @@ int main(int argc, char **argv) {
 				printf("%i", romEndAddr);
 			}
 		}
-		else if (optionSelected == '5') {
+		else if (optionSelected == '6') {
 			printf("\n--- Specify RAM size ---\n");
 			
 			if (cartridgeMode == GB_MODE) {
@@ -839,7 +1026,7 @@ int main(int argc, char **argv) {
 		}
 		
 		// Custom commands	
-		else if (optionSelected == '6') {
+		else if (optionSelected == '7') {
 			RS232_cputs(cport_nr, "G");
 			delay_ms(5);
 			
@@ -890,7 +1077,7 @@ int main(int argc, char **argv) {
 		
 		
 		// Other options
-		else if (optionSelected == '7') {
+		else if (optionSelected == '8') {
 			printf("\n--- Other options ---\n"\
 					 "1. Sachen ROM mapper\n"\
 					 "2. GBA Flash cart ROM mapper\n"\

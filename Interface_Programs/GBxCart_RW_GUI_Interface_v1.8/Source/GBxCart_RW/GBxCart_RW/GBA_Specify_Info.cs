@@ -10,11 +10,8 @@ using System.Windows.Forms;
 namespace GBxCart_RW {
     public partial class GBA_Specify_Info : Form {
 
-        string[] FormheaderTokens;
-
         public GBA_Specify_Info() {
             InitializeComponent();
-            FormheaderTokens = Form1.headerTokens;
         }
 
         private void gbaapplybutton_Click(object sender, EventArgs e) {
@@ -33,7 +30,7 @@ namespace GBxCart_RW {
                 rom_size = 4;
             }
             if (rom_size >= 1) {
-                FormheaderTokens[1] = "ROM size: " + gbaromsizebox.Text;
+                Form1.headerTokens[1] = "ROM size: " + gbaromsizebox.Text;
                 Program.gba_specify_rom_size(rom_size);
             }
             //Console.WriteLine(rom_size);
@@ -81,17 +78,18 @@ namespace GBxCart_RW {
 
             if (memory_size >= 1) {
                 if (memory_type == 1) {
-                    FormheaderTokens[2] = "SRAM size: " + gbaramsizebox.Text;
-                    FormheaderTokens[3] = "EEPROM size: None";
+                    Form1.headerTokens[2] = "SRAM size: " + gbaramsizebox.Text;
+                    Form1.headerTokens[3] = "EEPROM: None";
                 }
                 else if (memory_type == 2) {
-                    FormheaderTokens[2] = "Flash size: " + gbaramsizebox.Text;
-                    FormheaderTokens[3] = "EEPROM size: None";
+                    Form1.headerTokens[2] = "Flash size: " + gbaramsizebox.Text;
+                    Form1.headerTokens[3] = "EEPROM: None";
                 }
                 else if (memory_type == 3) {
-                    FormheaderTokens[2] = "SRAM/Flash size: None";
-                    FormheaderTokens[3] = "EEPROM size: " + eepromsizebox.Text;
+                    Form1.headerTokens[2] = "SRAM/Flash size: None";
+                    Form1.headerTokens[3] = "EEPROM: " + eepromsizebox.Text;
                 }
+                
                 Program.gba_specify_ram_size(memory_type, flash_type, memory_size);
             }
 
