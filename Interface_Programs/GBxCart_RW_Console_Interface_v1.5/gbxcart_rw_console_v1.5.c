@@ -1,9 +1,9 @@
 /*
  GBxCart RW - Console Interface
- Version: 1.4
+ Version: 1.5
  Author: Alex from insideGadgets (www.insidegadgets.com)
  Created: 7/11/2016
- Last Modified: 13/08/2017
+ Last Modified: 17/08/2017
  
  GBxCart RW allows you to dump your Gameboy/Gameboy Colour/Gameboy Advance games ROM, save the RAM and write to the RAM.
  
@@ -26,7 +26,7 @@
 
 int main(int argc, char **argv) {
 	
-	printf("GBxCart RW v1.4 by insideGadgets\n");
+	printf("GBxCart RW v1.5 by insideGadgets\n");
 	printf("################################\n");
 	
 	read_config();
@@ -510,9 +510,6 @@ int main(int argc, char **argv) {
 					// Open file
 					FILE *ramFile = fopen(titleFilename, "rb");
 					if (ramFile != NULL) {
-						
-						printf("flash = %i\n", hasFlashSave);
-						
 						// SRAM/Flash or EEPROM
 						if (eepromSize == EEPROM_NONE) {
 							// Check if it's SRAM or Flash (if we haven't checked before)
@@ -609,6 +606,7 @@ int main(int argc, char **argv) {
 											
 											print_progress_percent(readBytes, (ramBanks * endAddr) / 64);
 											com_wait_for_ack(); // Wait for write complete
+											
 										}
 									}
 									else { // Program flash in 1 byte at a time
@@ -622,6 +620,23 @@ int main(int argc, char **argv) {
 												flash_4k_sector_erase(sector);
 												sector++;
 												com_wait_for_ack(); // Wait 25ms for sector erase
+												
+												// Wait for first byte to be 0xFF, that's when we know the sector has been erased
+												readBuffer[0] = 0;
+												while (readBuffer[0] != 0xFF) {
+													set_number(currAddr, SET_START_ADDRESS);
+													set_mode(GBA_READ_SRAM);
+													
+													com_read_bytes(READ_BUFFER, 64);
+													RS232_cputs(cport_nr, "0"); // End read
+													
+													if (readBuffer[0] != 0xFF) {
+														delay_ms(5);
+													}
+												}
+												
+												// Set start address again
+												set_number(currAddr, SET_START_ADDRESS);
 											}
 											
 											com_write_bytes_from_file(GBA_FLASH_WRITE_BYTE, ramFile, 64);

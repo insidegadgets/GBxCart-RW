@@ -918,36 +918,40 @@ uint8_t gba_check_sram_flash(void) {
 	else {
 		duplicateCount = 0;
 
-		// Read bank 0
-		set_number(0, SET_START_ADDRESS);
-		set_mode(GBA_READ_SRAM);
-		com_read_bytes(READ_BUFFER, 64);
-		memcpy(&firstBuffer, readBuffer, 64);
-		RS232_cputs(cport_nr, "0"); // Stop read
+		for (uint8_t x = 0; x < 32; x++) {
+			// Read bank 0
+			set_number((uint32_t)(x * 0x400), SET_START_ADDRESS);
+			set_mode(GBA_READ_SRAM);
+			com_read_bytes(READ_BUFFER, 64);
+			memcpy(&firstBuffer, readBuffer, 64);
+			RS232_cputs(cport_nr, "0"); // Stop read
 
-		// Read bank 1
-		set_number(1, GBA_FLASH_SET_BANK); // Set bank 1
+			// Read bank 1
+			set_number(1, GBA_FLASH_SET_BANK); // Set bank 1
 
-		set_number(0, SET_START_ADDRESS);
-		set_mode(GBA_READ_SRAM);
-		com_read_bytes(READ_BUFFER, 64);
-		memcpy(&secondBuffer, readBuffer, 64);
-		RS232_cputs(cport_nr, "0"); // Stop read
+			set_number((uint32_t)(x * 0x400), SET_START_ADDRESS);
+			set_mode(GBA_READ_SRAM);
+			com_read_bytes(READ_BUFFER, 64);
+			memcpy(&secondBuffer, readBuffer, 64);
+			RS232_cputs(cport_nr, "0"); // Stop read
 
-		set_number(0, GBA_FLASH_SET_BANK); // Set back to bank 0
+			set_number(0, GBA_FLASH_SET_BANK); // Set back to bank 0
 
-		// Compare
-		for (uint8_t x = 0; x < 64; x++) {
-			if (firstBuffer[x] == secondBuffer[x]) {
-				duplicateCount++;
+			// Compare
+			for (uint8_t x = 0; x < 64; x++) {
+				if (firstBuffer[x] == secondBuffer[x]) {
+					duplicateCount++;
+				}
 			}
 		}
 
-		// If duplicated bank 0 and 1, then 512Kbit
-		if (duplicateCount == 64) {
+		// If bank 0 and 1 are duplicated, then it's 512Kbit Flash
+		if (duplicateCount >= 2000) {
+			printf("512Kbit\n");
 			return SRAM_FLASH_512KBIT;
 		}
 		else {
+			printf("1Mbit\n");
 			return SRAM_FLASH_1MBIT;
 		}
 	}
@@ -1759,6 +1763,23 @@ __declspec(dllexport) void write_ram(uint32_t &progress, uint8_t &cancelOperatio
 									flash_4k_sector_erase(sector);
 									sector++;
 									com_wait_for_ack(); // Wait 25ms for sector erase
+									
+									// Wait for first byte to be 0xFF, that's when we know the sector has been erased
+									readBuffer[0] = 0;
+									while (readBuffer[0] != 0xFF) {
+										set_number(currAddr, SET_START_ADDRESS);
+										set_mode(GBA_READ_SRAM);
+
+										com_read_bytes(READ_BUFFER, 64);
+										RS232_cputs(cport_nr, "0"); // End read
+										
+										if (readBuffer[0] != 0xFF) {
+											Sleep(5);
+										}
+									}
+
+									// Set start address again
+									set_number(currAddr, SET_START_ADDRESS);
 								}
 
 								com_write_bytes_from_file(GBA_FLASH_WRITE_BYTE, ramFile, 64);

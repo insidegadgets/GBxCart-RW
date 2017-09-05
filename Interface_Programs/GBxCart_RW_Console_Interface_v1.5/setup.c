@@ -1,9 +1,9 @@
 /*
  GBxCart RW - Console Interface
- Version: 1.4
+ Version: 1.5
  Author: Alex from insideGadgets (www.insidegadgets.com)
  Created: 7/11/2016
- Last Modified: 13/08/2017
+ Last Modified: 17/08/2017
  
  */
 
@@ -753,36 +753,41 @@ uint8_t gba_check_sram_flash (void) {
 	else {
 		duplicateCount = 0;
 		
-		// Read bank 0
-		set_number(0, SET_START_ADDRESS);
-		set_mode(GBA_READ_SRAM);
-		com_read_bytes(READ_BUFFER, 64);
-		memcpy(&firstBuffer, readBuffer, 64);
-		RS232_cputs(cport_nr, "0"); // Stop read
-		
-		// Read bank 1
-		set_number(1, GBA_FLASH_SET_BANK); // Set bank 1
-		
-		set_number(0, SET_START_ADDRESS);
-		set_mode(GBA_READ_SRAM);
-		com_read_bytes(READ_BUFFER, 64);
-		memcpy(&secondBuffer, readBuffer, 64);
-		RS232_cputs(cport_nr, "0"); // Stop read
-		
-		set_number(0, GBA_FLASH_SET_BANK); // Set back to bank 0
-		
-		// Compare
-		for (uint8_t x = 0; x < 64; x++) {
-			if (firstBuffer[x] == secondBuffer[x]) {
-				duplicateCount++;
+		printf("Testing for 512Kbit or 1Mbit Flash... ");
+		for (uint8_t x = 0; x < 32; x++) {
+			// Read bank 0
+			set_number((uint32_t) (x * 0x400), SET_START_ADDRESS);
+			set_mode(GBA_READ_SRAM);
+			com_read_bytes(READ_BUFFER, 64);
+			memcpy(&firstBuffer, readBuffer, 64);
+			RS232_cputs(cport_nr, "0"); // Stop read
+			
+			// Read bank 1
+			set_number(1, GBA_FLASH_SET_BANK); // Set bank 1
+			
+			set_number((uint32_t) (x * 0x400), SET_START_ADDRESS);
+			set_mode(GBA_READ_SRAM);
+			com_read_bytes(READ_BUFFER, 64);
+			memcpy(&secondBuffer, readBuffer, 64);
+			RS232_cputs(cport_nr, "0"); // Stop read
+			
+			set_number(0, GBA_FLASH_SET_BANK); // Set back to bank 0
+			
+			// Compare
+			for (uint8_t x = 0; x < 64; x++) {
+				if (firstBuffer[x] == secondBuffer[x]) {
+					duplicateCount++;
+				}
 			}
 		}
 		
-		// If duplicated bank 0 and 1, then 512Kbit
-		if (duplicateCount == 64) {
+		// If bank 0 and 1 are duplicated, then it's 512Kbit Flash
+		if (duplicateCount >= 2000) {
+			printf("512Kbit\n");
 			return SRAM_FLASH_512KBIT;
 		}
 		else {
+			printf("1Mbit\n");
 			return SRAM_FLASH_1MBIT;
 		}
 	}
