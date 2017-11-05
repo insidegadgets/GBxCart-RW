@@ -1,9 +1,9 @@
 /*
  GBxCart RW - GB Camera Save to BMP
- Version: 1.0
+ Version: 1.1
  Author: Alex from insideGadgets (www.insidegadgets.com)
  Created: 8/07/2017
- Last Modified: 8/07/2017
+ Last Modified: 4/11/2017
  
  GBxCart RW allows you to dump your Gameboy/Gameboy Colour/Gameboy Advance games ROM, save the RAM and write to the RAM.
  
@@ -25,11 +25,11 @@
 #include <unistd.h>
 #endif
 
-#include "setup.c" // See defines, variables, constants, functions here
+#include "setup.h" // See defines, variables, constants, functions here
 
 int main(int argc, char **argv) {
 	
-	printf("GBxCart RW - GB Camera Saver v1.0 by insideGadgets\n");
+	printf("GBxCart RW - GB Camera Saver v1.1 by insideGadgets\n");
 	printf("##################################################\n");
 	
 	read_config();
@@ -83,7 +83,7 @@ int main(int argc, char **argv) {
 	// Save memory to file
 	char savFilename[50];
 	strncpy(savFilename, timebuffer, 25);
-	strncat(savFilename, "\\GBCAMERA.sav", 14);
+	strncat(savFilename, "/GBCAMERA.sav", 14);
 	
 	FILE *ramFile = fopen(savFilename, "wb");
 	printf("\nSaving RAM to %s\n", savFilename);
@@ -105,7 +105,8 @@ int main(int argc, char **argv) {
 			set_number(ramAddress, SET_START_ADDRESS); // Set start address again
 			
 			RS232_cputs(cport_nr, "M0"); // Disable CS/RD/WR/CS2-RST from going high after each command
-			Sleep(5);
+			RS232_drain(cport_nr);
+			delay_ms(5);
 			
 			set_mode(GB_CART_MODE);
 			
@@ -116,24 +117,31 @@ int main(int argc, char **argv) {
 					sprintf(hexNum, "HA0x%x", ((ramAddress+x) >> 8));
 					RS232_cputs(cport_nr, hexNum);
 					RS232_SendByte(cport_nr, 0);
+					RS232_drain(cport_nr);
 					
 					sprintf(hexNum, "HB0x%x", ((ramAddress+x) & 0xFF));
 					RS232_cputs(cport_nr, hexNum);
 					RS232_SendByte(cport_nr, 0);
+					RS232_drain(cport_nr);
 					
 					RS232_cputs(cport_nr, "LD0x60"); // cs_mreqPin_low + rdPin_low
 					RS232_SendByte(cport_nr, 0);
+					RS232_drain(cport_nr);
 					
 					RS232_cputs(cport_nr, "DC");
+					RS232_drain(cport_nr);
 					
 					RS232_cputs(cport_nr, "HD0x60"); // cs_mreqPin_high + rdPin_high
 					RS232_SendByte(cport_nr, 0);
+					RS232_drain(cport_nr);
 					
 					RS232_cputs(cport_nr, "LA0xFF");
 					RS232_SendByte(cport_nr, 0);
+					RS232_drain(cport_nr);
 					
 					RS232_cputs(cport_nr, "LB0xFF");
 					RS232_SendByte(cport_nr, 0);
+					RS232_drain(cport_nr);
 				}
 				
 				com_read_bytes(ramFile, 64);
@@ -143,7 +151,8 @@ int main(int argc, char **argv) {
 				
 				// Request 64 bytes more
 				if (ramAddress < ramEndAddress) {
-					RS232_cputs(cport_nr, "1");
+					com_read_cont();
+					RS232_drain(cport_nr);
 				}
 				
 				// Print progress
@@ -157,10 +166,12 @@ int main(int argc, char **argv) {
 					print_progress_percent(readBytes, (ramBanks * (ramEndAddress - 0xA000 + 1)) / 64);
 				}
 			}
-			RS232_cputs(cport_nr, "0"); // Stop reading RAM (as we will bank switch)
+			com_read_stop(); // Stop reading RAM (as we will bank switch)
+			RS232_drain(cport_nr);
 		}
 		
 		RS232_cputs(cport_nr, "M1");
+		RS232_drain(cport_nr);
 	}
 	
 	else {
@@ -179,7 +190,8 @@ int main(int argc, char **argv) {
 				
 				// Request 64 bytes more
 				if (ramAddress < ramEndAddress) {
-					RS232_cputs(cport_nr, "1");
+					com_read_cont();
+					RS232_drain(cport_nr);
 				}
 				
 				// Print progress
@@ -193,7 +205,8 @@ int main(int argc, char **argv) {
 					print_progress_percent(readBytes, (ramBanks * (ramEndAddress - 0xA000 + 1)) / 64);
 				}
 			}
-			RS232_cputs(cport_nr, "0"); // Stop reading RAM (as we will bank switch)
+			com_read_stop(); // Stop reading RAM (as we will bank switch)
+			RS232_drain(cport_nr);
 		}
 	}
 	printf("]");
@@ -231,7 +244,7 @@ int main(int argc, char **argv) {
 			
 			// Write to BMP
 			char bmpName[60];
-			sprintf(bmpName, "%s\\%i.bmp", timebuffer, saveName);
+			sprintf(bmpName, "%s/%i.bmp", timebuffer, saveName);
 			save_to_bmp(bmpName);
 			saveName++;
 		}

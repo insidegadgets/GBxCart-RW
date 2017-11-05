@@ -1,9 +1,9 @@
 /*
  GBxCart RW - Console Interface Flasher
- Version: 1.1
+ Version: 1.2
  Author: Alex from insideGadgets (www.insidegadgets.com)
  Created: 26/08/2017
- Last Modified: 15/10/2017
+ Last Modified: 4/11/2017
  
  This program allows you to flash new ROMs to Flash Carts that are supported.
  
@@ -21,12 +21,11 @@
 #include <unistd.h>
 #endif
 
-#include "setup.c" // See defines, variables, constants, functions here
-
+#include "setup.h" // See defines, variables, constants, functions here
 
 int main(int argc, char **argv) {
 	
-	printf("GBxCart RW Flasher v1.1 by insideGadgets\n");
+	printf("GBxCart RW Flasher v1.2 by insideGadgets\n");
 	printf("########################################\n");
 	
 	// Check arguments
@@ -208,7 +207,7 @@ int main(int argc, char **argv) {
 			set_number(currAddr, SET_START_ADDRESS);
 			set_mode(READ_ROM_RAM);
 			com_read_bytes(READ_BUFFER, 64);
-			RS232_cputs(cport_nr, "0"); // Stop read
+			com_read_stop();
 			
 			
 			printf("\nErasing Flash");
@@ -228,7 +227,7 @@ int main(int argc, char **argv) {
 				set_mode(GBA_READ_SRAM);
 				
 				com_read_bytes(READ_BUFFER, 64);
-				RS232_cputs(cport_nr, "0"); // End read
+				com_read_stop(); // End read
 				
 				printf(".");
 				
@@ -291,6 +290,8 @@ int main(int argc, char **argv) {
 		
 		printf("\nYou can now drag and drop your ROM file to this exe file.");
 	}
+	
+	printf("\n");
 	
 	return 0;
 }

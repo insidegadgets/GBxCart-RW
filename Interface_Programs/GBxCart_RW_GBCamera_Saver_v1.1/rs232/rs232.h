@@ -76,6 +76,7 @@ void RS232_disableRTS(int);
 void RS232_flushRX(int);
 void RS232_flushTX(int);
 void RS232_flushRXTX(int);
+void RS232_drain(int);
 int RS232_GetPortnr(const char *);
 
 #ifdef __cplusplus

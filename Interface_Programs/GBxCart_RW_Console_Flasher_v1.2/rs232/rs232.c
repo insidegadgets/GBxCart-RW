@@ -479,6 +479,13 @@ void RS232_flushRXTX(int comport_number)
   tcflush(Cport[comport_number], TCIOFLUSH);
 }
 
+void RS232_drain(int comport_number)
+{
+  if(tcdrain(Cport[comport_number]) == -1)
+  {
+    perror("unable to drain COM write buffer");
+  }
+}
 
 #else  /* windows */
 
@@ -772,6 +779,10 @@ void RS232_flushRXTX(int comport_number)
   PurgeComm(Cport[comport_number], PURGE_TXCLEAR | PURGE_TXABORT);
 }
 
+void RS232_drain(int comport_number)
+{
+  FlushFileBuffers(Cport[comport_number]);
+}
 
 #endif
 

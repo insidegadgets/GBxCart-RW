@@ -1,9 +1,9 @@
 /*
  GBxCart RW - Console Interface
- Version: 1.7
+ Version: 1.8
  Author: Alex from insideGadgets (www.insidegadgets.com)
  Created: 7/11/2016
- Last Modified: 3/09/2017
+ Last Modified: 4/11/2017
  
  GBxCart RW allows you to dump your Gameboy/Gameboy Colour/Gameboy Advance games ROM, save the RAM and write to the RAM.
  
@@ -21,12 +21,11 @@
 #include <unistd.h>
 #endif
 
-#include "setup.c" // See defines, variables, constants, functions here
-
+#include "setup.h" // See defines, variables, constants, functions here
 
 int main(int argc, char **argv) {
 	
-	printf("GBxCart RW v1.7 by insideGadgets\n");
+	printf("GBxCart RW v1.8 by insideGadgets\n");
 	printf("################################\n");
 	
 	read_config();
@@ -124,13 +123,13 @@ int main(int argc, char **argv) {
 						
 						// Request 64 bytes more
 						if (currAddr < endAddr) {
-							RS232_cputs(cport_nr, "1");
+							com_read_cont();
 						}
 						
 						// Print progress
 						print_progress_percent(readBytes, (romBanks * 16384) / 64);
 					}
-					RS232_cputs(cport_nr, "0"); // Stop reading ROM (as we will bank switch)
+					com_read_stop(); // Stop reading ROM (as we will bank switch)
 				}
 				printf("]");
 			}
@@ -148,14 +147,14 @@ int main(int argc, char **argv) {
 					
 					// Request 64 bytes more
 					if (currAddr < endAddr) {
-						RS232_cputs(cport_nr, "1");
+						com_read_cont();
 					}
 					
 					// Print progress
 					print_progress_percent(currAddr, endAddr / 64);
 				}
 				printf("]");
-				RS232_cputs(cport_nr, "0"); // Stop reading
+				com_read_stop();
 			}
 			
 			fclose(romFile);
@@ -210,6 +209,7 @@ int main(int argc, char **argv) {
 								set_number(ramAddress, SET_START_ADDRESS); // Set start address again
 								
 								RS232_cputs(cport_nr, "M0"); // Disable CS/RD/WR/CS2-RST from going high after each command
+								RS232_drain(cport_nr);
 								delay_ms(5);
 								
 								set_mode(GB_CART_MODE);
@@ -221,24 +221,31 @@ int main(int argc, char **argv) {
 										sprintf(hexNum, "HA0x%x", ((ramAddress+x) >> 8));
 										RS232_cputs(cport_nr, hexNum);
 										RS232_SendByte(cport_nr, 0);
+										RS232_drain(cport_nr);
 										
 										sprintf(hexNum, "HB0x%x", ((ramAddress+x) & 0xFF));
 										RS232_cputs(cport_nr, hexNum);
 										RS232_SendByte(cport_nr, 0);
+										RS232_drain(cport_nr);
 										
 										RS232_cputs(cport_nr, "LD0x60"); // cs_mreqPin_low + rdPin_low
 										RS232_SendByte(cport_nr, 0);
+										RS232_drain(cport_nr);
 										
 										RS232_cputs(cport_nr, "DC");
+										RS232_drain(cport_nr);
 										
 										RS232_cputs(cport_nr, "HD0x60"); // cs_mreqPin_high + rdPin_high
 										RS232_SendByte(cport_nr, 0);
+										RS232_drain(cport_nr);
 										
 										RS232_cputs(cport_nr, "LA0xFF");
 										RS232_SendByte(cport_nr, 0);
+										RS232_drain(cport_nr);
 										
 										RS232_cputs(cport_nr, "LB0xFF");
 										RS232_SendByte(cport_nr, 0);
+										RS232_drain(cport_nr);
 									}
 									
 									com_read_bytes(ramFile, 64);
@@ -248,7 +255,7 @@ int main(int argc, char **argv) {
 									
 									// Request 64 bytes more
 									if (ramAddress < ramEndAddress) {
-										RS232_cputs(cport_nr, "1");
+										com_read_cont();
 									}
 									
 									// Print progress
@@ -262,10 +269,11 @@ int main(int argc, char **argv) {
 										print_progress_percent(readBytes, (ramBanks * (ramEndAddress - 0xA000 + 1)) / 64);
 									}
 								}
-								RS232_cputs(cport_nr, "0"); // Stop reading RAM (as we will bank switch)
+								com_read_stop(); // Stop reading RAM (as we will bank switch)
 							}
 							
 							RS232_cputs(cport_nr, "M1");
+							RS232_drain(cport_nr);
 						}
 						
 						else {
@@ -284,7 +292,7 @@ int main(int argc, char **argv) {
 									
 									// Request 64 bytes more
 									if (ramAddress < ramEndAddress) {
-										RS232_cputs(cport_nr, "1");
+										com_read_cont();
 									}
 									
 									// Print progress
@@ -298,7 +306,7 @@ int main(int argc, char **argv) {
 										print_progress_percent(readBytes, (ramBanks * (ramEndAddress - 0xA000 + 1)) / 64);
 									}
 								}
-								RS232_cputs(cport_nr, "0"); // Stop reading RAM (as we will bank switch)
+								com_read_stop(); // Stop reading RAM (as we will bank switch)
 							}
 						}
 						printf("]");
@@ -367,13 +375,13 @@ int main(int argc, char **argv) {
 									
 									// Request 64 bytes more
 									if (currAddr < endAddr) {
-										RS232_cputs(cport_nr, "1");
+										com_read_cont();
 									}
 									
 									print_progress_percent(readBytes, (ramBanks * ramEndAddress) / 64);
 								}
 								
-								RS232_cputs(cport_nr, "0"); // End read (for bank if flash)
+								com_read_stop(); // End read (for bank if flash)
 								
 								// Flash, switch back to bank 0
 								if (hasFlashSave >= FLASH_FOUND && bank == 1) {
@@ -404,13 +412,13 @@ int main(int argc, char **argv) {
 								
 								// Request 8 bytes more
 								if (currAddr < endAddr) {
-									RS232_cputs(cport_nr, "1");
+									com_read_cont();
 								}
 								
 								print_progress_percent(readBytes, endAddr / 64);
 							}
 							
-							RS232_cputs(cport_nr, "0"); // End read
+							com_read_stop(); // End read
 						}
 						
 						fclose(ramFile);
@@ -629,7 +637,7 @@ int main(int argc, char **argv) {
 													set_mode(GBA_READ_SRAM);
 													
 													com_read_bytes(READ_BUFFER, 64);
-													RS232_cputs(cport_nr, "0"); // End read
+													com_read_stop();
 													
 													if (readBuffer[0] != 0xFF) {
 														delay_ms(5);
@@ -828,10 +836,10 @@ int main(int argc, char **argv) {
 												set_mode(GBA_READ_SRAM);
 												
 												com_read_bytes(READ_BUFFER, 64);
-												RS232_cputs(cport_nr, "0"); // End read
+												com_read_stop();
 												
 												if (readBuffer[0] != 0xFF) {
-													Sleep(5);
+													delay_ms(5);
 												}
 											}
 										}
@@ -1028,6 +1036,7 @@ int main(int argc, char **argv) {
 		// Custom commands	
 		else if (optionSelected == '7') {
 			RS232_cputs(cport_nr, "G");
+			RS232_drain(cport_nr);
 			delay_ms(5);
 			
 			printf("\n--- Custom Commands ---\n"\
@@ -1054,9 +1063,11 @@ int main(int argc, char **argv) {
 				
 				
 				RS232_cputs(cport_nr, readInput);
+				RS232_drain(cport_nr);
 				
 				if (readInput[0] == 'I' || readInput[0] == 'O' || readInput[0] == 'L' || readInput[0] == 'H') {
 					RS232_SendByte(cport_nr, 0);
+					RS232_drain(cport_nr);
 				}
 				
 				if (readInput[0] == 'D') {
@@ -1142,54 +1153,66 @@ int main(int argc, char **argv) {
 					}
 					
 					RS232_cputs(cport_nr, "G"); // Set Gameboy mode
+					RS232_drain(cport_nr);
 					delay_ms(5);
 					
 					RS232_cputs(cport_nr, "M0"); // Disable CS/RD/WR/CS2-RST from going high after each command
+					RS232_drain(cport_nr);
 					delay_ms(5);
 					
 					// V1.1 PCB
 					if (gbxcartPcbVersion == PCB_1_1) {
 						RS232_cputs(cport_nr, "OE0x04"); // Pulse Reset
 						RS232_SendByte(cport_nr, 0);
+						RS232_drain(cport_nr);
 						delay_ms(5);
 						
 						RS232_cputs(cport_nr, "LE0x04");
 						RS232_SendByte(cport_nr, 0);
+						RS232_drain(cport_nr);
 						delay_ms(5);
 						
 						RS232_cputs(cport_nr, "HE0x04");
 						RS232_SendByte(cport_nr, 0);
+						RS232_drain(cport_nr);
 						delay_ms(5);
 					}
 					else { // V1.0 PCB
 						RS232_cputs(cport_nr, "OD0x80"); // Pulse Reset
 						RS232_SendByte(cport_nr, 0);
+						RS232_drain(cport_nr);
 						delay_ms(5);
 						
 						RS232_cputs(cport_nr, "LD0x80");
 						RS232_SendByte(cport_nr, 0);
+						RS232_drain(cport_nr);
 						delay_ms(5);
 						
 						RS232_cputs(cport_nr, "HD0x80");
 						RS232_SendByte(cport_nr, 0);
+						RS232_drain(cport_nr);
 						delay_ms(5);
 					}
 					
 					// Pulse A15 pin 0x60 times
 					RS232_cputs(cport_nr, "OA0x80");
 					RS232_SendByte(cport_nr, 0);
+					RS232_drain(cport_nr);
 					
 					for (uint8_t x = 0; x < 0x60; x++) {
 						RS232_cputs(cport_nr, "HA0x80");
 						RS232_SendByte(cport_nr, 0);
+						RS232_drain(cport_nr);
 						delay_ms(5);
 						
 						RS232_cputs(cport_nr, "LA0x80");
 						RS232_SendByte(cport_nr, 0);
+						RS232_drain(cport_nr);
 						delay_ms(5);
 					}
 					
 					RS232_cputs(cport_nr, "M1"); // Enable CS/RD/WR/CS2-RST goes high after each command
+					RS232_drain(cport_nr);
 					
 					
 					// Allow ROM bank/mask changes
@@ -1262,13 +1285,13 @@ int main(int argc, char **argv) {
 								
 								// Request 64 bytes more
 								if (currAddr < endAddr) {
-									RS232_cputs(cport_nr, "1");
+									com_read_cont();
 								}
 								
 								// Print progress
 								print_progress_percent(readBytes, (romBanks * 16384) / 64);
 							}
-							RS232_cputs(cport_nr, "0"); // Stop reading ROM (as we will bank switch)
+							com_read_stop(); // Stop reading ROM (as we will bank switch)
 						}
 						printf("]");
 					}
@@ -1295,6 +1318,7 @@ int main(int argc, char **argv) {
 						uint8_t a3 = 0;
 						while (a3 < 128) {
 							RS232_cputs(cport_nr, "M0"); // Disable CS/RD/WR/CS2-RST from going high after each command
+							RS232_drain(cport_nr);
 							
 							if (gbxcartPcbVersion == PCB_1_1) {	// V1.1 PCB
 								RS232_cputs(cport_nr, "LE0x04"); // CS2 low
@@ -1303,6 +1327,7 @@ int main(int argc, char **argv) {
 								RS232_cputs(cport_nr, "LD0x80"); // CS2 low
 							}
 							RS232_SendByte(cport_nr, 0);
+							RS232_drain(cport_nr);
 							
 							set_bank(2, a2);
 							set_bank(3, a3);
@@ -1315,8 +1340,10 @@ int main(int argc, char **argv) {
 								RS232_cputs(cport_nr, "HD0x80"); // CS2 high
 							}
 							RS232_SendByte(cport_nr, 0);
+							RS232_drain(cport_nr);
 							
 							RS232_cputs(cport_nr, "M1");
+							RS232_drain(cport_nr);
 							
 							gba_read_gametitle();
 							if (strlen(gameTitle) >= 5) {
@@ -1358,6 +1385,7 @@ int main(int argc, char **argv) {
 					
 					// Select banks
 					RS232_cputs(cport_nr, "M0"); // Disable CS/RD/WR/CS2-RST from going high after each command
+					RS232_drain(cport_nr);
 					
 					if (gbxcartPcbVersion == PCB_1_1) {	// V1.1 PCB
 						RS232_cputs(cport_nr, "LE0x04"); // CS2 low
@@ -1366,6 +1394,7 @@ int main(int argc, char **argv) {
 						RS232_cputs(cport_nr, "LD0x80"); // CS2 low
 					}
 					RS232_SendByte(cport_nr, 0);
+					RS232_drain(cport_nr);
 					
 					set_bank(2, address2Byte);
 					set_bank(3, address3Byte);
@@ -1378,8 +1407,10 @@ int main(int argc, char **argv) {
 						RS232_cputs(cport_nr, "HD0x80"); // CS2 high
 					}
 					RS232_SendByte(cport_nr, 0);
+					RS232_drain(cport_nr);
 					
 					RS232_cputs(cport_nr, "M1");
+					RS232_drain(cport_nr);
 					
 					gba_read_gametitle();
 					printf ("Game title: %s\n", gameTitle);
@@ -1429,14 +1460,14 @@ int main(int argc, char **argv) {
 								
 								// Request 64 bytes more
 								if (currAddr < endAddr) {
-									RS232_cputs(cport_nr, "1");
+									com_read_cont();
 								}
 								
 								// Print progress
 								print_progress_percent(currAddr, endAddr / 64);
 							}
 							printf("]\n");
-							RS232_cputs(cport_nr, "0"); // Stop reading
+							com_read_stop();
 							fclose(romFile);
 						}
 					}
@@ -1451,7 +1482,7 @@ int main(int argc, char **argv) {
 			// Open the port
 			RS232_CloseComport(cport_nr);
 			
-			Sleep(300);
+			delay_ms(300);
 			
 			system("tsb\\tsb com16:9600 I");
 		}
