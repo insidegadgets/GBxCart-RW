@@ -1,9 +1,9 @@
 /*
 GBxCart RW - GUI COM Interface
-Version : 1.9
+Version : 1.10
 Author : Alex from insideGadgets(www.insidegadgets.com)
 Created : 7 / 11 / 2016
-Last Modified : 15 / 10 / 2017
+Last Modified : 28 / 11 / 2017
 
 GBxCart RW allows you to dump your Gameboy / Gameboy Colour / Gameboy Advance games ROM, save the RAM and write to the RAM.
 
@@ -1232,16 +1232,17 @@ __declspec(dllexport) char* read_gba_header(int &headerlength) {
 	printf("Calculating ROM size");
 	romSize = gba_check_rom_size();
 
-	// SRAM/Flash check/size
-	printf("\nCalculating SRAM/Flash size");
-	ramSize = gba_check_sram_flash();
+	// EEPROM check
+	printf("\nChecking for EEPROM");
+	eepromSize = gba_check_eeprom();
 
-	// EEPROM check, if no SRAM/Flash present
-	if (ramSize == 0) {
-		eepromSize = gba_check_eeprom();
+	// SRAM/Flash check/size, if no EEPROM present
+	if (eepromSize == 0) {
+		printf("\nCalculating SRAM/Flash size");
+		ramSize = gba_check_sram_flash();
 	}
 	else {
-		eepromSize = 0;
+		ramSize = 0;
 	}
 
 	// If file exists, we know the ram has been erased before, so read memory info from this file

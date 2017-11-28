@@ -1,9 +1,9 @@
 /*
  GBxCart RW - Console Interface
- Version: 1.8
+ Version: 1.9
  Author: Alex from insideGadgets (www.insidegadgets.com)
  Created: 7/11/2016
- Last Modified: 4/11/2017
+ Last Modified: 28/11/2017
  
  */
 
@@ -854,6 +854,10 @@ uint8_t gba_check_eeprom (void) {
 		if (currAddr < endAddr) {
 			com_read_cont();
 		}
+		
+		if (currAddr % 20 == 0) {
+			printf(".");
+		}
 	}
 	com_read_stop();
 	
@@ -1024,16 +1028,17 @@ void read_gba_header (void) {
 	printf ("Calculating ROM size");
 	romSize = gba_check_rom_size();
 	
-	// SRAM/Flash check/size
-	printf ("\nCalculating SRAM/Flash size");
-	ramSize = gba_check_sram_flash();
+	// EEPROM check
+	printf ("\nChecking for EEPROM");
+	eepromSize = gba_check_eeprom();
 	
-	// EEPROM check, if no SRAM/Flash present
-	if (ramSize == 0) {
-		eepromSize = gba_check_eeprom();
+	// SRAM/Flash check/size, if no EEPROM present
+	if (eepromSize == 0) {
+		printf ("\nCalculating SRAM/Flash size");
+		ramSize = gba_check_sram_flash();
 	}
 	else {
-		eepromSize = 0;
+		ramSize = 0;
 	}
 	
 	// If file exists, we know the ram has been erased before, so read memory info from this file

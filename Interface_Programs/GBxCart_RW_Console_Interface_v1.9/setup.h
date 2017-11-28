@@ -1,9 +1,9 @@
 /*
  GBxCart RW - Console Interface
- Version: 1.8
+ Version: 1.9
  Author: Alex from insideGadgets (www.insidegadgets.com)
  Created: 7/11/2016
- Last Modified: 4/11/2017
+ Last Modified: 28/11/2017
  
  */
 

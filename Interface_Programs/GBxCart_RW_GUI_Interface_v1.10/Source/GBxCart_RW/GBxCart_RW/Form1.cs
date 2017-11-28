@@ -1,10 +1,10 @@
 ﻿/*
 
 GBxCart RW - GUI  Interface
-Version : 1.9
+Version : 1.10
 Author : Alex from insideGadgets(www.insidegadgets.com)
 Created : 7 / 11 / 2016
-Last Modified : 15 / 10 / 2017
+Last Modified : 28 / 11 / 2017
 
 GBxCart RW allows you to dump your Gameboy / Gameboy Colour / Gameboy Advance games ROM, save the RAM and write to the RAM.
 
