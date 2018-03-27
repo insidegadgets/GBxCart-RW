@@ -1,9 +1,9 @@
 /*
-GBxCart RW - GUI  Interface
-Version : 1.14
+GBxCart RW - GUI Interface
+Version : 1.15
 Author : Alex from insideGadgets(www.insidegadgets.com)
 Created : 7 / 11 / 2016
-Last Modified : 15 / 02 / 2018
+Last Modified : 28 / 02 / 2018
 
 GBxCart RW allows you to dump your Gameboy / Gameboy Colour / Gameboy Advance games ROM, save the RAM and write to the RAM.
 
@@ -11,7 +11,10 @@ GBxCart RW allows you to dump your Gameboy / Gameboy Colour / Gameboy Advance ga
 
 #include <stdio.h>
 #include <string.h>
+#include <math.h>
+#include <time.h>
 #include <windows.h>
+
 
 extern "C" {
 
@@ -104,8 +107,8 @@ extern int RS232_SendBuf(int comport_number, unsigned char *buf, int size);
 // Common vars
 #define READ_BUFFER 0
 
-int cport_nr = 7, // /dev/ttyS7 (COM8 on windows)
-bdrate = 1000000; // 1,000,000 baud
+int cport_nr = 7; // /dev/ttyS7 (COM8 on windows)
+int bdrate = 1000000; // 1,000,000 baud
 
 uint8_t gbxcartFirmwareVersion = 0;
 uint8_t gbxcartPcbVersion = 0;
@@ -191,10 +194,12 @@ __declspec(dllexport) int read_config(int type) {
 	}
 	return 0;*/
 
+	int alwaysAddDateTimeToSave = 0;
+	int promptForRestoreSaveFile = 0;
 
 	FILE *configfile = fopen("config.ini", "rt");
 	if (configfile != NULL) {
-		if (fscanf(configfile, "%d\n%d", &cport_nr, &bdrate) != 2) {
+		if (fscanf(configfile, "%d\n%d\n%d\n%d", &cport_nr, &bdrate, &alwaysAddDateTimeToSave, &promptForRestoreSaveFile) > 4) {
 			fprintf(stderr, "Config file is corrupt\n");
 		}
 		fclose(configfile);
@@ -206,20 +211,28 @@ __declspec(dllexport) int read_config(int type) {
 	if (type == 1) {
 		return cport_nr;
 	}
-	else {
+	else if (type == 2) {
 		return bdrate;
 	}
+	else if (type == 3) {
+		return alwaysAddDateTimeToSave;
+	}
+	else if (type == 4) {
+		return promptForRestoreSaveFile;
+	}
+
+
 	return 0;
 }
 
 // Update config file if com port or baudrate is changed
-__declspec(dllexport) void update_config(int comport, INT32 baudrate) {
+__declspec(dllexport) void update_config(int comport, INT32 baudrate, int alwaysAddDateTimeToSave, int promptForRestoreSaveFile) {
 	cport_nr = comport;
 	bdrate = baudrate;
 
 	FILE *configfile = fopen("config.ini", "wt");
 	if (configfile != NULL) {
-		fprintf(configfile, "%d\n%d\n", cport_nr+1, bdrate);
+		fprintf(configfile, "%d\n%d\n%d\n%d\n", cport_nr+1, bdrate, alwaysAddDateTimeToSave, promptForRestoreSaveFile);
 		fclose(configfile);
 	}
 }
@@ -1461,7 +1474,7 @@ __declspec(dllexport) int check_if_file_exists() {
 }
 
 // Read RAM
-__declspec(dllexport) void read_ram(uint32_t &progress, uint8_t &cancelOperation) {
+__declspec(dllexport) void read_ram(int saveAsNewFile, uint32_t &progress, uint8_t &cancelOperation) {
 	cartridgeMode = read_cartridge_mode();
 	gbxcartFirmwareVersion = request_value(READ_FIRMWARE_VERSION);
 
@@ -1474,6 +1487,19 @@ __declspec(dllexport) void read_ram(uint32_t &progress, uint8_t &cancelOperation
 			strncpy(titleFilename, currentFolder, 219);
 			strncat(titleFilename, "\\", 3);
 			strncat(titleFilename, gameTitle, 20);
+
+			// Add date/time to save file
+			if (saveAsNewFile == true) {
+				time_t rawtime;
+				struct tm* timeinfo;
+				char timebuffer[25];
+
+				time(&rawtime);
+				timeinfo = localtime(&rawtime);
+				strftime(timebuffer, 80, "_%Y.%m.%d-%H.%M.%S", timeinfo);
+
+				strncat(titleFilename, timebuffer, 25);
+			}
 			strncat(titleFilename, ".sav", 4);
 		
 			printf("Saving RAM to %s\n", titleFilename);
@@ -1606,6 +1632,19 @@ __declspec(dllexport) void read_ram(uint32_t &progress, uint8_t &cancelOperation
 			strncpy(titleFilename, currentFolder, 219);
 			strncat(titleFilename, "\\", 3);
 			strncat(titleFilename, gameTitle, 20);
+
+			// Add date/time to save file
+			if (saveAsNewFile == true) {
+				time_t rawtime;
+				struct tm* timeinfo;
+				char timebuffer[25];
+
+				time(&rawtime);
+				timeinfo = localtime(&rawtime);
+				strftime(timebuffer, 80, "_%Y.%m.%d-%H.%M.%S", timeinfo);
+
+				strncat(titleFilename, timebuffer, 25);
+			}
 			strncat(titleFilename, ".sav", 4);
 
 			// Create a new file
@@ -1704,7 +1743,7 @@ __declspec(dllexport) void read_ram(uint32_t &progress, uint8_t &cancelOperation
 }
 
 // Write RAM
-__declspec(dllexport) void write_ram(uint32_t &progress, uint8_t &cancelOperation) {
+__declspec(dllexport) void write_ram(char* writeSaveFileName, uint32_t &progress, uint8_t &cancelOperation) {
 	cartridgeMode = read_cartridge_mode();
 	printf("\n--- Write RAM to GB Cart ---\n");
 
@@ -1712,10 +1751,16 @@ __declspec(dllexport) void write_ram(uint32_t &progress, uint8_t &cancelOperatio
 		// Does cartridge have RAM
 		if (ramEndAddress > 0) {
 			char titleFilename[250];
-			strncpy(titleFilename, currentFolder, 219);
-			strncat(titleFilename, "\\", 3);
-			strncat(titleFilename, gameTitle, 20);
-			strncat(titleFilename, ".sav", 4);
+			
+			if (strlen(writeSaveFileName) >= 5) {
+				strncpy(titleFilename, writeSaveFileName, 249);
+			}
+			else {
+				strncpy(titleFilename, currentFolder, 219);
+				strncat(titleFilename, "\\", 3);
+				strncat(titleFilename, gameTitle, 20);
+				strncat(titleFilename, ".sav", 4);
+			}
 
 			// Open file
 			FILE *ramFile = fopen(titleFilename, "rb");
@@ -1772,10 +1817,16 @@ __declspec(dllexport) void write_ram(uint32_t &progress, uint8_t &cancelOperatio
 		   // Does cartridge have RAM
 		if (ramEndAddress > 0 || eepromEndAddress > 0) {
 			char titleFilename[250];
-			strncpy(titleFilename, currentFolder, 219);
-			strncat(titleFilename, "\\", 3);
-			strncat(titleFilename, gameTitle, 20);
-			strncat(titleFilename, ".sav", 4);
+
+			if (strlen(writeSaveFileName) >= 5) {
+				strncpy(titleFilename, writeSaveFileName, 249);
+			}
+			else {
+				strncpy(titleFilename, currentFolder, 219);
+				strncat(titleFilename, "\\", 3);
+				strncat(titleFilename, gameTitle, 20);
+				strncat(titleFilename, ".sav", 4);
+			}
 
 			// Open file
 			FILE *ramFile = fopen(titleFilename, "rb");

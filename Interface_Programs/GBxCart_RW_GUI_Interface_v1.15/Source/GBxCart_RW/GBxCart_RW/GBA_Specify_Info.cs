@@ -73,6 +73,7 @@ namespace GBxCart_RW {
                             }
                             else if (gbaflashchipbox.Text == "256M29EWH") {
                                 Form1.headerTokens[0] = "256M29EWH GBA Flash Cart";
+                                Form1.headerTokens[1] = "ROM size: 32 MByte";
                             }
                         }
                     }
@@ -246,7 +247,7 @@ namespace GBxCart_RW {
                 gbaflashpcbbox.Text = "AGB-E08-09";
             }
             else if (gbaflashchipbox.Text == "256M29EWH") {
-                gbaromsizebox.Text = "16 MByte";
+                gbaromsizebox.Text = "32 MByte";
                 memorytypebox.Text = "SRAM";
                 gbaramsizebox.Text = "512Kbit";
                 gbaflashpcbbox.Text = "AGB-E05-01";

@@ -292,5 +292,9 @@ namespace GBxCart_RW {
         private void gbflashwebox_SelectedIndexChanged(object sender, EventArgs e) {
 
         }
+
+        private void cartinfocancelbutton_Click(object sender, EventArgs e) {
+
+        }
     }
 }

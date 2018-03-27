@@ -37,10 +37,10 @@ namespace GBxCart_RW
         public static extern void read_rom(int cartMode, ref UInt32 length, ref int cancelOperation);
 
         [DllImport(dllLocation, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
-        public static extern void read_ram(ref UInt32 length, ref int cancelOperation);
+        public static extern void read_ram(bool saveAsNewFile, ref UInt32 length, ref int cancelOperation);
 
         [DllImport(dllLocation, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
-        public static extern void write_ram(ref UInt32 length, ref int cancelOperation);
+        public static extern void write_ram(string writeSaveFileName, ref UInt32 length, ref int cancelOperation);
 
         [DllImport(dllLocation, CallingConvention = CallingConvention.Cdecl)]
         public static extern void set_mode(char command);
@@ -49,7 +49,7 @@ namespace GBxCart_RW
         public static extern int read_config(int type);
 
         [DllImport(dllLocation, CallingConvention = CallingConvention.Cdecl)]
-        public static extern void update_config(int comport, Int32 baudrate);
+        public static extern void update_config(int comport, Int32 baudrate, int alwaysAddDateTimeToSave, int promptForRestoreSaveFile);
 
         [DllImport(dllLocation, CallingConvention = CallingConvention.Cdecl)]
         public static extern void gb_specify_rom_size(int size);

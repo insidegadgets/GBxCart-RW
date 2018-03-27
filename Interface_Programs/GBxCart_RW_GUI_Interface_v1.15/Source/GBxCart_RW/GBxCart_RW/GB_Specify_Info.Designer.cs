@@ -73,6 +73,7 @@
             this.cartinfocancelbutton.TabIndex = 78;
             this.cartinfocancelbutton.Text = "Cancel";
             this.cartinfocancelbutton.UseVisualStyleBackColor = true;
+            this.cartinfocancelbutton.Click += new System.EventHandler(this.cartinfocancelbutton_Click);
             // 
             // cartinfoapplybutton
             // 

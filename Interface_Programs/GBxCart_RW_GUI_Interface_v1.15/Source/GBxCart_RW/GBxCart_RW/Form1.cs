@@ -1,10 +1,10 @@
 ﻿/*
 
 GBxCart RW - GUI  Interface
-Version : 1.14
+Version : 1.15
 Author : Alex from insideGadgets(www.insidegadgets.com)
 Created : 7 / 11 / 2016
-Last Modified : 15 / 02 / 2018
+Last Modified : 28 / 02 / 2018
 
 GBxCart RW allows you to dump your Gameboy / Gameboy Colour / Gameboy Advance games ROM, save the RAM and write to the RAM.
 
@@ -34,7 +34,7 @@ namespace GBxCart_RW
         const int GBA_CART = 2;
 
         const int READROM = 1;
-        const int SAVERAM = 2;
+        public const int SAVERAM = 2;
         const int WRITERAM = 3;
         const int READHEADER = 4;
         const int WRITEROM = 5;
@@ -46,7 +46,7 @@ namespace GBxCart_RW
         public const char READ_PCB_VERSION = 'h';
 
         bool comConnected = false;
-        int commandReceived = 0;
+        public static int commandReceived = 0;
         bool headerRead = false;
         int cancelOperation = 0;
         UInt32 progress = 0;
@@ -54,6 +54,10 @@ namespace GBxCart_RW
         public static string[] headerTokens;
         string writeRomFileName;
         bool writeRomSelected = false;
+        public static bool saveAsNewFile = false;
+        string writeSaveFileName;
+        int alwaysAddDateTimeToSave = 0;
+        int promptForRestoreSaveFile = 0;
         public static int writeRomCartType = 0;
         public static UInt32 writeRomCartSize = 0;
         public static UInt32 writeRomSize = 0;
@@ -72,12 +76,35 @@ namespace GBxCart_RW
             backgroundWorker2.WorkerSupportsCancellation = true;
             backgroundWorker2.RunWorkerAsync();
 
+            statuslabel.Text = "";
+
             comPortTextBox.Text = Convert.ToString(Program.read_config(1));
             baudtextBox.Text = Convert.ToString(Program.read_config(2));
+            alwaysAddDateTimeToSave = Program.read_config(3);
+            promptForRestoreSaveFile = Program.read_config(4);
+            
+            // Update menu text if set
+            if (alwaysAddDateTimeToSave == 1) {
+                alwaysAddDatetimeToSaveGamesYesToolStripMenuItem.Text = "Always add date/time to backed up Save Game files: Yes";
+            }
+            if (promptForRestoreSaveFile == 1) {
+                promptForFileToolStripMenuItem.Text = "Always prompt for Save Game file when restoring: Yes";
+            }
 
-            statuslabel.Text = "";
+            // Load default directory
             this.directoryNameToolStripMenuItem.Text = @AppDomain.CurrentDomain.BaseDirectory;
             Program.update_current_folder(@AppDomain.CurrentDomain.BaseDirectory);
+
+            // Check if directory file exists
+            if (File.Exists(@"config-folder.ini")) {
+                using (StreamReader configFolderFile = new StreamReader(@"config-folder.ini")) {
+                    while (configFolderFile.Peek() >= 0) {
+                        this.directoryNameToolStripMenuItem.Text = configFolderFile.ReadLine();
+                        Program.update_current_folder(this.directoryNameToolStripMenuItem.Text);
+                        persistanceToolStripMenuItem.Text = "Remember: Yes";
+                    }
+                }
+            }
         }
 
         private void Form1_Load(object sender, EventArgs e) {
@@ -175,7 +202,7 @@ namespace GBxCart_RW
                     }
                 }
                 else if (commandReceived == SAVERAM) { // Save RAM
-                    Program.read_ram(ref progress, ref cancelOperation);
+                    Program.read_ram(saveAsNewFile, ref progress, ref cancelOperation);
                     commandReceived = 0;
                     System.Threading.Thread.Sleep(500);
 
@@ -191,7 +218,7 @@ namespace GBxCart_RW
                     }
                 }
                 else if (commandReceived == WRITERAM) { // Write RAM
-                    Program.write_ram(ref progress, ref cancelOperation);
+                    Program.write_ram(writeSaveFileName, ref progress, ref cancelOperation);
                     commandReceived = 0;
                     System.Threading.Thread.Sleep(500);
 
@@ -319,8 +346,8 @@ namespace GBxCart_RW
                 progress = 0;
                 backgroundWorker1.ReportProgress(0);
                 
-
-                Program.update_config(comPortInt, baudInt);
+                // Update config
+                Program.update_config(comPortInt, baudInt, alwaysAddDateTimeToSave, promptForRestoreSaveFile);
                 
                 // Read device firmware
                 int firmwareVersion = Program.read_firmware_version();
@@ -412,15 +439,38 @@ namespace GBxCart_RW
                 backgroundWorker1.ReportProgress(0);
                 
                 if (Program.check_if_file_exists() == 1) {
-                    Functions.MessageBoxHelper.PrepToCenterMessageBoxOnForm(this);
-                    DialogResult dialogResult = MessageBox.Show("This will erase the save game from your PC.\nPress Yes to continue or No to abort.", "Confirm Save", MessageBoxButtons.YesNo);
+                    if (alwaysAddDateTimeToSave == 1) {
+                        saveAsNewFile = true;
+                        commandReceived = SAVERAM;
+                        statuslabel.Text = "Backing up Save...";
+                    }
+                    else {
+                        SaveOptions SaveOptionsForm = new SaveOptions();
+                        SaveOptionsForm.ShowDialog();
+
+                        if (commandReceived == SAVERAM) {
+                            statuslabel.Text = "Backing up Save...";
+                        }
+                        else {
+                            statuslabel.Text = "Backing up Save cancelled";
+                        }
+                    }
+                    
+                    /*Functions.MessageBoxHelper.PrepToCenterMessageBoxOnForm(this);
+                     * DialogResult dialogResult = MessageBox.Show("Existing Save Game detected on your PC.\nWould you like to add the date/time to the save file name, overwrite the existing file or cancel?", "Save as New File/Overwrite/Cancel", MessageBoxButtons.SaveOverwriteCancel);
+                    if (dialogResult == DialogResult.Yes) {
+                        commandReceived = SAVERAM;
+                        statuslabel.Text = "Backing up Save...";
+                    }*/
+
+                    /*DialogResult dialogResult = MessageBox.Show("This will erase the save game from your PC.\nPress Yes to continue or No to abort.", "Confirm Save", MessageBoxButtons.YesNo);
                     if (dialogResult == DialogResult.Yes) {
                         commandReceived = SAVERAM;
                         statuslabel.Text = "Backing up Save...";
                     }
                     else if (dialogResult == DialogResult.No) {
                         statuslabel.Text = "Backing up Save cancelled";
-                    }
+                    }*/
                 }
                 else {
                     commandReceived = SAVERAM;
@@ -436,13 +486,43 @@ namespace GBxCart_RW
                 backgroundWorker1.ReportProgress(0);
 
                 if (Program.check_if_file_exists() == 1) {
-                    Functions.MessageBoxHelper.PrepToCenterMessageBoxOnForm(this);
+                    /*Functions.MessageBoxHelper.PrepToCenterMessageBoxOnForm(this);
                     DialogResult dialogResult = MessageBox.Show("This will erase the save game from your Gameboy / Gameboy Advance cart\nPress Yes to continue or No to abort.", "Confirm Write", MessageBoxButtons.YesNo);
                     if (dialogResult == DialogResult.Yes) {
                         commandReceived = WRITERAM;
                         statuslabel.Text = "Restoring Save...";
                     }
                     else if (dialogResult == DialogResult.No) {
+                        statuslabel.Text = "Restoring Save cancelled";
+                    }*/
+
+                    bool writeSavePrompt = false;
+                    if (promptForRestoreSaveFile == 1) {
+                        openFileDialog2.InitialDirectory = this.directoryNameToolStripMenuItem.Text;
+                        DialogResult result = openFileDialog2.ShowDialog();
+                        if (result == DialogResult.OK) {
+                            FileInfo fileSelected = new FileInfo(openFileDialog2.FileName);
+                            writeSaveFileName = openFileDialog2.FileName;
+                            writeSavePrompt = true;
+                        }
+                    }
+                    else {
+                        writeSaveFileName = "";
+                        writeSavePrompt = true;
+                    }
+
+                    if (writeSavePrompt == true) {
+                        Functions.MessageBoxHelper.PrepToCenterMessageBoxOnForm(this);
+                        DialogResult dialogResult = MessageBox.Show("This will erase the save game from your Gameboy / Gameboy Advance cart\nPress Yes to continue or No to abort.", "Confirm Write", MessageBoxButtons.YesNo);
+                        if (dialogResult == DialogResult.Yes) {
+                            commandReceived = WRITERAM;
+                            statuslabel.Text = "Restoring Save...";
+                        }
+                        else if (dialogResult == DialogResult.No) {
+                            statuslabel.Text = "Restoring Save cancelled";
+                        }
+                    }
+                    else {
                         statuslabel.Text = "Restoring Save cancelled";
                     }
                 }
@@ -519,6 +599,7 @@ namespace GBxCart_RW
                     System.Windows.Forms.MessageBox.Show("PCB v1.0 is not supported for this function.");
                 }
                 else {
+                    openFileDialog1.InitialDirectory = this.directoryNameToolStripMenuItem.Text;
                     DialogResult result = openFileDialog1.ShowDialog();
                     if (result == DialogResult.OK) {
 
@@ -606,7 +687,67 @@ namespace GBxCart_RW
                 //Console.WriteLine(folderSelect.FileName);
                 Program.update_current_folder(folderSelect.FileName);
                 this.directoryNameToolStripMenuItem.Text = folderSelect.FileName;
+
+                // If remembered, save the new folder
+                if (persistanceToolStripMenuItem.Text == "Remember: Yes") {
+                    using (StreamWriter configFolderFile = new StreamWriter(@"config-folder.ini")) {
+                        configFolderFile.WriteLine(this.directoryNameToolStripMenuItem.Text);
+                    }
+                }
             }
+        }
+
+        private void persistanceToolStripMenuItem_Click(object sender, EventArgs e) {
+            if (persistanceToolStripMenuItem.Text == "Remember: Yes") {
+                persistanceToolStripMenuItem.Text = "Remember: No";
+                if (File.Exists(@"config-folder.ini")) { // Delete file if exists
+                    File.Delete(@"config-folder.ini");
+                }
+            }
+            else {
+                persistanceToolStripMenuItem.Text = "Remember: Yes";
+                using (StreamWriter configFolderFile = new StreamWriter(@"config-folder.ini")) {
+                    configFolderFile.WriteLine(this.directoryNameToolStripMenuItem.Text);
+                }
+            }
+        }
+
+        private void alwaysAddDatetimeToSaveGamesYesToolStripMenuItem_Click(object sender, EventArgs e) {
+            if (alwaysAddDateTimeToSave == 0) {
+                alwaysAddDatetimeToSaveGamesYesToolStripMenuItem.Text = "Always add date/time to backed up Save Game files: Yes";
+                alwaysAddDateTimeToSave = 1;
+            }
+            else {
+                alwaysAddDatetimeToSaveGamesYesToolStripMenuItem.Text = "Always add date/ time to backed up Save Game files: No";
+                alwaysAddDateTimeToSave = 0;
+            }
+
+            // Update config
+            int comPortInt = Convert.ToInt32(comPortTextBox.Text);
+            Int32 baudInt = Convert.ToInt32(baudtextBox.Text);
+            comPortInt--;
+            Program.update_config(comPortInt, baudInt, alwaysAddDateTimeToSave, promptForRestoreSaveFile);
+        }
+
+        private void promptForFileToolStripMenuItem_Click(object sender, EventArgs e) {
+            if (promptForRestoreSaveFile == 0) {
+                promptForFileToolStripMenuItem.Text = "Always prompt for Save Game file when restoring: Yes";
+                promptForRestoreSaveFile = 1;
+            }
+            else {
+                promptForFileToolStripMenuItem.Text = "Always prompt for Save Game file when restoring: No";
+                promptForRestoreSaveFile = 0;
+            }
+
+            // Update config
+            int comPortInt = Convert.ToInt32(comPortTextBox.Text);
+            Int32 baudInt = Convert.ToInt32(baudtextBox.Text);
+            comPortInt--;
+            Program.update_config(comPortInt, baudInt, alwaysAddDateTimeToSave, promptForRestoreSaveFile);
+        }
+
+        private void optionsToolStripMenuItem_Click(object sender, EventArgs e) {
+
         }
     }
     

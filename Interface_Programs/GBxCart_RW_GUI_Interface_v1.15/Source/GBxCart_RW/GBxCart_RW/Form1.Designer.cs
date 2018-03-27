@@ -56,12 +56,17 @@
             this.eraseRAMMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.locationToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.directoryNameToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.persistanceToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.optionsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.alwaysAddDatetimeToSaveGamesYesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.promptForFileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.helpToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.manualMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.checkForUpdatesMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.openFileDialog1 = new System.Windows.Forms.OpenFileDialog();
             this.writerombutton = new System.Windows.Forms.Button();
             this.modeTextBox = new System.Windows.Forms.ComboBox();
+            this.openFileDialog2 = new System.Windows.Forms.OpenFileDialog();
             this.menuStrip1.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -264,6 +269,7 @@
             this.menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.fileToolStripMenuItem,
             this.locationToolStripMenuItem,
+            this.optionsToolStripMenuItem,
             this.helpToolStripMenuItem});
             this.menuStrip1.Location = new System.Drawing.Point(0, 0);
             this.menuStrip1.Name = "menuStrip1";
@@ -305,7 +311,8 @@
             // locationToolStripMenuItem
             // 
             this.locationToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.directoryNameToolStripMenuItem});
+            this.directoryNameToolStripMenuItem,
+            this.persistanceToolStripMenuItem});
             this.locationToolStripMenuItem.Name = "locationToolStripMenuItem";
             this.locationToolStripMenuItem.Size = new System.Drawing.Size(67, 20);
             this.locationToolStripMenuItem.Text = "Directory";
@@ -314,9 +321,40 @@
             // directoryNameToolStripMenuItem
             // 
             this.directoryNameToolStripMenuItem.Name = "directoryNameToolStripMenuItem";
-            this.directoryNameToolStripMenuItem.Size = new System.Drawing.Size(203, 22);
+            this.directoryNameToolStripMenuItem.Size = new System.Drawing.Size(154, 22);
             this.directoryNameToolStripMenuItem.Text = "C:\\";
             this.directoryNameToolStripMenuItem.Click += new System.EventHandler(this.directoryNameToolStripMenuItem_Click);
+            // 
+            // persistanceToolStripMenuItem
+            // 
+            this.persistanceToolStripMenuItem.Name = "persistanceToolStripMenuItem";
+            this.persistanceToolStripMenuItem.Size = new System.Drawing.Size(154, 22);
+            this.persistanceToolStripMenuItem.Text = "Remember: No";
+            this.persistanceToolStripMenuItem.Click += new System.EventHandler(this.persistanceToolStripMenuItem_Click);
+            // 
+            // optionsToolStripMenuItem
+            // 
+            this.optionsToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.alwaysAddDatetimeToSaveGamesYesToolStripMenuItem,
+            this.promptForFileToolStripMenuItem});
+            this.optionsToolStripMenuItem.Name = "optionsToolStripMenuItem";
+            this.optionsToolStripMenuItem.Size = new System.Drawing.Size(61, 20);
+            this.optionsToolStripMenuItem.Text = "Options";
+            this.optionsToolStripMenuItem.Click += new System.EventHandler(this.optionsToolStripMenuItem_Click);
+            // 
+            // alwaysAddDatetimeToSaveGamesYesToolStripMenuItem
+            // 
+            this.alwaysAddDatetimeToSaveGamesYesToolStripMenuItem.Name = "alwaysAddDatetimeToSaveGamesYesToolStripMenuItem";
+            this.alwaysAddDatetimeToSaveGamesYesToolStripMenuItem.Size = new System.Drawing.Size(368, 22);
+            this.alwaysAddDatetimeToSaveGamesYesToolStripMenuItem.Text = "Always add date/time to backed up Save Game files: No";
+            this.alwaysAddDatetimeToSaveGamesYesToolStripMenuItem.Click += new System.EventHandler(this.alwaysAddDatetimeToSaveGamesYesToolStripMenuItem_Click);
+            // 
+            // promptForFileToolStripMenuItem
+            // 
+            this.promptForFileToolStripMenuItem.Name = "promptForFileToolStripMenuItem";
+            this.promptForFileToolStripMenuItem.Size = new System.Drawing.Size(368, 22);
+            this.promptForFileToolStripMenuItem.Text = "Always prompt for Save Game file when restoring: No";
+            this.promptForFileToolStripMenuItem.Click += new System.EventHandler(this.promptForFileToolStripMenuItem_Click);
             // 
             // helpToolStripMenuItem
             // 
@@ -373,6 +411,10 @@
             this.modeTextBox.TabIndex = 73;
             this.modeTextBox.SelectedIndexChanged += new System.EventHandler(this.modeTextBox_SelectedIndexChanged);
             // 
+            // openFileDialog2
+            // 
+            this.openFileDialog2.FileName = "*.sav";
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -402,7 +444,7 @@
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "Form1";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-            this.Text = "GBxCart RW v1.14 by insideGadgets";
+            this.Text = "GBxCart RW v1.15 by insideGadgets";
             this.Load += new System.EventHandler(this.Form1_Load);
             this.menuStrip1.ResumeLayout(false);
             this.menuStrip1.PerformLayout();
@@ -445,6 +487,11 @@
         private System.Windows.Forms.ComboBox modeTextBox;
         private System.Windows.Forms.ToolStripMenuItem locationToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem directoryNameToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem persistanceToolStripMenuItem;
+        private System.Windows.Forms.OpenFileDialog openFileDialog2;
+        private System.Windows.Forms.ToolStripMenuItem optionsToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem alwaysAddDatetimeToSaveGamesYesToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem promptForFileToolStripMenuItem;
     }
 }
 
