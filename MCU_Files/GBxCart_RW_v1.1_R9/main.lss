@@ -1,0 +1,3457 @@
+
+main.elf:     file format elf32-avr
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .text         00000fb4  00000000  00000000  00000094  2**1
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  1 .data         00000000  00800060  00000fb4  00001048  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  2 .bss          0000009b  00800060  00800060  00001048  2**0
+                  ALLOC
+  3 .comment      0000005c  00000000  00000000  00001048  2**0
+                  CONTENTS, READONLY
+  4 .note.gnu.avr.deviceinfo 00000040  00000000  00000000  000010a4  2**2
+                  CONTENTS, READONLY
+  5 .debug_aranges 00000028  00000000  00000000  000010e4  2**0
+                  CONTENTS, READONLY, DEBUGGING
+  6 .debug_info   00001fce  00000000  00000000  0000110c  2**0
+                  CONTENTS, READONLY, DEBUGGING
+  7 .debug_abbrev 00000700  00000000  00000000  000030da  2**0
+                  CONTENTS, READONLY, DEBUGGING
+  8 .debug_line   0000104b  00000000  00000000  000037da  2**0
+                  CONTENTS, READONLY, DEBUGGING
+  9 .debug_frame  000002ec  00000000  00000000  00004828  2**2
+                  CONTENTS, READONLY, DEBUGGING
+ 10 .debug_str    000005c8  00000000  00000000  00004b14  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 11 .debug_loc    000016bd  00000000  00000000  000050dc  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 12 .debug_ranges 00000060  00000000  00000000  00006799  2**0
+                  CONTENTS, READONLY, DEBUGGING
+
+Disassembly of section .text:
+
+00000000 <__vectors>:
+   0:	10 c0       	rjmp	.+32     	; 0x22 <__ctors_end>
+   2:	1f c0       	rjmp	.+62     	; 0x42 <__bad_interrupt>
+   4:	1e c0       	rjmp	.+60     	; 0x42 <__bad_interrupt>
+   6:	1d c0       	rjmp	.+58     	; 0x42 <__bad_interrupt>
+   8:	1c c0       	rjmp	.+56     	; 0x42 <__bad_interrupt>
+   a:	1b c0       	rjmp	.+54     	; 0x42 <__bad_interrupt>
+   c:	1a c0       	rjmp	.+52     	; 0x42 <__bad_interrupt>
+   e:	19 c0       	rjmp	.+50     	; 0x42 <__bad_interrupt>
+  10:	18 c0       	rjmp	.+48     	; 0x42 <__bad_interrupt>
+  12:	17 c0       	rjmp	.+46     	; 0x42 <__bad_interrupt>
+  14:	16 c0       	rjmp	.+44     	; 0x42 <__bad_interrupt>
+  16:	15 c0       	rjmp	.+42     	; 0x42 <__bad_interrupt>
+  18:	14 c0       	rjmp	.+40     	; 0x42 <__bad_interrupt>
+  1a:	13 c0       	rjmp	.+38     	; 0x42 <__bad_interrupt>
+  1c:	12 c0       	rjmp	.+36     	; 0x42 <__bad_interrupt>
+  1e:	11 c0       	rjmp	.+34     	; 0x42 <__bad_interrupt>
+  20:	10 c0       	rjmp	.+32     	; 0x42 <__bad_interrupt>
+
+00000022 <__ctors_end>:
+  22:	11 24       	eor	r1, r1
+  24:	1f be       	out	0x3f, r1	; 63
+  26:	cf e5       	ldi	r28, 0x5F	; 95
+  28:	d2 e0       	ldi	r29, 0x02	; 2
+  2a:	de bf       	out	0x3e, r29	; 62
+  2c:	cd bf       	out	0x3d, r28	; 61
+
+0000002e <__do_clear_bss>:
+  2e:	20 e0       	ldi	r18, 0x00	; 0
+  30:	a0 e6       	ldi	r26, 0x60	; 96
+  32:	b0 e0       	ldi	r27, 0x00	; 0
+  34:	01 c0       	rjmp	.+2      	; 0x38 <.do_clear_bss_start>
+
+00000036 <.do_clear_bss_loop>:
+  36:	1d 92       	st	X+, r1
+
+00000038 <.do_clear_bss_start>:
+  38:	ab 3f       	cpi	r26, 0xFB	; 251
+  3a:	b2 07       	cpc	r27, r18
+  3c:	e1 f7       	brne	.-8      	; 0x36 <.do_clear_bss_loop>
+  3e:	cc d2       	rcall	.+1432   	; 0x5d8 <main>
+  40:	b7 c7       	rjmp	.+3950   	; 0xfb0 <_exit>
+
+00000042 <__bad_interrupt>:
+  42:	de cf       	rjmp	.-68     	; 0x0 <__vectors>
+
+00000044 <USART_Receive>:
+uint16_t flashWriteCycle[3][2];
+
+
+// Receive USART data
+uint8_t USART_Receive(void) {
+	while ( !(UCSRA & (1<<RXC)) ); // Wait for data to be received
+  44:	5f 9b       	sbis	0x0b, 7	; 11
+  46:	fe cf       	rjmp	.-4      	; 0x44 <USART_Receive>
+	return UDR; // Get and return received data from buffer
+  48:	8c b1       	in	r24, 0x0c	; 12
+}
+  4a:	08 95       	ret
+
+0000004c <USART_Transmit>:
+
+// Transmit USART data
+void USART_Transmit(unsigned char data) {
+	while ( !( UCSRA & (1<<UDRE)) ); // Wait for empty transmit buffer
+  4c:	5d 9b       	sbis	0x0b, 5	; 11
+  4e:	fe cf       	rjmp	.-4      	; 0x4c <USART_Transmit>
+	UDR = data;
+  50:	8c b9       	out	0x0c, r24	; 12
+  52:	08 95       	ret
+
+00000054 <usart_read_bytes>:
+}
+
+// Read 1-128 bytes from the USART 
+void usart_read_bytes(uint8_t count) {
+  54:	0f 93       	push	r16
+  56:	1f 93       	push	r17
+  58:	cf 93       	push	r28
+  5a:	df 93       	push	r29
+  5c:	d8 2f       	mov	r29, r24
+  5e:	0e e6       	ldi	r16, 0x6E	; 110
+  60:	10 e0       	ldi	r17, 0x00	; 0
+	for (uint8_t x = 0; x < count; x++) {
+  62:	c0 e0       	ldi	r28, 0x00	; 0
+  64:	cd 17       	cp	r28, r29
+  66:	31 f0       	breq	.+12     	; 0x74 <usart_read_bytes+0x20>
+		receivedBuffer[x] = USART_Receive();
+  68:	ed df       	rcall	.-38     	; 0x44 <USART_Receive>
+  6a:	f8 01       	movw	r30, r16
+  6c:	81 93       	st	Z+, r24
+  6e:	8f 01       	movw	r16, r30
+	UDR = data;
+}
+
+// Read 1-128 bytes from the USART 
+void usart_read_bytes(uint8_t count) {
+	for (uint8_t x = 0; x < count; x++) {
+  70:	cf 5f       	subi	r28, 0xFF	; 255
+  72:	f8 cf       	rjmp	.-16     	; 0x64 <usart_read_bytes+0x10>
+		receivedBuffer[x] = USART_Receive();
+	}
+}
+  74:	df 91       	pop	r29
+  76:	cf 91       	pop	r28
+  78:	1f 91       	pop	r17
+  7a:	0f 91       	pop	r16
+  7c:	08 95       	ret
+
+0000007e <usart_read_chars>:
+
+// Read the USART until a 0 (string terminator byte) is received
+void usart_read_chars(void) {
+  7e:	cf 93       	push	r28
+	uint8_t x = 0;
+  80:	c0 e0       	ldi	r28, 0x00	; 0
+	while (1) {
+		receivedBuffer[x] = USART_Receive();
+  82:	e0 df       	rcall	.-64     	; 0x44 <USART_Receive>
+  84:	ec 2f       	mov	r30, r28
+  86:	f0 e0       	ldi	r31, 0x00	; 0
+  88:	e2 59       	subi	r30, 0x92	; 146
+  8a:	ff 4f       	sbci	r31, 0xFF	; 255
+  8c:	80 83       	st	Z, r24
+		if (receivedBuffer[x] == 0) {
+  8e:	88 23       	and	r24, r24
+  90:	11 f0       	breq	.+4      	; 0x96 <usart_read_chars+0x18>
+			break;
+		}
+		x++;
+  92:	cf 5f       	subi	r28, 0xFF	; 255
+	}
+  94:	f6 cf       	rjmp	.-20     	; 0x82 <usart_read_chars+0x4>
+}
+  96:	cf 91       	pop	r28
+  98:	08 95       	ret
+
+0000009a <rd_wr_csmreq_cs2_reset>:
+
+// Turn RD, WR, CS/MREQ and CS2 to high so they are deselected (reset state)
+void rd_wr_csmreq_cs2_reset(void) {
+	cs2Pin_high; // CS2 off
+  9a:	3a 9a       	sbi	0x07, 2	; 7
+	cs_mreqPin_high; // CS/MREQ off
+  9c:	94 9a       	sbi	0x12, 4	; 18
+	rdPin_high; // RD off
+  9e:	95 9a       	sbi	0x12, 5	; 18
+	wrPin_high; // WR off
+  a0:	96 9a       	sbi	0x12, 6	; 18
+  a2:	08 95       	ret
+
+000000a4 <gb_mode>:
+// ****** Gameboy / Gameboy Colour functions ******
+
+// Set Gameboy mode
+void gb_mode(void) {
+	// Set inputs
+	PORT_DATA7_0 = 0;
+  a4:	15 ba       	out	0x15, r1	; 21
+	DDR_DATA7_0 = 0;
+  a6:	14 ba       	out	0x14, r1	; 20
+	
+	// Set outputs
+	PORT_ADDR7_0 = 0;
+  a8:	18 ba       	out	0x18, r1	; 24
+	PORT_ADDR15_8 = 0;
+  aa:	1b ba       	out	0x1b, r1	; 27
+	DDR_ADDR7_0 = 0xFF;
+  ac:	8f ef       	ldi	r24, 0xFF	; 255
+  ae:	87 bb       	out	0x17, r24	; 23
+	DDR_ADDR15_8 = 0xFF;
+  b0:	8a bb       	out	0x1a, r24	; 26
+  b2:	08 95       	ret
+
+000000b4 <set_16bit_address>:
+}
+
+// Set the 16 bit address on A15-0
+void set_16bit_address(uint16_t address) {
+	PORT_ADDR15_8 = (address >> 8);
+  b4:	9b bb       	out	0x1b, r25	; 27
+	PORT_ADDR7_0 = (address & 0xFF);
+  b6:	88 bb       	out	0x18, r24	; 24
+  b8:	08 95       	ret
+
+000000ba <read_8bit_data>:
+}
+
+// Set the address and read a byte from the 8 bit data line
+uint8_t read_8bit_data(uint16_t address) {
+	set_16bit_address(address);
+  ba:	fc df       	rcall	.-8      	; 0xb4 <set_16bit_address>
+	
+	cs_mreqPin_low;
+  bc:	94 98       	cbi	0x12, 4	; 18
+	rdPin_low;
+  be:	95 98       	cbi	0x12, 5	; 18
+	
+	asm volatile("nop"); // Delay a little (minimum needed is 1 nops, 2 nops for GB camera)
+  c0:	00 00       	nop
+	asm volatile("nop");
+  c2:	00 00       	nop
+	uint8_t data = PIN_DATA7_0; // Read data
+  c4:	83 b3       	in	r24, 0x13	; 19
+	
+	rdPin_high;
+  c6:	95 9a       	sbi	0x12, 5	; 18
+	cs_mreqPin_high;
+  c8:	94 9a       	sbi	0x12, 4	; 18
+	
+	return data;
+}
+  ca:	08 95       	ret
+
+000000cc <write_8bit_data>:
+
+// Set the address and write a byte to the 8 bit data line and pulse cs/mREQ if writing to RAM
+void write_8bit_data(uint16_t address, uint8_t data, uint8_t type) {
+  cc:	cf 93       	push	r28
+  ce:	df 93       	push	r29
+  d0:	d6 2f       	mov	r29, r22
+  d2:	c4 2f       	mov	r28, r20
+	set_16bit_address(address);
+  d4:	ef df       	rcall	.-34     	; 0xb4 <set_16bit_address>
+	
+	DDR_DATA7_0 = 0xFF; // Set data pins as outputs
+  d6:	8f ef       	ldi	r24, 0xFF	; 255
+  d8:	84 bb       	out	0x14, r24	; 20
+	PORT_DATA7_0 = data; // Set data
+  da:	d5 bb       	out	0x15, r29	; 21
+	
+	// Pulse WR and mREQ if the type matches
+	wrPin_low;
+  dc:	96 98       	cbi	0x12, 6	; 18
+	if (type == MEMORY_WRITE) {
+  de:	c1 30       	cpi	r28, 0x01	; 1
+  e0:	09 f4       	brne	.+2      	; 0xe4 <write_8bit_data+0x18>
+		cs_mreqPin_low;
+  e2:	94 98       	cbi	0x12, 4	; 18
+	}
+	
+	asm volatile("nop");
+  e4:	00 00       	nop
+	
+	if (type == MEMORY_WRITE) {
+  e6:	c1 30       	cpi	r28, 0x01	; 1
+  e8:	09 f4       	brne	.+2      	; 0xec <write_8bit_data+0x20>
+		cs_mreqPin_high;
+  ea:	94 9a       	sbi	0x12, 4	; 18
+	}
+	wrPin_high;
+  ec:	96 9a       	sbi	0x12, 6	; 18
+	
+	// Clear data outputs and set data pins as inputs
+	PORT_DATA7_0 = 0;
+  ee:	15 ba       	out	0x15, r1	; 21
+	DDR_DATA7_0 = 0;
+  f0:	14 ba       	out	0x14, r1	; 20
+}
+  f2:	df 91       	pop	r29
+  f4:	cf 91       	pop	r28
+  f6:	08 95       	ret
+
+000000f8 <gba_mode>:
+// ****** Gameboy Advance functions ****** 
+
+// Set GBA mode
+void gba_mode(void) {
+	// Set outputs for reading ROM addresses as default
+	GBA_PORT_ROM_ADDR7_0 = 0;
+  f8:	18 ba       	out	0x18, r1	; 24
+	GBA_PORT_ROM_ADDR15_8 = 0;
+  fa:	1b ba       	out	0x1b, r1	; 27
+	GBA_PORT_ROM_ADDR23_16 = 0;
+  fc:	15 ba       	out	0x15, r1	; 21
+	GBA_DDR_ROM_ADDR7_0 = 0xFF;
+  fe:	8f ef       	ldi	r24, 0xFF	; 255
+ 100:	87 bb       	out	0x17, r24	; 23
+	GBA_DDR_ROM_ADDR15_8 = 0xFF;
+ 102:	8a bb       	out	0x1a, r24	; 26
+	GBA_DDR_ROM_ADDR23_16 = 0xFF;
+ 104:	84 bb       	out	0x14, r24	; 20
+ 106:	08 95       	ret
+
+00000108 <gba_set_24bit_address>:
+}
+
+// Set the 24 bit address on A23-0
+void gba_set_24bit_address(uint32_t address) {	
+ 108:	0f 93       	push	r16
+ 10a:	1f 93       	push	r17
+	GBA_PORT_ROM_ADDR23_16 = 0; // Set 0-23 address lines low and set as outputs
+ 10c:	15 ba       	out	0x15, r1	; 21
+	GBA_PORT_ROM_ADDR15_8 = 0;
+ 10e:	1b ba       	out	0x1b, r1	; 27
+	GBA_PORT_ROM_ADDR7_0 = 0;
+ 110:	18 ba       	out	0x18, r1	; 24
+	GBA_DDR_ROM_ADDR23_16 = 0xFF;
+ 112:	2f ef       	ldi	r18, 0xFF	; 255
+ 114:	24 bb       	out	0x14, r18	; 20
+	GBA_DDR_ROM_ADDR15_8 = 0xFF;
+ 116:	2a bb       	out	0x1a, r18	; 26
+	GBA_DDR_ROM_ADDR7_0 = 0xFF;
+ 118:	27 bb       	out	0x17, r18	; 23
+	
+	GBA_PORT_ROM_ADDR23_16 = (address >> 16);
+ 11a:	8c 01       	movw	r16, r24
+ 11c:	22 27       	eor	r18, r18
+ 11e:	33 27       	eor	r19, r19
+ 120:	05 bb       	out	0x15, r16	; 21
+	GBA_PORT_ROM_ADDR15_8 = (address >> 8);
+ 122:	07 2f       	mov	r16, r23
+ 124:	18 2f       	mov	r17, r24
+ 126:	29 2f       	mov	r18, r25
+ 128:	33 27       	eor	r19, r19
+ 12a:	0b bb       	out	0x1b, r16	; 27
+	GBA_PORT_ROM_ADDR7_0 = (address & 0xFF);
+ 12c:	68 bb       	out	0x18, r22	; 24
+}
+ 12e:	1f 91       	pop	r17
+ 130:	0f 91       	pop	r16
+ 132:	08 95       	ret
+
+00000134 <gba_read_16bit_data>:
+
+// ---------- ROM/SRAM ----------
+
+// Read a byte from the 16 bit data line non-sequentially
+uint16_t gba_read_16bit_data(uint32_t address) {
+	gba_set_24bit_address(address);
+ 134:	e9 df       	rcall	.-46     	; 0x108 <gba_set_24bit_address>
+	
+	cs_mreqPin_low;
+ 136:	94 98       	cbi	0x12, 4	; 18
+	
+	GBA_PORT_ROM_ADDR15_8 = 0; // Set address lines low and set as inputs
+ 138:	1b ba       	out	0x1b, r1	; 27
+	GBA_PORT_ROM_ADDR7_0 = 0;
+ 13a:	18 ba       	out	0x18, r1	; 24
+	GBA_DDR_ROM_ADDR15_8 = 0;
+ 13c:	1a ba       	out	0x1a, r1	; 26
+	GBA_DDR_ROM_ADDR7_0 = 0;
+ 13e:	17 ba       	out	0x17, r1	; 23
+	
+	rdPin_low;
+ 140:	95 98       	cbi	0x12, 5	; 18
+	asm volatile("nop");
+ 142:	00 00       	nop
+	
+	uint16_t data = (GBA_PIN_ROM_DATA15_8 << 8) | GBA_PIN_ROM_DATA7_0; // Read data
+ 144:	29 b3       	in	r18, 0x19	; 25
+ 146:	86 b3       	in	r24, 0x16	; 22
+	
+	rdPin_high;
+ 148:	95 9a       	sbi	0x12, 5	; 18
+	cs_mreqPin_high;
+ 14a:	94 9a       	sbi	0x12, 4	; 18
+	
+	return data;
+ 14c:	90 e0       	ldi	r25, 0x00	; 0
+}
+ 14e:	92 2b       	or	r25, r18
+ 150:	08 95       	ret
+
+00000152 <gba_read_ram_8bit_data>:
+
+// Set the address and read a byte from the 8 bit data line
+uint8_t gba_read_ram_8bit_data(uint16_t address) {
+	set_16bit_address(address);
+ 152:	b0 df       	rcall	.-160    	; 0xb4 <set_16bit_address>
+	
+	rdPin_low;
+ 154:	95 98       	cbi	0x12, 5	; 18
+	cs2Pin_low; // CS2 pin low for SRAM/Flash select
+ 156:	3a 98       	cbi	0x07, 2	; 7
+	
+	asm volatile("nop"); // Delay a little (minimum needed is 2)
+ 158:	00 00       	nop
+	asm volatile("nop");
+ 15a:	00 00       	nop
+	
+	uint8_t data = GBA_PIN_RAM_DATA7_0; // Read data
+ 15c:	83 b3       	in	r24, 0x13	; 19
+	
+	cs2Pin_high;
+ 15e:	3a 9a       	sbi	0x07, 2	; 7
+	rdPin_high;
+ 160:	95 9a       	sbi	0x12, 5	; 18
+	
+	return data;
+}
+ 162:	08 95       	ret
+
+00000164 <gba_write_ram_8bit_data>:
+
+// Set the address and write a byte to the 8 bit data line 
+void gba_write_ram_8bit_data(uint16_t address, uint8_t data) {
+ 164:	cf 93       	push	r28
+ 166:	c6 2f       	mov	r28, r22
+	set_16bit_address(address);
+ 168:	a5 df       	rcall	.-182    	; 0xb4 <set_16bit_address>
+	
+	GBA_DDR_RAM_DATA7_0 = 0xFF; // Set data pins as outputs
+ 16a:	8f ef       	ldi	r24, 0xFF	; 255
+ 16c:	84 bb       	out	0x14, r24	; 20
+	GBA_PORT_RAM_DATA7_0 = data; // Set data
+ 16e:	c5 bb       	out	0x15, r28	; 21
+	
+	// Pulse WR
+	wrPin_low;
+ 170:	96 98       	cbi	0x12, 6	; 18
+	cs2Pin_low; // CS2 pin low for SRAM/Flash select
+ 172:	3a 98       	cbi	0x07, 2	; 7
+	
+	asm volatile("nop");
+ 174:	00 00       	nop
+	asm volatile("nop");
+ 176:	00 00       	nop
+	
+	cs2Pin_high;
+ 178:	3a 9a       	sbi	0x07, 2	; 7
+	wrPin_high;
+ 17a:	96 9a       	sbi	0x12, 6	; 18
+	
+	// Clear data outputs and set data pins as inputs
+	GBA_PORT_RAM_DATA7_0 = 0;
+ 17c:	15 ba       	out	0x15, r1	; 21
+	GBA_DDR_RAM_DATA7_0 = 0;
+ 17e:	14 ba       	out	0x14, r1	; 20
+}
+ 180:	cf 91       	pop	r28
+ 182:	08 95       	ret
+
+00000184 <gba_eeprom_mode>:
+
+// ---------- EEPROM ----------
+
+// Set address/data all high (includes AD0/A23)
+void gba_eeprom_mode (void) {
+	GBA_DDR_ROM_ADDR7_0 = 0xFF;
+ 184:	8f ef       	ldi	r24, 0xFF	; 255
+ 186:	87 bb       	out	0x17, r24	; 23
+	GBA_DDR_ROM_ADDR15_8 = 0xFF;
+ 188:	8a bb       	out	0x1a, r24	; 26
+	GBA_DDR_ROM_ADDR23_16 = 0xFF;
+ 18a:	84 bb       	out	0x14, r24	; 20
+	GBA_PORT_ROM_ADDR7_0 = 0x80;
+ 18c:	90 e8       	ldi	r25, 0x80	; 128
+ 18e:	98 bb       	out	0x18, r25	; 24
+	GBA_PORT_ROM_ADDR15_8 = 0xFF;
+ 190:	8b bb       	out	0x1b, r24	; 27
+	GBA_PORT_ROM_ADDR23_16 = 0xFF;
+ 192:	85 bb       	out	0x15, r24	; 21
+ 194:	08 95       	ret
+
+00000196 <gba_eeprom_set_address>:
+}
+
+// Send out EEPROM address serially (WR clock, AD0 data out)
+void gba_eeprom_set_address(uint16_t address, uint8_t eepromSize, uint8_t command) {
+	cs_mreqPin_low;
+ 196:	94 98       	cbi	0x12, 4	; 18
+	
+	int8_t x = 0;
+	if (eepromSize == EEPROM_64KBIT) {
+ 198:	62 30       	cpi	r22, 0x02	; 2
+ 19a:	49 f4       	brne	.+18     	; 0x1ae <gba_eeprom_set_address+0x18>
+		if (command == EEPROM_READ) {
+ 19c:	41 11       	cpse	r20, r1
+ 19e:	05 c0       	rjmp	.+10     	; 0x1aa <gba_eeprom_set_address+0x14>
+			address |= (1<<15) | (1<<14); // Set upper 2 bits high for read request
+ 1a0:	90 6c       	ori	r25, 0xC0	; 192
+		}
+		else {
+			address |= (1<<15); // Set upper 1 bit high for write request
+		}
+		x = 15;
+ 1a2:	2f e0       	ldi	r18, 0x0F	; 15
+		x = 7;
+	}
+	
+	// Loop through address, 8 or 16 bits depending on EEPROM (includes the 2 bits for request type)
+	while (x >= 0) {
+		if (address & (1<<x)) {
+ 1a4:	e1 e0       	ldi	r30, 0x01	; 1
+ 1a6:	f0 e0       	ldi	r31, 0x00	; 0
+ 1a8:	13 c0       	rjmp	.+38     	; 0x1d0 <gba_eeprom_set_address+0x3a>
+	if (eepromSize == EEPROM_64KBIT) {
+		if (command == EEPROM_READ) {
+			address |= (1<<15) | (1<<14); // Set upper 2 bits high for read request
+		}
+		else {
+			address |= (1<<15); // Set upper 1 bit high for write request
+ 1aa:	90 68       	ori	r25, 0x80	; 128
+ 1ac:	fa cf       	rjmp	.-12     	; 0x1a2 <gba_eeprom_set_address+0xc>
+		}
+		x = 15;
+	}
+	else {
+		if (command == EEPROM_READ) {
+ 1ae:	41 11       	cpse	r20, r1
+ 1b0:	02 c0       	rjmp	.+4      	; 0x1b6 <gba_eeprom_set_address+0x20>
+			address |= (1<<7) | (1<<6);
+ 1b2:	80 6c       	ori	r24, 0xC0	; 192
+ 1b4:	01 c0       	rjmp	.+2      	; 0x1b8 <gba_eeprom_set_address+0x22>
+		}
+		else {
+			address |= (1<<7);
+ 1b6:	80 68       	ori	r24, 0x80	; 128
+		}
+		x = 7;
+ 1b8:	27 e0       	ldi	r18, 0x07	; 7
+ 1ba:	f4 cf       	rjmp	.-24     	; 0x1a4 <gba_eeprom_set_address+0xe>
+	while (x >= 0) {
+		if (address & (1<<x)) {
+			ad0Pin_high;
+		}
+		else {
+			ad0Pin_low;
+ 1bc:	c0 98       	cbi	0x18, 0	; 24
+		}
+		
+		wrPin_low; // CLK
+ 1be:	96 98       	cbi	0x12, 6	; 18
+		asm ("nop");
+ 1c0:	00 00       	nop
+		asm ("nop");
+ 1c2:	00 00       	nop
+		wrPin_high; 
+ 1c4:	96 9a       	sbi	0x12, 6	; 18
+		asm ("nop");
+ 1c6:	00 00       	nop
+		asm ("nop");
+ 1c8:	00 00       	nop
+ 1ca:	21 50       	subi	r18, 0x01	; 1
+		}
+		x = 7;
+	}
+	
+	// Loop through address, 8 or 16 bits depending on EEPROM (includes the 2 bits for request type)
+	while (x >= 0) {
+ 1cc:	27 fd       	sbrc	r18, 7
+ 1ce:	0d c0       	rjmp	.+26     	; 0x1ea <gba_eeprom_set_address+0x54>
+		if (address & (1<<x)) {
+ 1d0:	bf 01       	movw	r22, r30
+ 1d2:	02 2e       	mov	r0, r18
+ 1d4:	02 c0       	rjmp	.+4      	; 0x1da <gba_eeprom_set_address+0x44>
+ 1d6:	66 0f       	add	r22, r22
+ 1d8:	77 1f       	adc	r23, r23
+ 1da:	0a 94       	dec	r0
+ 1dc:	e2 f7       	brpl	.-8      	; 0x1d6 <gba_eeprom_set_address+0x40>
+ 1de:	68 23       	and	r22, r24
+ 1e0:	79 23       	and	r23, r25
+ 1e2:	67 2b       	or	r22, r23
+ 1e4:	59 f3       	breq	.-42     	; 0x1bc <gba_eeprom_set_address+0x26>
+			ad0Pin_high;
+ 1e6:	c0 9a       	sbi	0x18, 0	; 24
+ 1e8:	ea cf       	rjmp	.-44     	; 0x1be <gba_eeprom_set_address+0x28>
+		
+		x--;
+	}
+	
+	// Only send stop bit (0) and WR/CS high if reading, as writing is done in 1 continuous chunk
+	if (command == EEPROM_READ) {  
+ 1ea:	41 11       	cpse	r20, r1
+ 1ec:	07 c0       	rjmp	.+14     	; 0x1fc <gba_eeprom_set_address+0x66>
+		ad0Pin_low;
+ 1ee:	c0 98       	cbi	0x18, 0	; 24
+		asm ("nop");
+ 1f0:	00 00       	nop
+		wrPin_low;
+ 1f2:	96 98       	cbi	0x12, 6	; 18
+		asm ("nop");
+ 1f4:	00 00       	nop
+		asm ("nop");
+ 1f6:	00 00       	nop
+		
+		wrPin_high;
+ 1f8:	96 9a       	sbi	0x12, 6	; 18
+		cs_mreqPin_high;
+ 1fa:	94 9a       	sbi	0x12, 4	; 18
+ 1fc:	08 95       	ret
+
+000001fe <gba_eeprom_read>:
+	}
+}
+
+// Read 8 bytes from the EEPROM address, data is valid on rising edge
+void gba_eeprom_read(uint16_t address, uint8_t eepromSize) {
+	gba_eeprom_set_address(address, eepromSize, EEPROM_READ);
+ 1fe:	40 e0       	ldi	r20, 0x00	; 0
+ 200:	ca df       	rcall	.-108    	; 0x196 <gba_eeprom_set_address>
+	
+	// Set AD0 pin as input
+	GBA_PORT_EEPROM_DATA7_0 &= ~(1<<AD0);
+ 202:	c0 98       	cbi	0x18, 0	; 24
+	GBA_DDR_EEPROM_DATA7_0 &= ~(1<<AD0);
+ 204:	b8 98       	cbi	0x17, 0	; 23
+	
+	cs_mreqPin_low;
+ 206:	94 98       	cbi	0x12, 4	; 18
+ 208:	84 e0       	ldi	r24, 0x04	; 4
+	
+	// Ignore first 4 bits
+	for (int8_t x = 0; x < 4; x++) {
+		rdPin_low; // CLK
+ 20a:	95 98       	cbi	0x12, 5	; 18
+		asm ("nop");
+ 20c:	00 00       	nop
+		asm ("nop");
+ 20e:	00 00       	nop
+		rdPin_high; 
+ 210:	95 9a       	sbi	0x12, 5	; 18
+		asm ("nop");
+ 212:	00 00       	nop
+		asm ("nop");
+ 214:	00 00       	nop
+ 216:	81 50       	subi	r24, 0x01	; 1
+	GBA_DDR_EEPROM_DATA7_0 &= ~(1<<AD0);
+	
+	cs_mreqPin_low;
+	
+	// Ignore first 4 bits
+	for (int8_t x = 0; x < 4; x++) {
+ 218:	c1 f7       	brne	.-16     	; 0x20a <gba_eeprom_read+0xc>
+ 21a:	e0 ef       	ldi	r30, 0xF0	; 240
+ 21c:	f0 e0       	ldi	r31, 0x00	; 0
+			asm ("nop");
+			asm ("nop");
+			rdPin_high;
+			
+			if (GBA_PIN_EEPROM_DATA7_0 & (1<<AD0)) {
+				data |= (1<<x);
+ 21e:	41 e0       	ldi	r20, 0x01	; 1
+ 220:	50 e0       	ldi	r21, 0x00	; 0
+	
+	// Set AD0 pin as input
+	GBA_PORT_EEPROM_DATA7_0 &= ~(1<<AD0);
+	GBA_DDR_EEPROM_DATA7_0 &= ~(1<<AD0);
+	
+	cs_mreqPin_low;
+ 222:	87 e0       	ldi	r24, 0x07	; 7
+ 224:	90 e0       	ldi	r25, 0x00	; 0
+ 226:	20 e0       	ldi	r18, 0x00	; 0
+	
+	// Read out 64 bits
+	for (uint8_t c = 0; c < 8; c++) {
+		uint8_t data = 0;
+		for (int8_t x = 7; x >= 0; x--) {
+			rdPin_low; // CLK
+ 228:	95 98       	cbi	0x12, 5	; 18
+			asm ("nop");
+ 22a:	00 00       	nop
+			asm ("nop");
+ 22c:	00 00       	nop
+			rdPin_high;
+ 22e:	95 9a       	sbi	0x12, 5	; 18
+			
+			if (GBA_PIN_EEPROM_DATA7_0 & (1<<AD0)) {
+ 230:	b0 9b       	sbis	0x16, 0	; 22
+ 232:	07 c0       	rjmp	.+14     	; 0x242 <gba_eeprom_read+0x44>
+				data |= (1<<x);
+ 234:	ba 01       	movw	r22, r20
+ 236:	08 2e       	mov	r0, r24
+ 238:	01 c0       	rjmp	.+2      	; 0x23c <gba_eeprom_read+0x3e>
+ 23a:	66 0f       	add	r22, r22
+ 23c:	0a 94       	dec	r0
+ 23e:	ea f7       	brpl	.-6      	; 0x23a <gba_eeprom_read+0x3c>
+ 240:	26 2b       	or	r18, r22
+ 242:	01 97       	sbiw	r24, 0x01	; 1
+ 244:	88 f7       	brcc	.-30     	; 0x228 <gba_eeprom_read+0x2a>
+			}
+		}
+		eepromBuffer[c] = data;
+ 246:	21 93       	st	Z+, r18
+		asm ("nop");
+		asm ("nop");
+	}
+	
+	// Read out 64 bits
+	for (uint8_t c = 0; c < 8; c++) {
+ 248:	80 e0       	ldi	r24, 0x00	; 0
+ 24a:	e8 3f       	cpi	r30, 0xF8	; 248
+ 24c:	f8 07       	cpc	r31, r24
+ 24e:	49 f7       	brne	.-46     	; 0x222 <gba_eeprom_read+0x24>
+			}
+		}
+		eepromBuffer[c] = data;
+	}
+	
+	cs_mreqPin_high;
+ 250:	94 9a       	sbi	0x12, 4	; 18
+	
+	// Set AD0 pin as output
+	GBA_PORT_EEPROM_DATA7_0 |= (1<<AD0);
+ 252:	c0 9a       	sbi	0x18, 0	; 24
+	GBA_DDR_EEPROM_DATA7_0 |= (1<<AD0);
+ 254:	b8 9a       	sbi	0x17, 0	; 23
+ 256:	08 95       	ret
+
+00000258 <gba_eeprom_write>:
+}
+
+// Write 8 bytes to the EEPROM address
+void gba_eeprom_write(uint16_t address, uint8_t eepromSize) {
+	gba_eeprom_set_address(address, eepromSize, EEPROM_WRITE);
+ 258:	41 e0       	ldi	r20, 0x01	; 1
+ 25a:	9d df       	rcall	.-198    	; 0x196 <gba_eeprom_set_address>
+ 25c:	e0 ef       	ldi	r30, 0xF0	; 240
+ 25e:	f0 e0       	ldi	r31, 0x00	; 0
+ 260:	48 e0       	ldi	r20, 0x08	; 8
+	GBA_PORT_EEPROM_DATA7_0 |= (1<<AD0);
+	GBA_DDR_EEPROM_DATA7_0 |= (1<<AD0);
+}
+
+// Write 8 bytes to the EEPROM address
+void gba_eeprom_write(uint16_t address, uint8_t eepromSize) {
+ 262:	27 e0       	ldi	r18, 0x07	; 7
+ 264:	30 e0       	ldi	r19, 0x00	; 0
+	gba_eeprom_set_address(address, eepromSize, EEPROM_WRITE);
+	
+	// Write 64 bits
+	for (uint8_t c = 0; c < 8; c++) {
+		for (int8_t x = 7; x >= 0; x--) {
+			if (eepromBuffer[c] & (1<<x)) {
+ 266:	80 81       	ld	r24, Z
+ 268:	90 e0       	ldi	r25, 0x00	; 0
+ 26a:	02 2e       	mov	r0, r18
+ 26c:	02 c0       	rjmp	.+4      	; 0x272 <__stack+0x13>
+ 26e:	95 95       	asr	r25
+ 270:	87 95       	ror	r24
+ 272:	0a 94       	dec	r0
+ 274:	e2 f7       	brpl	.-8      	; 0x26e <__stack+0xf>
+ 276:	80 ff       	sbrs	r24, 0
+ 278:	02 c0       	rjmp	.+4      	; 0x27e <__stack+0x1f>
+				ad0Pin_high;
+ 27a:	c0 9a       	sbi	0x18, 0	; 24
+ 27c:	01 c0       	rjmp	.+2      	; 0x280 <__stack+0x21>
+			}
+			else {
+				ad0Pin_low;
+ 27e:	c0 98       	cbi	0x18, 0	; 24
+			}
+			
+			wrPin_low; // CLK
+ 280:	96 98       	cbi	0x12, 6	; 18
+			asm ("nop");
+ 282:	00 00       	nop
+			asm ("nop");
+ 284:	00 00       	nop
+			wrPin_high; 
+ 286:	96 9a       	sbi	0x12, 6	; 18
+			asm ("nop");
+ 288:	00 00       	nop
+			asm ("nop");
+ 28a:	00 00       	nop
+ 28c:	21 50       	subi	r18, 0x01	; 1
+ 28e:	31 09       	sbc	r19, r1
+ 290:	50 f7       	brcc	.-44     	; 0x266 <__stack+0x7>
+ 292:	41 50       	subi	r20, 0x01	; 1
+ 294:	31 96       	adiw	r30, 0x01	; 1
+// Write 8 bytes to the EEPROM address
+void gba_eeprom_write(uint16_t address, uint8_t eepromSize) {
+	gba_eeprom_set_address(address, eepromSize, EEPROM_WRITE);
+	
+	// Write 64 bits
+	for (uint8_t c = 0; c < 8; c++) {
+ 296:	41 11       	cpse	r20, r1
+ 298:	e4 cf       	rjmp	.-56     	; 0x262 <__stack+0x3>
+			asm ("nop");
+		}
+	}
+	
+	// Last bit low
+	ad0Pin_low;
+ 29a:	c0 98       	cbi	0x18, 0	; 24
+	wrPin_low; // CLK
+ 29c:	96 98       	cbi	0x12, 6	; 18
+	asm ("nop");
+ 29e:	00 00       	nop
+	asm ("nop");
+ 2a0:	00 00       	nop
+	wrPin_high; 
+ 2a2:	96 9a       	sbi	0x12, 6	; 18
+	asm ("nop");
+ 2a4:	00 00       	nop
+	asm ("nop");
+ 2a6:	00 00       	nop
+	
+	cs_mreqPin_high;
+ 2a8:	94 9a       	sbi	0x12, 4	; 18
+ 2aa:	08 95       	ret
+
+000002ac <flash_write_bus_cycle>:
+
+
+// ---------- FLASH ----------
+
+// Set the address and data for the write byte cycle to the flash
+void flash_write_bus_cycle(uint16_t address, uint8_t data) {
+ 2ac:	cf 93       	push	r28
+ 2ae:	c6 2f       	mov	r28, r22
+	GBA_DDR_RAM_DATA7_0 = 0xFF; // Set data pins as outputs
+ 2b0:	2f ef       	ldi	r18, 0xFF	; 255
+ 2b2:	24 bb       	out	0x14, r18	; 20
+	set_16bit_address(address);
+ 2b4:	ff de       	rcall	.-514    	; 0xb4 <set_16bit_address>
+	GBA_PORT_RAM_DATA7_0 = data;
+ 2b6:	c5 bb       	out	0x15, r28	; 21
+	
+	wrPin_low;
+ 2b8:	96 98       	cbi	0x12, 6	; 18
+	cs2Pin_low;
+ 2ba:	3a 98       	cbi	0x07, 2	; 7
+	asm volatile("nop");
+ 2bc:	00 00       	nop
+	wrPin_high;
+ 2be:	96 9a       	sbi	0x12, 6	; 18
+	cs2Pin_high;
+ 2c0:	3a 9a       	sbi	0x07, 2	; 7
+}
+ 2c2:	cf 91       	pop	r28
+ 2c4:	08 95       	ret
+
+000002c6 <flash_read_chip_id>:
+
+// Read the flash manufacturer and device ID (Software ID)
+void flash_read_chip_id(void) {
+ 2c6:	cf 93       	push	r28
+ 2c8:	df 93       	push	r29
+	flash_write_bus_cycle(0x5555, 0xAA);
+ 2ca:	6a ea       	ldi	r22, 0xAA	; 170
+ 2cc:	85 e5       	ldi	r24, 0x55	; 85
+ 2ce:	95 e5       	ldi	r25, 0x55	; 85
+ 2d0:	ed df       	rcall	.-38     	; 0x2ac <flash_write_bus_cycle>
+	flash_write_bus_cycle(0x2AAA, 0x55);
+ 2d2:	65 e5       	ldi	r22, 0x55	; 85
+ 2d4:	8a ea       	ldi	r24, 0xAA	; 170
+ 2d6:	9a e2       	ldi	r25, 0x2A	; 42
+ 2d8:	e9 df       	rcall	.-46     	; 0x2ac <flash_write_bus_cycle>
+	flash_write_bus_cycle(0x5555, 0x90); // Software ID entry
+ 2da:	60 e9       	ldi	r22, 0x90	; 144
+ 2dc:	85 e5       	ldi	r24, 0x55	; 85
+ 2de:	95 e5       	ldi	r25, 0x55	; 85
+ 2e0:	e5 df       	rcall	.-54     	; 0x2ac <flash_write_bus_cycle>
+	#else
+		//round up by default
+		__ticks_dc = (uint32_t)(ceil(fabs(__tmp)));
+	#endif
+
+	__builtin_avr_delay_cycles(__ticks_dc);
+ 2e2:	8f e3       	ldi	r24, 0x3F	; 63
+ 2e4:	9c e9       	ldi	r25, 0x9C	; 156
+ 2e6:	01 97       	sbiw	r24, 0x01	; 1
+ 2e8:	f1 f7       	brne	.-4      	; 0x2e6 <flash_read_chip_id+0x20>
+ 2ea:	00 c0       	rjmp	.+0      	; 0x2ec <flash_read_chip_id+0x26>
+ 2ec:	00 00       	nop
+	_delay_ms(20); // Wait a little (for Atmel chip)
+	
+	// Set data as inputs
+	GBA_PORT_RAM_DATA7_0 = 0;
+ 2ee:	15 ba       	out	0x15, r1	; 21
+	GBA_DDR_RAM_DATA7_0 = 0;
+ 2f0:	14 ba       	out	0x14, r1	; 20
+	
+	// Read and transmit the 2 bytes
+	flashChipIdBuffer[0] = gba_read_ram_8bit_data(0x0000);
+ 2f2:	80 e0       	ldi	r24, 0x00	; 0
+ 2f4:	90 e0       	ldi	r25, 0x00	; 0
+ 2f6:	2d df       	rcall	.-422    	; 0x152 <gba_read_ram_8bit_data>
+ 2f8:	cc e6       	ldi	r28, 0x6C	; 108
+ 2fa:	d0 e0       	ldi	r29, 0x00	; 0
+ 2fc:	88 83       	st	Y, r24
+	flashChipIdBuffer[1] = gba_read_ram_8bit_data(0x0001);
+ 2fe:	81 e0       	ldi	r24, 0x01	; 1
+ 300:	90 e0       	ldi	r25, 0x00	; 0
+ 302:	27 df       	rcall	.-434    	; 0x152 <gba_read_ram_8bit_data>
+ 304:	89 83       	std	Y+1, r24	; 0x01
+	
+	flash_write_bus_cycle(0x5555, 0xAA);
+ 306:	6a ea       	ldi	r22, 0xAA	; 170
+ 308:	85 e5       	ldi	r24, 0x55	; 85
+ 30a:	95 e5       	ldi	r25, 0x55	; 85
+ 30c:	cf df       	rcall	.-98     	; 0x2ac <flash_write_bus_cycle>
+	flash_write_bus_cycle(0x2AAA, 0x55);
+ 30e:	65 e5       	ldi	r22, 0x55	; 85
+ 310:	8a ea       	ldi	r24, 0xAA	; 170
+ 312:	9a e2       	ldi	r25, 0x2A	; 42
+ 314:	cb df       	rcall	.-106    	; 0x2ac <flash_write_bus_cycle>
+	flash_write_bus_cycle(0x5555, 0xF0); // Software ID exit
+ 316:	60 ef       	ldi	r22, 0xF0	; 240
+ 318:	85 e5       	ldi	r24, 0x55	; 85
+ 31a:	95 e5       	ldi	r25, 0x55	; 85
+ 31c:	c7 df       	rcall	.-114    	; 0x2ac <flash_write_bus_cycle>
+ 31e:	8f e3       	ldi	r24, 0x3F	; 63
+ 320:	9c e9       	ldi	r25, 0x9C	; 156
+ 322:	01 97       	sbiw	r24, 0x01	; 1
+ 324:	f1 f7       	brne	.-4      	; 0x322 <flash_read_chip_id+0x5c>
+ 326:	00 c0       	rjmp	.+0      	; 0x328 <flash_read_chip_id+0x62>
+ 328:	00 00       	nop
+	_delay_ms(20); // Wait a little (for Atmel chip)
+}
+ 32a:	df 91       	pop	r29
+ 32c:	cf 91       	pop	r28
+ 32e:	08 95       	ret
+
+00000330 <flash_switch_bank>:
+
+// Switch banks on the Flash
+void flash_switch_bank(uint8_t bank) {
+ 330:	cf 93       	push	r28
+ 332:	c8 2f       	mov	r28, r24
+	flash_write_bus_cycle(0x5555, 0xAA);
+ 334:	6a ea       	ldi	r22, 0xAA	; 170
+ 336:	85 e5       	ldi	r24, 0x55	; 85
+ 338:	95 e5       	ldi	r25, 0x55	; 85
+ 33a:	b8 df       	rcall	.-144    	; 0x2ac <flash_write_bus_cycle>
+	flash_write_bus_cycle(0x2AAA, 0x55);
+ 33c:	65 e5       	ldi	r22, 0x55	; 85
+ 33e:	8a ea       	ldi	r24, 0xAA	; 170
+ 340:	9a e2       	ldi	r25, 0x2A	; 42
+ 342:	b4 df       	rcall	.-152    	; 0x2ac <flash_write_bus_cycle>
+	
+	flash_write_bus_cycle(0x5555, 0xB0);
+ 344:	60 eb       	ldi	r22, 0xB0	; 176
+ 346:	85 e5       	ldi	r24, 0x55	; 85
+ 348:	95 e5       	ldi	r25, 0x55	; 85
+ 34a:	b0 df       	rcall	.-160    	; 0x2ac <flash_write_bus_cycle>
+	flash_write_bus_cycle(0x0000, bank);
+ 34c:	6c 2f       	mov	r22, r28
+ 34e:	80 e0       	ldi	r24, 0x00	; 0
+ 350:	90 e0       	ldi	r25, 0x00	; 0
+}
+ 352:	cf 91       	pop	r28
+void flash_switch_bank(uint8_t bank) {
+	flash_write_bus_cycle(0x5555, 0xAA);
+	flash_write_bus_cycle(0x2AAA, 0x55);
+	
+	flash_write_bus_cycle(0x5555, 0xB0);
+	flash_write_bus_cycle(0x0000, bank);
+ 354:	ab cf       	rjmp	.-170    	; 0x2ac <flash_write_bus_cycle>
+
+00000356 <flash_erase_4k_sector>:
+}
+
+// Erase 4K sector on Flash, expects first sector to start at 0, left shifts by 12 (A15-A12 to select sector for 512Kbit)
+// Takes 25ms after last command to erase sector
+void flash_erase_4k_sector(uint8_t sector) {
+ 356:	cf 93       	push	r28
+ 358:	c8 2f       	mov	r28, r24
+	flash_write_bus_cycle(0x5555, 0xAA);
+ 35a:	6a ea       	ldi	r22, 0xAA	; 170
+ 35c:	85 e5       	ldi	r24, 0x55	; 85
+ 35e:	95 e5       	ldi	r25, 0x55	; 85
+ 360:	a5 df       	rcall	.-182    	; 0x2ac <flash_write_bus_cycle>
+	flash_write_bus_cycle(0x2AAA, 0x55);
+ 362:	65 e5       	ldi	r22, 0x55	; 85
+ 364:	8a ea       	ldi	r24, 0xAA	; 170
+ 366:	9a e2       	ldi	r25, 0x2A	; 42
+ 368:	a1 df       	rcall	.-190    	; 0x2ac <flash_write_bus_cycle>
+	flash_write_bus_cycle(0x5555, 0x80);
+ 36a:	60 e8       	ldi	r22, 0x80	; 128
+ 36c:	85 e5       	ldi	r24, 0x55	; 85
+ 36e:	95 e5       	ldi	r25, 0x55	; 85
+ 370:	9d df       	rcall	.-198    	; 0x2ac <flash_write_bus_cycle>
+	flash_write_bus_cycle(0x5555, 0xAA);
+ 372:	6a ea       	ldi	r22, 0xAA	; 170
+ 374:	85 e5       	ldi	r24, 0x55	; 85
+ 376:	95 e5       	ldi	r25, 0x55	; 85
+ 378:	99 df       	rcall	.-206    	; 0x2ac <flash_write_bus_cycle>
+	flash_write_bus_cycle(0x2AAA, 0x55);
+ 37a:	65 e5       	ldi	r22, 0x55	; 85
+ 37c:	8a ea       	ldi	r24, 0xAA	; 170
+ 37e:	9a e2       	ldi	r25, 0x2A	; 42
+ 380:	95 df       	rcall	.-214    	; 0x2ac <flash_write_bus_cycle>
+	
+	flash_write_bus_cycle((uint16_t) sector << 12, 0x30);
+ 382:	60 e3       	ldi	r22, 0x30	; 48
+ 384:	80 e0       	ldi	r24, 0x00	; 0
+ 386:	9c 2f       	mov	r25, r28
+ 388:	92 95       	swap	r25
+ 38a:	90 7f       	andi	r25, 0xF0	; 240
+ 38c:	8f df       	rcall	.-226    	; 0x2ac <flash_write_bus_cycle>
+ 38e:	8f e4       	ldi	r24, 0x4F	; 79
+ 390:	93 ec       	ldi	r25, 0xC3	; 195
+ 392:	01 97       	sbiw	r24, 0x01	; 1
+ 394:	f1 f7       	brne	.-4      	; 0x392 <flash_erase_4k_sector+0x3c>
+ 396:	00 c0       	rjmp	.+0      	; 0x398 <flash_erase_4k_sector+0x42>
+ 398:	00 00       	nop
+	_delay_ms(25); // Wait 25ms for sector erase
+}
+ 39a:	cf 91       	pop	r28
+ 39c:	08 95       	ret
+
+0000039e <flash_write_byte>:
+
+// Write a single byte to the Flash address
+// Takes 20us to program Flash
+void flash_write_byte(uint16_t address, uint8_t data) {
+ 39e:	1f 93       	push	r17
+ 3a0:	cf 93       	push	r28
+ 3a2:	df 93       	push	r29
+ 3a4:	ec 01       	movw	r28, r24
+ 3a6:	16 2f       	mov	r17, r22
+	flash_write_bus_cycle(0x5555, 0xAA);
+ 3a8:	6a ea       	ldi	r22, 0xAA	; 170
+ 3aa:	85 e5       	ldi	r24, 0x55	; 85
+ 3ac:	95 e5       	ldi	r25, 0x55	; 85
+ 3ae:	7e df       	rcall	.-260    	; 0x2ac <flash_write_bus_cycle>
+	flash_write_bus_cycle(0x2AAA, 0x55);
+ 3b0:	65 e5       	ldi	r22, 0x55	; 85
+ 3b2:	8a ea       	ldi	r24, 0xAA	; 170
+ 3b4:	9a e2       	ldi	r25, 0x2A	; 42
+ 3b6:	7a df       	rcall	.-268    	; 0x2ac <flash_write_bus_cycle>
+	flash_write_bus_cycle(0x5555, 0xA0);
+ 3b8:	60 ea       	ldi	r22, 0xA0	; 160
+ 3ba:	85 e5       	ldi	r24, 0x55	; 85
+ 3bc:	95 e5       	ldi	r25, 0x55	; 85
+ 3be:	76 df       	rcall	.-276    	; 0x2ac <flash_write_bus_cycle>
+	
+	flash_write_bus_cycle(address, data);
+ 3c0:	61 2f       	mov	r22, r17
+ 3c2:	ce 01       	movw	r24, r28
+ 3c4:	73 df       	rcall	.-282    	; 0x2ac <flash_write_bus_cycle>
+	#else
+		//round up by default
+		__ticks_dc = (uint32_t)(ceil(fabs(__tmp)));
+	#endif
+
+	__builtin_avr_delay_cycles(__ticks_dc);
+ 3c6:	85 e3       	ldi	r24, 0x35	; 53
+ 3c8:	8a 95       	dec	r24
+ 3ca:	f1 f7       	brne	.-4      	; 0x3c8 <flash_write_byte+0x2a>
+ 3cc:	00 00       	nop
+	_delay_us(20); // Wait byte program time
+}
+ 3ce:	df 91       	pop	r29
+ 3d0:	cf 91       	pop	r28
+ 3d2:	1f 91       	pop	r17
+ 3d4:	08 95       	ret
+
+000003d6 <flash_write_sector>:
+
+// Write a sector (128 bytes) to the Atmel flash
+// Takes 20ms for write cycle
+void flash_write_sector(uint16_t sector) {
+ 3d6:	ef 92       	push	r14
+ 3d8:	ff 92       	push	r15
+ 3da:	0f 93       	push	r16
+ 3dc:	1f 93       	push	r17
+ 3de:	cf 93       	push	r28
+ 3e0:	df 93       	push	r29
+ 3e2:	8c 01       	movw	r16, r24
+	flash_write_bus_cycle(0x5555, 0xAA);
+ 3e4:	6a ea       	ldi	r22, 0xAA	; 170
+ 3e6:	85 e5       	ldi	r24, 0x55	; 85
+ 3e8:	95 e5       	ldi	r25, 0x55	; 85
+ 3ea:	60 df       	rcall	.-320    	; 0x2ac <flash_write_bus_cycle>
+	flash_write_bus_cycle(0x2AAA, 0x55);
+ 3ec:	65 e5       	ldi	r22, 0x55	; 85
+ 3ee:	8a ea       	ldi	r24, 0xAA	; 170
+ 3f0:	9a e2       	ldi	r25, 0x2A	; 42
+ 3f2:	5c df       	rcall	.-328    	; 0x2ac <flash_write_bus_cycle>
+	flash_write_bus_cycle(0x5555, 0xA0);
+ 3f4:	60 ea       	ldi	r22, 0xA0	; 160
+ 3f6:	85 e5       	ldi	r24, 0x55	; 85
+ 3f8:	95 e5       	ldi	r25, 0x55	; 85
+ 3fa:	58 df       	rcall	.-336    	; 0x2ac <flash_write_bus_cycle>
+	
+	// Write the bytes (A0-A6 byte address, A7-A15 sector address)
+	for (uint8_t x = 0; x < 128; x++) {
+		flash_write_bus_cycle((uint16_t) (sector << 7) | (uint16_t) x, receivedBuffer[x]);
+ 3fc:	16 95       	lsr	r17
+ 3fe:	10 2f       	mov	r17, r16
+ 400:	00 27       	eor	r16, r16
+ 402:	17 95       	ror	r17
+ 404:	07 95       	ror	r16
+ 406:	9e e6       	ldi	r25, 0x6E	; 110
+ 408:	e9 2e       	mov	r14, r25
+ 40a:	90 e0       	ldi	r25, 0x00	; 0
+ 40c:	f9 2e       	mov	r15, r25
+ 40e:	c0 e0       	ldi	r28, 0x00	; 0
+ 410:	d0 e0       	ldi	r29, 0x00	; 0
+ 412:	f7 01       	movw	r30, r14
+ 414:	61 91       	ld	r22, Z+
+ 416:	7f 01       	movw	r14, r30
+ 418:	ce 01       	movw	r24, r28
+ 41a:	80 2b       	or	r24, r16
+ 41c:	91 2b       	or	r25, r17
+ 41e:	46 df       	rcall	.-372    	; 0x2ac <flash_write_bus_cycle>
+ 420:	21 96       	adiw	r28, 0x01	; 1
+	flash_write_bus_cycle(0x5555, 0xAA);
+	flash_write_bus_cycle(0x2AAA, 0x55);
+	flash_write_bus_cycle(0x5555, 0xA0);
+	
+	// Write the bytes (A0-A6 byte address, A7-A15 sector address)
+	for (uint8_t x = 0; x < 128; x++) {
+ 422:	c0 38       	cpi	r28, 0x80	; 128
+ 424:	d1 05       	cpc	r29, r1
+ 426:	a9 f7       	brne	.-22     	; 0x412 <__LOCK_REGION_LENGTH__+0x12>
+	#else
+		//round up by default
+		__ticks_dc = (uint32_t)(ceil(fabs(__tmp)));
+	#endif
+
+	__builtin_avr_delay_cycles(__ticks_dc);
+ 428:	8f e3       	ldi	r24, 0x3F	; 63
+ 42a:	9c e9       	ldi	r25, 0x9C	; 156
+ 42c:	01 97       	sbiw	r24, 0x01	; 1
+ 42e:	f1 f7       	brne	.-4      	; 0x42c <__LOCK_REGION_LENGTH__+0x2c>
+ 430:	00 c0       	rjmp	.+0      	; 0x432 <__LOCK_REGION_LENGTH__+0x32>
+ 432:	00 00       	nop
+		flash_write_bus_cycle((uint16_t) (sector << 7) | (uint16_t) x, receivedBuffer[x]);
+	}
+	_delay_ms(20); // Wait sector program time
+}
+ 434:	df 91       	pop	r29
+ 436:	cf 91       	pop	r28
+ 438:	1f 91       	pop	r17
+ 43a:	0f 91       	pop	r16
+ 43c:	ff 90       	pop	r15
+ 43e:	ef 90       	pop	r14
+ 440:	08 95       	ret
+
+00000442 <gb_flash_read_byte>:
+
+// ---------- GB FLASH CARTS ----------
+
+// Read a byte from the flash (No CS pin pulse)
+uint8_t gb_flash_read_byte(uint16_t address) {
+	PORT_DATA7_0 = 0;
+ 442:	15 ba       	out	0x15, r1	; 21
+	DDR_DATA7_0 = 0;
+ 444:	14 ba       	out	0x14, r1	; 20
+	
+	set_16bit_address(address);
+ 446:	36 de       	rcall	.-916    	; 0xb4 <set_16bit_address>
+	
+	rdPin_low;
+ 448:	95 98       	cbi	0x12, 5	; 18
+	asm volatile("nop"); // Delay a little
+ 44a:	00 00       	nop
+	asm volatile("nop");
+ 44c:	00 00       	nop
+	uint8_t data = PIN_DATA7_0; // Read data
+ 44e:	83 b3       	in	r24, 0x13	; 19
+	rdPin_high;
+ 450:	95 9a       	sbi	0x12, 5	; 18
+	
+	return data;
+}
+ 452:	08 95       	ret
+
+00000454 <gb_flash_write_bus_cycle>:
+
+// Set the address and data for the write byte cycle to the flash
+void gb_flash_write_bus_cycle(uint16_t address, uint8_t data) {
+ 454:	cf 93       	push	r28
+ 456:	c6 2f       	mov	r28, r22
+	DDR_DATA7_0 = 0xFF; // Set data pins as outputs
+ 458:	2f ef       	ldi	r18, 0xFF	; 255
+ 45a:	24 bb       	out	0x14, r18	; 20
+	set_16bit_address(address);
+ 45c:	2b de       	rcall	.-938    	; 0xb4 <set_16bit_address>
+	PORT_DATA7_0 = data;
+ 45e:	c5 bb       	out	0x15, r28	; 21
+	
+	if (flashWriteWePin == WE_AS_AUDIO_PIN) { // Audio pin
+ 460:	80 91 f8 00 	lds	r24, 0x00F8	; 0x8000f8 <flashWriteWePin>
+ 464:	81 34       	cpi	r24, 0x41	; 65
+ 466:	31 f4       	brne	.+12     	; 0x474 <gb_flash_write_bus_cycle+0x20>
+		audioPin_low; // WE low
+ 468:	39 98       	cbi	0x07, 1	; 7
+		asm volatile("nop");
+ 46a:	00 00       	nop
+		asm volatile("nop");
+ 46c:	00 00       	nop
+		asm volatile("nop");
+ 46e:	00 00       	nop
+		audioPin_high; // WE high
+ 470:	39 9a       	sbi	0x07, 1	; 7
+ 472:	05 c0       	rjmp	.+10     	; 0x47e <gb_flash_write_bus_cycle+0x2a>
+	}
+	else { // WR pin
+		wrPin_low; // WE low
+ 474:	96 98       	cbi	0x12, 6	; 18
+		asm volatile("nop");
+ 476:	00 00       	nop
+		asm volatile("nop");
+ 478:	00 00       	nop
+		asm volatile("nop");
+ 47a:	00 00       	nop
+		wrPin_high; // WE high
+ 47c:	96 9a       	sbi	0x12, 6	; 18
+	}
+}
+ 47e:	cf 91       	pop	r28
+ 480:	08 95       	ret
+
+00000482 <gb_flash_write_byte>:
+
+// Write a single byte to the Flash address. Takes 20-50us to program each byte.
+void gb_flash_write_byte(uint16_t address, uint8_t data) {
+ 482:	1f 93       	push	r17
+ 484:	cf 93       	push	r28
+ 486:	df 93       	push	r29
+ 488:	ec 01       	movw	r28, r24
+ 48a:	16 2f       	mov	r17, r22
+	gb_flash_write_bus_cycle(flashWriteCycle[0][0], flashWriteCycle[0][1]);
+ 48c:	60 91 62 00 	lds	r22, 0x0062	; 0x800062 <_edata+0x2>
+ 490:	80 91 60 00 	lds	r24, 0x0060	; 0x800060 <_edata>
+ 494:	90 91 61 00 	lds	r25, 0x0061	; 0x800061 <_edata+0x1>
+ 498:	dd df       	rcall	.-70     	; 0x454 <gb_flash_write_bus_cycle>
+	gb_flash_write_bus_cycle(flashWriteCycle[1][0], flashWriteCycle[1][1]);
+ 49a:	60 91 66 00 	lds	r22, 0x0066	; 0x800066 <_edata+0x6>
+ 49e:	80 91 64 00 	lds	r24, 0x0064	; 0x800064 <_edata+0x4>
+ 4a2:	90 91 65 00 	lds	r25, 0x0065	; 0x800065 <_edata+0x5>
+ 4a6:	d6 df       	rcall	.-84     	; 0x454 <gb_flash_write_bus_cycle>
+	gb_flash_write_bus_cycle(flashWriteCycle[2][0], flashWriteCycle[2][1]);
+ 4a8:	60 91 6a 00 	lds	r22, 0x006A	; 0x80006a <_edata+0xa>
+ 4ac:	80 91 68 00 	lds	r24, 0x0068	; 0x800068 <_edata+0x8>
+ 4b0:	90 91 69 00 	lds	r25, 0x0069	; 0x800069 <_edata+0x9>
+ 4b4:	cf df       	rcall	.-98     	; 0x454 <gb_flash_write_bus_cycle>
+	gb_flash_write_bus_cycle(address, data);
+ 4b6:	61 2f       	mov	r22, r17
+ 4b8:	ce 01       	movw	r24, r28
+ 4ba:	cc df       	rcall	.-104    	; 0x454 <gb_flash_write_bus_cycle>
+	#else
+		//round up by default
+		__ticks_dc = (uint32_t)(ceil(fabs(__tmp)));
+	#endif
+
+	__builtin_avr_delay_cycles(__ticks_dc);
+ 4bc:	85 e3       	ldi	r24, 0x35	; 53
+ 4be:	8a 95       	dec	r24
+ 4c0:	f1 f7       	brne	.-4      	; 0x4be <gb_flash_write_byte+0x3c>
+ 4c2:	00 00       	nop
+	_delay_us(20); // Wait byte program time
+	
+	// Set data pins inputs
+	PORT_DATA7_0 = 0;
+ 4c4:	15 ba       	out	0x15, r1	; 21
+	DDR_DATA7_0 = 0;
+ 4c6:	14 ba       	out	0x14, r1	; 20
+	
+	// Verify data
+	uint8_t dataVerify = gb_flash_read_byte(address);
+ 4c8:	ce 01       	movw	r24, r28
+ 4ca:	bb df       	rcall	.-138    	; 0x442 <gb_flash_read_byte>
+	while (data != dataVerify) {
+ 4cc:	81 17       	cp	r24, r17
+ 4ce:	39 f0       	breq	.+14     	; 0x4de <gb_flash_write_byte+0x5c>
+		dataVerify = gb_flash_read_byte(address);
+ 4d0:	ce 01       	movw	r24, r28
+ 4d2:	b7 df       	rcall	.-146    	; 0x442 <gb_flash_read_byte>
+ 4d4:	95 e3       	ldi	r25, 0x35	; 53
+ 4d6:	9a 95       	dec	r25
+ 4d8:	f1 f7       	brne	.-4      	; 0x4d6 <gb_flash_write_byte+0x54>
+ 4da:	00 00       	nop
+ 4dc:	f7 cf       	rjmp	.-18     	; 0x4cc <gb_flash_write_byte+0x4a>
+		_delay_us(20);
+	}
+}
+ 4de:	df 91       	pop	r29
+ 4e0:	cf 91       	pop	r28
+ 4e2:	1f 91       	pop	r17
+ 4e4:	08 95       	ret
+
+000004e6 <gba_flash_write_bus_cycle>:
+
+
+// ---------- GBA FLASH CARTS ----------
+
+// Set the 24 bit address and 16 bit data for the write byte cycle to the flash (pulse WR pin)
+void gba_flash_write_bus_cycle(uint32_t address, uint16_t data) {
+ 4e6:	cf 93       	push	r28
+ 4e8:	df 93       	push	r29
+ 4ea:	ea 01       	movw	r28, r20
+	gba_set_24bit_address(address);
+ 4ec:	0d de       	rcall	.-998    	; 0x108 <gba_set_24bit_address>
+	
+	cs_mreqPin_low;
+ 4ee:	94 98       	cbi	0x12, 4	; 18
+	
+	GBA_DDR_ROM_ADDR15_8 = 0xFF; // Set data pins as outputs
+ 4f0:	8f ef       	ldi	r24, 0xFF	; 255
+ 4f2:	8a bb       	out	0x1a, r24	; 26
+	GBA_DDR_ROM_ADDR7_0 = 0xFF;
+ 4f4:	87 bb       	out	0x17, r24	; 23
+	GBA_PORT_ROM_DATA15_8 = data >> 8; // Set data
+ 4f6:	db bb       	out	0x1b, r29	; 27
+	GBA_PORT_ROM_DATA7_0 = data & 0xFF;
+ 4f8:	c8 bb       	out	0x18, r28	; 24
+	
+	wrPin_low;
+ 4fa:	96 98       	cbi	0x12, 6	; 18
+	asm volatile("nop");
+ 4fc:	00 00       	nop
+	asm volatile("nop");
+ 4fe:	00 00       	nop
+	asm volatile("nop");
+ 500:	00 00       	nop
+	wrPin_high;
+ 502:	96 9a       	sbi	0x12, 6	; 18
+	cs_mreqPin_high;
+ 504:	94 9a       	sbi	0x12, 4	; 18
+}
+ 506:	df 91       	pop	r29
+ 508:	cf 91       	pop	r28
+ 50a:	08 95       	ret
+
+0000050c <gba_flash_write_byte_swapped>:
+
+// Write 2 bytes to the Flash address. Time to wait depends on Flash, we will query it to verify the correct data has been written.
+// Address is divided by 2 as we are in GBA mode. 
+// Data byte's bit 0 & 1 are swapped for chip commands as D0 & D1 lines are swapped
+void gba_flash_write_byte_swapped(uint32_t address, uint16_t data) {
+ 50c:	cf 92       	push	r12
+ 50e:	df 92       	push	r13
+ 510:	ef 92       	push	r14
+ 512:	ff 92       	push	r15
+ 514:	cf 93       	push	r28
+ 516:	df 93       	push	r29
+ 518:	6b 01       	movw	r12, r22
+ 51a:	7c 01       	movw	r14, r24
+ 51c:	ea 01       	movw	r28, r20
+	gba_flash_write_bus_cycle(0xAAA / 2, 0xA9);
+ 51e:	49 ea       	ldi	r20, 0xA9	; 169
+ 520:	50 e0       	ldi	r21, 0x00	; 0
+ 522:	65 e5       	ldi	r22, 0x55	; 85
+ 524:	75 e0       	ldi	r23, 0x05	; 5
+ 526:	80 e0       	ldi	r24, 0x00	; 0
+ 528:	90 e0       	ldi	r25, 0x00	; 0
+ 52a:	dd df       	rcall	.-70     	; 0x4e6 <gba_flash_write_bus_cycle>
+	gba_flash_write_bus_cycle(0x555 / 2, 0x56);
+ 52c:	46 e5       	ldi	r20, 0x56	; 86
+ 52e:	50 e0       	ldi	r21, 0x00	; 0
+ 530:	6a ea       	ldi	r22, 0xAA	; 170
+ 532:	72 e0       	ldi	r23, 0x02	; 2
+ 534:	80 e0       	ldi	r24, 0x00	; 0
+ 536:	90 e0       	ldi	r25, 0x00	; 0
+ 538:	d6 df       	rcall	.-84     	; 0x4e6 <gba_flash_write_bus_cycle>
+	gba_flash_write_bus_cycle(0xAAA / 2, 0xA0);
+ 53a:	40 ea       	ldi	r20, 0xA0	; 160
+ 53c:	50 e0       	ldi	r21, 0x00	; 0
+ 53e:	65 e5       	ldi	r22, 0x55	; 85
+ 540:	75 e0       	ldi	r23, 0x05	; 5
+ 542:	80 e0       	ldi	r24, 0x00	; 0
+ 544:	90 e0       	ldi	r25, 0x00	; 0
+ 546:	cf df       	rcall	.-98     	; 0x4e6 <gba_flash_write_bus_cycle>
+	gba_flash_write_bus_cycle(address, data);
+ 548:	ae 01       	movw	r20, r28
+ 54a:	c7 01       	movw	r24, r14
+ 54c:	b6 01       	movw	r22, r12
+ 54e:	cb df       	rcall	.-106    	; 0x4e6 <gba_flash_write_bus_cycle>
+ 550:	25 e3       	ldi	r18, 0x35	; 53
+ 552:	2a 95       	dec	r18
+ 554:	f1 f7       	brne	.-4      	; 0x552 <gba_flash_write_byte_swapped+0x46>
+ 556:	00 00       	nop
+	_delay_us(20); // Wait byte program time
+	
+	// Verify data
+	uint16_t dataVerify = gba_read_16bit_data(address);
+ 558:	c7 01       	movw	r24, r14
+ 55a:	b6 01       	movw	r22, r12
+ 55c:	eb dd       	rcall	.-1066   	; 0x134 <gba_read_16bit_data>
+	while (data != dataVerify) {
+ 55e:	8c 17       	cp	r24, r28
+ 560:	9d 07       	cpc	r25, r29
+ 562:	41 f0       	breq	.+16     	; 0x574 <gba_flash_write_byte_swapped+0x68>
+		dataVerify = gba_read_16bit_data(address);
+ 564:	c7 01       	movw	r24, r14
+ 566:	b6 01       	movw	r22, r12
+ 568:	e5 dd       	rcall	.-1078   	; 0x134 <gba_read_16bit_data>
+ 56a:	25 e3       	ldi	r18, 0x35	; 53
+ 56c:	2a 95       	dec	r18
+ 56e:	f1 f7       	brne	.-4      	; 0x56c <gba_flash_write_byte_swapped+0x60>
+ 570:	00 00       	nop
+ 572:	f5 cf       	rjmp	.-22     	; 0x55e <gba_flash_write_byte_swapped+0x52>
+		_delay_us(20);
+	}
+}
+ 574:	df 91       	pop	r29
+ 576:	cf 91       	pop	r28
+ 578:	ff 90       	pop	r15
+ 57a:	ef 90       	pop	r14
+ 57c:	df 90       	pop	r13
+ 57e:	cf 90       	pop	r12
+ 580:	08 95       	ret
+
+00000582 <setup>:
+
+
+// Setup
+void setup(void) {
+	// Turn off watchdog
+	MCUCSR &= ~(1<<WDRF);
+ 582:	84 b7       	in	r24, 0x34	; 52
+ 584:	87 7f       	andi	r24, 0xF7	; 247
+ 586:	84 bf       	out	0x34, r24	; 52
+	WDTCR = (1<<WDCE) | (1<<WDE);
+ 588:	88 e1       	ldi	r24, 0x18	; 24
+ 58a:	81 bd       	out	0x21, r24	; 33
+	WDTCR = 0;
+ 58c:	11 bc       	out	0x21, r1	; 33
+	
+	// Reset common lines
+	rd_wr_csmreq_cs2_reset();
+ 58e:	85 dd       	rcall	.-1270   	; 0x9a <rd_wr_csmreq_cs2_reset>
+	
+	// Set outputs
+	DDRD |= (1<<ACTIVITY_LED) | (1<<WR_PIN) | (1<<RD_PIN) | (1<<CS_MREQ_PIN) | (1<<LED_5V);
+ 590:	81 b3       	in	r24, 0x11	; 17
+ 592:	88 6f       	ori	r24, 0xF8	; 248
+ 594:	81 bb       	out	0x11, r24	; 17
+	DDRE |= (1<<CS2_PIN) | (1<<LED_3V);
+ 596:	86 b1       	in	r24, 0x06	; 6
+ 598:	85 60       	ori	r24, 0x05	; 5
+ 59a:	86 b9       	out	0x06, r24	; 6
+	
+	// Set all pins as inputs
+	PORT_DATA7_0 = 0;
+ 59c:	15 ba       	out	0x15, r1	; 21
+	DDR_DATA7_0 = 0;
+ 59e:	14 ba       	out	0x14, r1	; 20
+	PORT_ADDR7_0 = 0;
+ 5a0:	18 ba       	out	0x18, r1	; 24
+	DDR_ADDR7_0 = 0;
+ 5a2:	17 ba       	out	0x17, r1	; 23
+	PORT_ADDR15_8 = 0;
+ 5a4:	1b ba       	out	0x1b, r1	; 27
+	DDR_ADDR15_8 = 0;
+ 5a6:	1a ba       	out	0x1a, r1	; 26
+	
+	// Light up 3.3V or 5V
+	if (PIND & (1<<SWITCH_DETECT)) {
+ 5a8:	82 9b       	sbis	0x10, 2	; 16
+ 5aa:	03 c0       	rjmp	.+6      	; 0x5b2 <setup+0x30>
+		PORTD |= (1<<LED_5V);
+ 5ac:	97 9a       	sbi	0x12, 7	; 18
+		PORTE &= ~(1<<LED_3V);
+ 5ae:	38 98       	cbi	0x07, 0	; 7
+ 5b0:	02 c0       	rjmp	.+4      	; 0x5b6 <setup+0x34>
+	}
+	else {
+		PORTE |= (1<<LED_3V);
+ 5b2:	38 9a       	sbi	0x07, 0	; 7
+		PORTD &= ~(1<<LED_5V);
+ 5b4:	97 98       	cbi	0x12, 7	; 18
+	}
+	
+	// Light LED
+	PORTD |= (1<<ACTIVITY_LED);
+ 5b6:	93 9a       	sbi	0x12, 3	; 18
+	#else
+		//round up by default
+		__ticks_dc = (uint32_t)(ceil(fabs(__tmp)));
+	#endif
+
+	__builtin_avr_delay_cycles(__ticks_dc);
+ 5b8:	2f ef       	ldi	r18, 0xFF	; 255
+ 5ba:	84 e3       	ldi	r24, 0x34	; 52
+ 5bc:	9c e0       	ldi	r25, 0x0C	; 12
+ 5be:	21 50       	subi	r18, 0x01	; 1
+ 5c0:	80 40       	sbci	r24, 0x00	; 0
+ 5c2:	90 40       	sbci	r25, 0x00	; 0
+ 5c4:	e1 f7       	brne	.-8      	; 0x5be <setup+0x3c>
+ 5c6:	00 c0       	rjmp	.+0      	; 0x5c8 <setup+0x46>
+ 5c8:	00 00       	nop
+	_delay_ms(500);
+	PORTD &= ~(1<<ACTIVITY_LED);
+ 5ca:	93 98       	cbi	0x12, 3	; 18
+	
+	// Setup USART
+	UBRRL = 0; // 1Mbps Baud rate
+ 5cc:	19 b8       	out	0x09, r1	; 9
+	sbi(UCSRA, U2X); // Double rate
+ 5ce:	59 9a       	sbi	0x0b, 1	; 11
+	sbi(UCSRB, TXEN); // Transmitter enable
+ 5d0:	53 9a       	sbi	0x0a, 3	; 10
+	sbi(UCSRB, RXEN); // Receiver enable
+ 5d2:	54 9a       	sbi	0x0a, 4	; 10
+	
+	// Turn on interrupts
+	sei();
+ 5d4:	78 94       	sei
+ 5d6:	08 95       	ret
+
+000005d8 <main>:
+#include <string.h>
+#include "setup.c" // See defines, variables, constants, functions here
+
+
+int main(void) {
+	setup();
+ 5d8:	d4 df       	rcall	.-88     	; 0x582 <setup>
+	
+	uint32_t address = 0;
+	uint8_t eepromSize = EEPROM_4KBIT;
+	uint8_t cartMode = GB_MODE;
+	uint8_t resetCommonLines = 1;
+ 5da:	88 24       	eor	r8, r8
+ 5dc:	83 94       	inc	r8
+
+int main(void) {
+	setup();
+	
+	uint32_t address = 0;
+	uint8_t eepromSize = EEPROM_4KBIT;
+ 5de:	99 24       	eor	r9, r9
+ 5e0:	93 94       	inc	r9
+
+
+int main(void) {
+	setup();
+	
+	uint32_t address = 0;
+ 5e2:	c1 2c       	mov	r12, r1
+ 5e4:	d1 2c       	mov	r13, r1
+ 5e6:	76 01       	movw	r14, r12
+ 5e8:	3c e6       	ldi	r19, 0x6C	; 108
+ 5ea:	63 2e       	mov	r6, r19
+ 5ec:	30 e0       	ldi	r19, 0x00	; 0
+ 5ee:	73 2e       	mov	r7, r19
+ 5f0:	08 ef       	ldi	r16, 0xF8	; 248
+ 5f2:	10 e0       	ldi	r17, 0x00	; 0
+	uint8_t eepromSize = EEPROM_4KBIT;
+	uint8_t cartMode = GB_MODE;
+	uint8_t resetCommonLines = 1;
+	
+	while(1) {
+		if (resetCommonLines == 1) {
+ 5f4:	21 e0       	ldi	r18, 0x01	; 1
+ 5f6:	82 12       	cpse	r8, r18
+ 5f8:	01 c0       	rjmp	.+2      	; 0x5fc <main+0x24>
+			rd_wr_csmreq_cs2_reset();
+ 5fa:	4f dd       	rcall	.-1378   	; 0x9a <rd_wr_csmreq_cs2_reset>
+		}
+		receivedChar = USART_Receive(); // Wait for 1 byte of data
+ 5fc:	23 dd       	rcall	.-1466   	; 0x44 <USART_Receive>
+ 5fe:	80 93 ef 00 	sts	0x00EF, r24	; 0x8000ef <receivedChar>
+		
+		// Read the pin to find out which mode we are in, if it reads high, we are powered by 5V
+		if (PIND & (1<<SWITCH_DETECT)) {
+ 602:	82 9b       	sbis	0x10, 2	; 16
+ 604:	04 c0       	rjmp	.+8      	; 0x60e <main+0x36>
+			cartMode = GB_MODE;
+			PORTD |= (1<<LED_5V);
+ 606:	97 9a       	sbi	0x12, 7	; 18
+			PORTE &= ~(1<<LED_3V);
+ 608:	38 98       	cbi	0x07, 0	; 7
+		}
+		receivedChar = USART_Receive(); // Wait for 1 byte of data
+		
+		// Read the pin to find out which mode we are in, if it reads high, we are powered by 5V
+		if (PIND & (1<<SWITCH_DETECT)) {
+			cartMode = GB_MODE;
+ 60a:	81 e0       	ldi	r24, 0x01	; 1
+ 60c:	03 c0       	rjmp	.+6      	; 0x614 <main+0x3c>
+			PORTD |= (1<<LED_5V);
+			PORTE &= ~(1<<LED_3V);
+		}
+		else {
+			cartMode = GBA_MODE;
+			PORTE |= (1<<LED_3V);
+ 60e:	38 9a       	sbi	0x07, 0	; 7
+			PORTD &= ~(1<<LED_5V);
+ 610:	97 98       	cbi	0x12, 7	; 18
+			cartMode = GB_MODE;
+			PORTD |= (1<<LED_5V);
+			PORTE &= ~(1<<LED_3V);
+		}
+		else {
+			cartMode = GBA_MODE;
+ 612:	82 e0       	ldi	r24, 0x02	; 2
+			PORTE |= (1<<LED_3V);
+			PORTD &= ~(1<<LED_5V);
+		}
+		
+		// Return the cart mode in use
+		if (receivedChar == CART_MODE) {
+ 614:	90 91 ef 00 	lds	r25, 0x00EF	; 0x8000ef <receivedChar>
+ 618:	93 34       	cpi	r25, 0x43	; 67
+ 61a:	09 f4       	brne	.+2      	; 0x61e <main+0x46>
+ 61c:	eb c2       	rjmp	.+1494   	; 0xbf4 <main+0x61c>
+			USART_Transmit(cartMode);
+		}
+		
+		// Change to GB mode or GBA mode if requested
+		else if (receivedChar == GB_CART_MODE) {
+ 61e:	97 34       	cpi	r25, 0x47	; 71
+ 620:	11 f4       	brne	.+4      	; 0x626 <main+0x4e>
+			gb_mode();
+ 622:	40 dd       	rcall	.-1408   	; 0xa4 <gb_mode>
+ 624:	e7 cf       	rjmp	.-50     	; 0x5f4 <main+0x1c>
+		}
+		else if (receivedChar == GBA_CART_MODE) {
+ 626:	97 36       	cpi	r25, 0x67	; 103
+ 628:	09 f4       	brne	.+2      	; 0x62c <main+0x54>
+ 62a:	c5 c0       	rjmp	.+394    	; 0x7b6 <main+0x1de>
+			gba_mode();
+		}
+		
+		// Set address
+		else if (receivedChar == SET_START_ADDRESS) {
+ 62c:	91 34       	cpi	r25, 0x41	; 65
+ 62e:	59 f4       	brne	.+22     	; 0x646 <main+0x6e>
+			usart_read_chars(); // Read start address
+ 630:	26 dd       	rcall	.-1460   	; 0x7e <usart_read_chars>
+			address = strtol(receivedBuffer, NULL, 16); // Convert address string in hex to dec
+ 632:	40 e1       	ldi	r20, 0x10	; 16
+ 634:	50 e0       	ldi	r21, 0x00	; 0
+ 636:	60 e0       	ldi	r22, 0x00	; 0
+ 638:	70 e0       	ldi	r23, 0x00	; 0
+ 63a:	8e e6       	ldi	r24, 0x6E	; 110
+ 63c:	90 e0       	ldi	r25, 0x00	; 0
+ 63e:	f9 d2       	rcall	.+1522   	; 0xc32 <strtol>
+ 640:	6b 01       	movw	r12, r22
+ 642:	7c 01       	movw	r14, r24
+ 644:	d7 cf       	rjmp	.-82     	; 0x5f4 <main+0x1c>
+		
+		
+		// ****** Gameboy / Gameboy Colour ******
+		
+		// Read 64 bytes of ROM/RAM from address (and increment) until anything but 1 is received
+		else if (receivedChar == READ_ROM_RAM) {
+ 646:	92 35       	cpi	r25, 0x52	; 82
+ 648:	e1 f4       	brne	.+56     	; 0x682 <main+0xaa>
+			gb_mode();
+ 64a:	2c dd       	rcall	.-1448   	; 0xa4 <gb_mode>
+			receivedChar = '1';
+ 64c:	81 e3       	ldi	r24, 0x31	; 49
+					USART_Transmit(read_8bit_data(address));
+					address++;
+				}
+				
+				PORTD &= ~(1<<ACTIVITY_LED);
+				receivedChar = USART_Receive();
+ 64e:	80 93 ef 00 	sts	0x00EF, r24	; 0x8000ef <receivedChar>
+		
+		// Read 64 bytes of ROM/RAM from address (and increment) until anything but 1 is received
+		else if (receivedChar == READ_ROM_RAM) {
+			gb_mode();
+			receivedChar = '1';
+			while (receivedChar == '1') {
+ 652:	80 91 ef 00 	lds	r24, 0x00EF	; 0x8000ef <receivedChar>
+ 656:	81 33       	cpi	r24, 0x31	; 49
+ 658:	69 f6       	brne	.-102    	; 0x5f4 <main+0x1c>
+				PORTD |= (1<<ACTIVITY_LED);
+ 65a:	93 9a       	sbi	0x12, 3	; 18
+ 65c:	c0 e0       	ldi	r28, 0x00	; 0
+ 65e:	d0 e0       	ldi	r29, 0x00	; 0
+				for (uint8_t x = 0; x < 64; x++) {
+					USART_Transmit(read_8bit_data(address));
+ 660:	ce 01       	movw	r24, r28
+ 662:	8c 0d       	add	r24, r12
+ 664:	9d 1d       	adc	r25, r13
+ 666:	29 dd       	rcall	.-1454   	; 0xba <read_8bit_data>
+ 668:	f1 dc       	rcall	.-1566   	; 0x4c <USART_Transmit>
+ 66a:	21 96       	adiw	r28, 0x01	; 1
+		else if (receivedChar == READ_ROM_RAM) {
+			gb_mode();
+			receivedChar = '1';
+			while (receivedChar == '1') {
+				PORTD |= (1<<ACTIVITY_LED);
+				for (uint8_t x = 0; x < 64; x++) {
+ 66c:	c0 34       	cpi	r28, 0x40	; 64
+ 66e:	d1 05       	cpc	r29, r1
+ 670:	b9 f7       	brne	.-18     	; 0x660 <main+0x88>
+ 672:	80 e4       	ldi	r24, 0x40	; 64
+ 674:	c8 0e       	add	r12, r24
+ 676:	d1 1c       	adc	r13, r1
+ 678:	e1 1c       	adc	r14, r1
+ 67a:	f1 1c       	adc	r15, r1
+					USART_Transmit(read_8bit_data(address));
+					address++;
+				}
+				
+				PORTD &= ~(1<<ACTIVITY_LED);
+ 67c:	93 98       	cbi	0x12, 3	; 18
+				receivedChar = USART_Receive();
+ 67e:	e2 dc       	rcall	.-1596   	; 0x44 <USART_Receive>
+ 680:	e6 cf       	rjmp	.-52     	; 0x64e <main+0x76>
+			}
+		}
+		
+		// Write 64 bytes to RAM on address (and increment)
+		else if (receivedChar == WRITE_RAM) {
+ 682:	97 35       	cpi	r25, 0x57	; 87
+ 684:	d9 f4       	brne	.+54     	; 0x6bc <main+0xe4>
+			gb_mode();
+ 686:	0e dd       	rcall	.-1508   	; 0xa4 <gb_mode>
+			
+			// Read 64 bytes first as CH340G sends them all at once
+			usart_read_bytes(64);
+ 688:	80 e4       	ldi	r24, 0x40	; 64
+ 68a:	e4 dc       	rcall	.-1592   	; 0x54 <usart_read_bytes>
+			
+			PORTD |= (1<<ACTIVITY_LED);
+ 68c:	93 9a       	sbi	0x12, 3	; 18
+ 68e:	ce e6       	ldi	r28, 0x6E	; 110
+ 690:	d0 e0       	ldi	r29, 0x00	; 0
+ 692:	a1 2c       	mov	r10, r1
+ 694:	b1 2c       	mov	r11, r1
+			for (uint8_t x = 0; x < 64; x++) {
+				write_8bit_data(address, receivedBuffer[x], MEMORY_WRITE);
+ 696:	69 91       	ld	r22, Y+
+ 698:	c5 01       	movw	r24, r10
+ 69a:	8c 0d       	add	r24, r12
+ 69c:	9d 1d       	adc	r25, r13
+ 69e:	41 e0       	ldi	r20, 0x01	; 1
+ 6a0:	15 dd       	rcall	.-1494   	; 0xcc <write_8bit_data>
+ 6a2:	9f ef       	ldi	r25, 0xFF	; 255
+ 6a4:	a9 1a       	sub	r10, r25
+ 6a6:	b9 0a       	sbc	r11, r25
+			
+			// Read 64 bytes first as CH340G sends them all at once
+			usart_read_bytes(64);
+			
+			PORTD |= (1<<ACTIVITY_LED);
+			for (uint8_t x = 0; x < 64; x++) {
+ 6a8:	e0 e4       	ldi	r30, 0x40	; 64
+ 6aa:	ae 16       	cp	r10, r30
+ 6ac:	b1 04       	cpc	r11, r1
+ 6ae:	99 f7       	brne	.-26     	; 0x696 <main+0xbe>
+ 6b0:	f0 e4       	ldi	r31, 0x40	; 64
+ 6b2:	cf 0e       	add	r12, r31
+ 6b4:	d1 1c       	adc	r13, r1
+ 6b6:	e1 1c       	adc	r14, r1
+ 6b8:	f1 1c       	adc	r15, r1
+ 6ba:	9b c1       	rjmp	.+822    	; 0x9f2 <main+0x41a>
+			PORTD &= ~(1<<ACTIVITY_LED);
+			USART_Transmit(SEND_ACK); // Send back acknowledgement
+		}
+		
+		// Set bank address and write a byte
+		else if (receivedChar == SET_BANK) {
+ 6bc:	92 34       	cpi	r25, 0x42	; 66
+ 6be:	d1 f4       	brne	.+52     	; 0x6f4 <main+0x11c>
+			gb_mode();
+ 6c0:	f1 dc       	rcall	.-1566   	; 0xa4 <gb_mode>
+			
+			usart_read_chars(); // Read start address
+ 6c2:	dd dc       	rcall	.-1606   	; 0x7e <usart_read_chars>
+			uint16_t bankaddress = strtol(receivedBuffer, NULL, 16); // Convert address string in hex to dec
+ 6c4:	40 e1       	ldi	r20, 0x10	; 16
+ 6c6:	50 e0       	ldi	r21, 0x00	; 0
+ 6c8:	60 e0       	ldi	r22, 0x00	; 0
+ 6ca:	70 e0       	ldi	r23, 0x00	; 0
+ 6cc:	8e e6       	ldi	r24, 0x6E	; 110
+ 6ce:	90 e0       	ldi	r25, 0x00	; 0
+ 6d0:	b0 d2       	rcall	.+1376   	; 0xc32 <strtol>
+ 6d2:	1b 01       	movw	r2, r22
+ 6d4:	2c 01       	movw	r4, r24
+			
+			receivedChar = USART_Receive(); // Wait for bank number
+ 6d6:	b6 dc       	rcall	.-1684   	; 0x44 <USART_Receive>
+ 6d8:	80 93 ef 00 	sts	0x00EF, r24	; 0x8000ef <receivedChar>
+			if (receivedChar == 'B') {
+ 6dc:	82 34       	cpi	r24, 0x42	; 66
+ 6de:	09 f0       	breq	.+2      	; 0x6e2 <main+0x10a>
+ 6e0:	89 cf       	rjmp	.-238    	; 0x5f4 <main+0x1c>
+				usart_read_chars(); // Read data
+ 6e2:	cd dc       	rcall	.-1638   	; 0x7e <usart_read_chars>
+				uint8_t data = atoi(receivedBuffer); // Convert data string to dec
+ 6e4:	8e e6       	ldi	r24, 0x6E	; 110
+ 6e6:	90 e0       	ldi	r25, 0x00	; 0
+ 6e8:	b5 d3       	rcall	.+1898   	; 0xe54 <atoi>
+				
+				write_8bit_data(bankaddress, data, BANK_WRITE);
+ 6ea:	40 e0       	ldi	r20, 0x00	; 0
+ 6ec:	68 2f       	mov	r22, r24
+ 6ee:	c1 01       	movw	r24, r2
+ 6f0:	ed dc       	rcall	.-1574   	; 0xcc <write_8bit_data>
+ 6f2:	80 cf       	rjmp	.-256    	; 0x5f4 <main+0x1c>
+		
+		// ****** Gameboy Advance ******
+		
+		// ---------- ROM ----------
+		// Read one 16bit byte from ROM using address (and increment) until anything but 1 is received
+		else if (receivedChar == GBA_READ_ROM) {
+ 6f4:	92 37       	cpi	r25, 0x72	; 114
+ 6f6:	19 f5       	brne	.+70     	; 0x73e <main+0x166>
+			gba_mode(); 
+ 6f8:	ff dc       	rcall	.-1538   	; 0xf8 <gba_mode>
+			
+			receivedChar = '1';
+ 6fa:	81 e3       	ldi	r24, 0x31	; 49
+					
+					address++;
+				}
+				
+				PORTD &= ~(1<<ACTIVITY_LED);
+				receivedChar = USART_Receive();
+ 6fc:	80 93 ef 00 	sts	0x00EF, r24	; 0x8000ef <receivedChar>
+		// Read one 16bit byte from ROM using address (and increment) until anything but 1 is received
+		else if (receivedChar == GBA_READ_ROM) {
+			gba_mode(); 
+			
+			receivedChar = '1';
+			while (receivedChar == '1') {
+ 700:	80 91 ef 00 	lds	r24, 0x00EF	; 0x8000ef <receivedChar>
+ 704:	81 33       	cpi	r24, 0x31	; 49
+ 706:	09 f0       	breq	.+2      	; 0x70a <main+0x132>
+ 708:	75 cf       	rjmp	.-278    	; 0x5f4 <main+0x1c>
+				PORTD |= (1<<ACTIVITY_LED);
+ 70a:	93 9a       	sbi	0x12, 3	; 18
+ 70c:	16 01       	movw	r2, r12
+ 70e:	27 01       	movw	r4, r14
+ 710:	c0 e2       	ldi	r28, 0x20	; 32
+				for (uint8_t x = 0; x < 32; x++) {
+					uint16_t dataRead = gba_read_16bit_data(address);
+ 712:	c2 01       	movw	r24, r4
+ 714:	b1 01       	movw	r22, r2
+ 716:	0e dd       	rcall	.-1508   	; 0x134 <gba_read_16bit_data>
+ 718:	d9 2f       	mov	r29, r25
+					
+					// Low byte & High byte
+					USART_Transmit(dataRead & 0xFF);
+ 71a:	98 dc       	rcall	.-1744   	; 0x4c <USART_Transmit>
+					USART_Transmit(dataRead >> 8);
+ 71c:	8d 2f       	mov	r24, r29
+ 71e:	96 dc       	rcall	.-1748   	; 0x4c <USART_Transmit>
+					
+					address++;
+ 720:	2f ef       	ldi	r18, 0xFF	; 255
+ 722:	22 1a       	sub	r2, r18
+ 724:	32 0a       	sbc	r3, r18
+ 726:	42 0a       	sbc	r4, r18
+ 728:	52 0a       	sbc	r5, r18
+ 72a:	c1 50       	subi	r28, 0x01	; 1
+			gba_mode(); 
+			
+			receivedChar = '1';
+			while (receivedChar == '1') {
+				PORTD |= (1<<ACTIVITY_LED);
+				for (uint8_t x = 0; x < 32; x++) {
+ 72c:	91 f7       	brne	.-28     	; 0x712 <main+0x13a>
+ 72e:	80 e2       	ldi	r24, 0x20	; 32
+ 730:	c8 0e       	add	r12, r24
+ 732:	d1 1c       	adc	r13, r1
+ 734:	e1 1c       	adc	r14, r1
+ 736:	f1 1c       	adc	r15, r1
+					USART_Transmit(dataRead >> 8);
+					
+					address++;
+				}
+				
+				PORTD &= ~(1<<ACTIVITY_LED);
+ 738:	93 98       	cbi	0x12, 3	; 18
+				receivedChar = USART_Receive();
+ 73a:	84 dc       	rcall	.-1784   	; 0x44 <USART_Receive>
+ 73c:	df cf       	rjmp	.-66     	; 0x6fc <main+0x124>
+		}
+		
+		
+		// ---------- SRAM ----------
+		// Read RAM from address (and increment) until anything but 1 is received
+		else if (receivedChar == GBA_READ_SRAM) {
+ 73e:	9d 36       	cpi	r25, 0x6D	; 109
+ 740:	e1 f4       	brne	.+56     	; 0x77a <main+0x1a2>
+			gb_mode(); // Set GB mode as it uses 16 bit address with 8 bit data
+ 742:	b0 dc       	rcall	.-1696   	; 0xa4 <gb_mode>
+			
+			receivedChar = '1';
+ 744:	81 e3       	ldi	r24, 0x31	; 49
+					USART_Transmit(gba_read_ram_8bit_data(address));
+					address++;
+				}
+				
+				PORTD &= ~(1<<ACTIVITY_LED);
+				receivedChar = USART_Receive();
+ 746:	80 93 ef 00 	sts	0x00EF, r24	; 0x8000ef <receivedChar>
+		// Read RAM from address (and increment) until anything but 1 is received
+		else if (receivedChar == GBA_READ_SRAM) {
+			gb_mode(); // Set GB mode as it uses 16 bit address with 8 bit data
+			
+			receivedChar = '1';
+			while (receivedChar == '1') {
+ 74a:	80 91 ef 00 	lds	r24, 0x00EF	; 0x8000ef <receivedChar>
+ 74e:	81 33       	cpi	r24, 0x31	; 49
+ 750:	91 f5       	brne	.+100    	; 0x7b6 <main+0x1de>
+				PORTD |= (1<<ACTIVITY_LED);
+ 752:	93 9a       	sbi	0x12, 3	; 18
+ 754:	c0 e0       	ldi	r28, 0x00	; 0
+ 756:	d0 e0       	ldi	r29, 0x00	; 0
+				for (uint8_t x = 0; x < 64; x++) {
+					USART_Transmit(gba_read_ram_8bit_data(address));
+ 758:	ce 01       	movw	r24, r28
+ 75a:	8c 0d       	add	r24, r12
+ 75c:	9d 1d       	adc	r25, r13
+ 75e:	f9 dc       	rcall	.-1550   	; 0x152 <gba_read_ram_8bit_data>
+ 760:	75 dc       	rcall	.-1814   	; 0x4c <USART_Transmit>
+ 762:	21 96       	adiw	r28, 0x01	; 1
+			gb_mode(); // Set GB mode as it uses 16 bit address with 8 bit data
+			
+			receivedChar = '1';
+			while (receivedChar == '1') {
+				PORTD |= (1<<ACTIVITY_LED);
+				for (uint8_t x = 0; x < 64; x++) {
+ 764:	c0 34       	cpi	r28, 0x40	; 64
+ 766:	d1 05       	cpc	r29, r1
+ 768:	b9 f7       	brne	.-18     	; 0x758 <main+0x180>
+ 76a:	90 e4       	ldi	r25, 0x40	; 64
+ 76c:	c9 0e       	add	r12, r25
+ 76e:	d1 1c       	adc	r13, r1
+ 770:	e1 1c       	adc	r14, r1
+ 772:	f1 1c       	adc	r15, r1
+					USART_Transmit(gba_read_ram_8bit_data(address));
+					address++;
+				}
+				
+				PORTD &= ~(1<<ACTIVITY_LED);
+ 774:	93 98       	cbi	0x12, 3	; 18
+				receivedChar = USART_Receive();
+ 776:	66 dc       	rcall	.-1844   	; 0x44 <USART_Receive>
+ 778:	e6 cf       	rjmp	.-52     	; 0x746 <main+0x16e>
+			
+			gba_mode(); // Set back
+		}
+		
+		// Write to RAM on address (and increment) with 64 bytes of data
+		else if (receivedChar == GBA_WRITE_SRAM) {
+ 77a:	97 37       	cpi	r25, 0x77	; 119
+ 77c:	f1 f4       	brne	.+60     	; 0x7ba <main+0x1e2>
+			gb_mode();
+ 77e:	92 dc       	rcall	.-1756   	; 0xa4 <gb_mode>
+			
+			usart_read_bytes(64);
+ 780:	80 e4       	ldi	r24, 0x40	; 64
+ 782:	68 dc       	rcall	.-1840   	; 0x54 <usart_read_bytes>
+			
+			PORTD |= (1<<ACTIVITY_LED);
+ 784:	93 9a       	sbi	0x12, 3	; 18
+ 786:	ce e6       	ldi	r28, 0x6E	; 110
+ 788:	d0 e0       	ldi	r29, 0x00	; 0
+ 78a:	a1 2c       	mov	r10, r1
+ 78c:	b1 2c       	mov	r11, r1
+			for (uint8_t x = 0; x < 64; x++) {
+				gba_write_ram_8bit_data(address, receivedBuffer[x]);
+ 78e:	69 91       	ld	r22, Y+
+ 790:	c5 01       	movw	r24, r10
+ 792:	8c 0d       	add	r24, r12
+ 794:	9d 1d       	adc	r25, r13
+ 796:	e6 dc       	rcall	.-1588   	; 0x164 <gba_write_ram_8bit_data>
+ 798:	ef ef       	ldi	r30, 0xFF	; 255
+ 79a:	ae 1a       	sub	r10, r30
+ 79c:	be 0a       	sbc	r11, r30
+			gb_mode();
+			
+			usart_read_bytes(64);
+			
+			PORTD |= (1<<ACTIVITY_LED);
+			for (uint8_t x = 0; x < 64; x++) {
+ 79e:	f0 e4       	ldi	r31, 0x40	; 64
+ 7a0:	af 16       	cp	r10, r31
+ 7a2:	b1 04       	cpc	r11, r1
+ 7a4:	a1 f7       	brne	.-24     	; 0x78e <main+0x1b6>
+ 7a6:	20 e4       	ldi	r18, 0x40	; 64
+ 7a8:	c2 0e       	add	r12, r18
+ 7aa:	d1 1c       	adc	r13, r1
+ 7ac:	e1 1c       	adc	r14, r1
+ 7ae:	f1 1c       	adc	r15, r1
+				gba_write_ram_8bit_data(address, receivedBuffer[x]);
+				address++;
+			}
+			USART_Transmit(SEND_ACK); // Send back acknowledgement
+ 7b0:	81 e3       	ldi	r24, 0x31	; 49
+ 7b2:	4c dc       	rcall	.-1896   	; 0x4c <USART_Transmit>
+			
+			PORTD &= ~(1<<ACTIVITY_LED);
+ 7b4:	93 98       	cbi	0x12, 3	; 18
+			gba_mode(); // Set back
+ 7b6:	a0 dc       	rcall	.-1728   	; 0xf8 <gba_mode>
+ 7b8:	1d cf       	rjmp	.-454    	; 0x5f4 <main+0x1c>
+		}
+		
+		// Write 1 byte to SRAM address
+		else if (receivedChar == GBA_WRITE_ONE_BYTE_SRAM) {
+ 7ba:	9f 36       	cpi	r25, 0x6F	; 111
+ 7bc:	31 f4       	brne	.+12     	; 0x7ca <main+0x1f2>
+			gb_mode();
+ 7be:	72 dc       	rcall	.-1820   	; 0xa4 <gb_mode>
+			
+			uint8_t data = USART_Receive();
+ 7c0:	41 dc       	rcall	.-1918   	; 0x44 <USART_Receive>
+			gba_write_ram_8bit_data(address, data);
+ 7c2:	68 2f       	mov	r22, r24
+ 7c4:	c6 01       	movw	r24, r12
+ 7c6:	ce dc       	rcall	.-1636   	; 0x164 <gba_write_ram_8bit_data>
+ 7c8:	23 c0       	rjmp	.+70     	; 0x810 <main+0x238>
+		}
+		
+		
+		// ---------- FLASH ----------
+		// Read the Flash Manufacturer and Device ID
+		else if (receivedChar == GBA_FLASH_READ_ID) {
+ 7ca:	99 36       	cpi	r25, 0x69	; 105
+ 7cc:	49 f4       	brne	.+18     	; 0x7e0 <main+0x208>
+			gb_mode();
+ 7ce:	6a dc       	rcall	.-1836   	; 0xa4 <gb_mode>
+			
+			flash_read_chip_id();
+ 7d0:	7a dd       	rcall	.-1292   	; 0x2c6 <flash_read_chip_id>
+			USART_Transmit(flashChipIdBuffer[0]);
+ 7d2:	80 91 6c 00 	lds	r24, 0x006C	; 0x80006c <flashChipIdBuffer>
+ 7d6:	3a dc       	rcall	.-1932   	; 0x4c <USART_Transmit>
+			USART_Transmit(flashChipIdBuffer[1]);
+ 7d8:	80 91 6d 00 	lds	r24, 0x006D	; 0x80006d <flashChipIdBuffer+0x1>
+ 7dc:	37 dc       	rcall	.-1938   	; 0x4c <USART_Transmit>
+ 7de:	eb cf       	rjmp	.-42     	; 0x7b6 <main+0x1de>
+			
+			gba_mode(); // Set back
+		}
+		
+		// Change bank
+		else if (receivedChar == GBA_FLASH_SET_BANK) {
+ 7e0:	9b 36       	cpi	r25, 0x6B	; 107
+ 7e2:	49 f4       	brne	.+18     	; 0x7f6 <main+0x21e>
+			usart_read_chars(); // Read data
+ 7e4:	4c dc       	rcall	.-1896   	; 0x7e <usart_read_chars>
+			uint8_t bank = atoi(receivedBuffer); // Convert data string to dec
+ 7e6:	8e e6       	ldi	r24, 0x6E	; 110
+ 7e8:	90 e0       	ldi	r25, 0x00	; 0
+ 7ea:	34 d3       	rcall	.+1640   	; 0xe54 <atoi>
+ 7ec:	c8 2f       	mov	r28, r24
+			
+			gb_mode();
+ 7ee:	5a dc       	rcall	.-1868   	; 0xa4 <gb_mode>
+			flash_switch_bank(bank);
+ 7f0:	8c 2f       	mov	r24, r28
+ 7f2:	9e dd       	rcall	.-1220   	; 0x330 <flash_switch_bank>
+ 7f4:	e0 cf       	rjmp	.-64     	; 0x7b6 <main+0x1de>
+			
+			gba_mode(); // Set back
+		}
+		
+		// Erase 4K sector on Flash (sector 0 to 15 for 512Kbit)
+		else if (receivedChar == GBA_FLASH_4K_SECTOR_ERASE) {
+ 7f6:	93 37       	cpi	r25, 0x73	; 115
+ 7f8:	69 f4       	brne	.+26     	; 0x814 <main+0x23c>
+			gb_mode();
+ 7fa:	54 dc       	rcall	.-1880   	; 0xa4 <gb_mode>
+			
+			usart_read_chars(); // Read sector
+ 7fc:	40 dc       	rcall	.-1920   	; 0x7e <usart_read_chars>
+			uint8_t sectorAddress = strtol(receivedBuffer, NULL, 16); // Convert address string in hex to dec
+ 7fe:	40 e1       	ldi	r20, 0x10	; 16
+ 800:	50 e0       	ldi	r21, 0x00	; 0
+ 802:	60 e0       	ldi	r22, 0x00	; 0
+ 804:	70 e0       	ldi	r23, 0x00	; 0
+ 806:	8e e6       	ldi	r24, 0x6E	; 110
+ 808:	90 e0       	ldi	r25, 0x00	; 0
+ 80a:	13 d2       	rcall	.+1062   	; 0xc32 <strtol>
+ 80c:	86 2f       	mov	r24, r22
+			
+			flash_erase_4k_sector(sectorAddress);
+ 80e:	a3 dd       	rcall	.-1210   	; 0x356 <flash_erase_4k_sector>
+			USART_Transmit(SEND_ACK); // Send back acknowledgement
+ 810:	81 e3       	ldi	r24, 0x31	; 49
+ 812:	e4 cf       	rjmp	.-56     	; 0x7dc <main+0x204>
+			
+			gba_mode(); // Set back
+		}
+		
+		// Write 64 bytes to Flash address one byte write at a time (and increment)
+		else if (receivedChar == GBA_FLASH_WRITE_BYTE) {
+ 814:	92 36       	cpi	r25, 0x62	; 98
+ 816:	d9 f4       	brne	.+54     	; 0x84e <main+0x276>
+			gb_mode();
+ 818:	45 dc       	rcall	.-1910   	; 0xa4 <gb_mode>
+			
+			usart_read_bytes(64);
+ 81a:	80 e4       	ldi	r24, 0x40	; 64
+ 81c:	1b dc       	rcall	.-1994   	; 0x54 <usart_read_bytes>
+			
+			PORTD |= (1<<ACTIVITY_LED);
+ 81e:	93 9a       	sbi	0x12, 3	; 18
+ 820:	2e e6       	ldi	r18, 0x6E	; 110
+ 822:	a2 2e       	mov	r10, r18
+ 824:	20 e0       	ldi	r18, 0x00	; 0
+ 826:	b2 2e       	mov	r11, r18
+ 828:	c0 e0       	ldi	r28, 0x00	; 0
+ 82a:	d0 e0       	ldi	r29, 0x00	; 0
+			for (uint8_t x = 0; x < 64; x++) {
+				flash_write_byte(address, receivedBuffer[x]);
+ 82c:	f5 01       	movw	r30, r10
+ 82e:	61 91       	ld	r22, Z+
+ 830:	5f 01       	movw	r10, r30
+ 832:	ce 01       	movw	r24, r28
+ 834:	8c 0d       	add	r24, r12
+ 836:	9d 1d       	adc	r25, r13
+ 838:	b2 dd       	rcall	.-1180   	; 0x39e <flash_write_byte>
+ 83a:	21 96       	adiw	r28, 0x01	; 1
+			gb_mode();
+			
+			usart_read_bytes(64);
+			
+			PORTD |= (1<<ACTIVITY_LED);
+			for (uint8_t x = 0; x < 64; x++) {
+ 83c:	c0 34       	cpi	r28, 0x40	; 64
+ 83e:	d1 05       	cpc	r29, r1
+ 840:	a9 f7       	brne	.-22     	; 0x82c <main+0x254>
+ 842:	f0 e4       	ldi	r31, 0x40	; 64
+ 844:	cf 0e       	add	r12, r31
+ 846:	d1 1c       	adc	r13, r1
+ 848:	e1 1c       	adc	r14, r1
+ 84a:	f1 1c       	adc	r15, r1
+ 84c:	b1 cf       	rjmp	.-158    	; 0x7b0 <main+0x1d8>
+			PORTD &= ~(1<<ACTIVITY_LED);
+			gba_mode(); // Set back
+		}
+		
+		// Write 128 bytes to flash sector for Atmel flash (and increment)
+		else if (receivedChar == GBA_FLASH_WRITE_ATMEL) {
+ 84e:	91 36       	cpi	r25, 0x61	; 97
+ 850:	61 f4       	brne	.+24     	; 0x86a <main+0x292>
+			gb_mode();
+ 852:	28 dc       	rcall	.-1968   	; 0xa4 <gb_mode>
+			
+			usart_read_bytes(128);
+ 854:	80 e8       	ldi	r24, 0x80	; 128
+ 856:	fe db       	rcall	.-2052   	; 0x54 <usart_read_bytes>
+			
+			PORTD |= (1<<ACTIVITY_LED);
+ 858:	93 9a       	sbi	0x12, 3	; 18
+			flash_write_sector(address); // Address used as sector number
+ 85a:	c6 01       	movw	r24, r12
+ 85c:	bc dd       	rcall	.-1160   	; 0x3d6 <flash_write_sector>
+			address++;
+ 85e:	2f ef       	ldi	r18, 0xFF	; 255
+ 860:	c2 1a       	sub	r12, r18
+ 862:	d2 0a       	sbc	r13, r18
+ 864:	e2 0a       	sbc	r14, r18
+ 866:	f2 0a       	sbc	r15, r18
+ 868:	a3 cf       	rjmp	.-186    	; 0x7b0 <main+0x1d8>
+		}
+		
+		
+		// ---------- EEPROM ----------
+		// Set EEPROM size
+		else if (receivedChar == GBA_SET_EEPROM_SIZE) {
+ 86a:	93 35       	cpi	r25, 0x53	; 83
+ 86c:	51 f4       	brne	.+20     	; 0x882 <main+0x2aa>
+			usart_read_chars(); // Read size
+ 86e:	07 dc       	rcall	.-2034   	; 0x7e <usart_read_chars>
+			eepromSize = strtol(receivedBuffer, NULL, 16); // Convert size to dec
+ 870:	40 e1       	ldi	r20, 0x10	; 16
+ 872:	50 e0       	ldi	r21, 0x00	; 0
+ 874:	60 e0       	ldi	r22, 0x00	; 0
+ 876:	70 e0       	ldi	r23, 0x00	; 0
+ 878:	8e e6       	ldi	r24, 0x6E	; 110
+ 87a:	90 e0       	ldi	r25, 0x00	; 0
+ 87c:	da d1       	rcall	.+948    	; 0xc32 <strtol>
+ 87e:	96 2e       	mov	r9, r22
+ 880:	b9 ce       	rjmp	.-654    	; 0x5f4 <main+0x1c>
+		}
+		
+		// Read the EEPROM on address (and increment) until anything but 1 is received
+		else if (receivedChar == GBA_READ_EEPROM) {
+ 882:	95 36       	cpi	r25, 0x65	; 101
+ 884:	e1 f4       	brne	.+56     	; 0x8be <main+0x2e6>
+			gba_eeprom_mode();
+ 886:	7e dc       	rcall	.-1796   	; 0x184 <gba_eeprom_mode>
+			
+			receivedChar = '1';
+ 888:	81 e3       	ldi	r24, 0x31	; 49
+					USART_Transmit(eepromBuffer[c]);
+				}
+				address++; // Increment to next 8 bytes
+				
+				PORTD &= ~(1<<ACTIVITY_LED);
+				receivedChar = USART_Receive();
+ 88a:	80 93 ef 00 	sts	0x00EF, r24	; 0x8000ef <receivedChar>
+		// Read the EEPROM on address (and increment) until anything but 1 is received
+		else if (receivedChar == GBA_READ_EEPROM) {
+			gba_eeprom_mode();
+			
+			receivedChar = '1';
+			while (receivedChar == '1') {
+ 88e:	80 91 ef 00 	lds	r24, 0x00EF	; 0x8000ef <receivedChar>
+ 892:	81 33       	cpi	r24, 0x31	; 49
+ 894:	09 f0       	breq	.+2      	; 0x898 <main+0x2c0>
+ 896:	8f cf       	rjmp	.-226    	; 0x7b6 <main+0x1de>
+				PORTD |= (1<<ACTIVITY_LED);
+ 898:	93 9a       	sbi	0x12, 3	; 18
+				gba_eeprom_read(address, eepromSize);
+ 89a:	69 2d       	mov	r22, r9
+ 89c:	c6 01       	movw	r24, r12
+ 89e:	af dc       	rcall	.-1698   	; 0x1fe <gba_eeprom_read>
+ 8a0:	c0 ef       	ldi	r28, 0xF0	; 240
+ 8a2:	d0 e0       	ldi	r29, 0x00	; 0
+				
+				// Send back the 8 bytes of data
+				for (uint8_t c = 0; c < 8; c++) {
+					USART_Transmit(eepromBuffer[c]);
+ 8a4:	89 91       	ld	r24, Y+
+ 8a6:	d2 db       	rcall	.-2140   	; 0x4c <USART_Transmit>
+			while (receivedChar == '1') {
+				PORTD |= (1<<ACTIVITY_LED);
+				gba_eeprom_read(address, eepromSize);
+				
+				// Send back the 8 bytes of data
+				for (uint8_t c = 0; c < 8; c++) {
+ 8a8:	0c 17       	cp	r16, r28
+ 8aa:	1d 07       	cpc	r17, r29
+ 8ac:	d9 f7       	brne	.-10     	; 0x8a4 <main+0x2cc>
+					USART_Transmit(eepromBuffer[c]);
+				}
+				address++; // Increment to next 8 bytes
+ 8ae:	8f ef       	ldi	r24, 0xFF	; 255
+ 8b0:	c8 1a       	sub	r12, r24
+ 8b2:	d8 0a       	sbc	r13, r24
+ 8b4:	e8 0a       	sbc	r14, r24
+ 8b6:	f8 0a       	sbc	r15, r24
+				
+				PORTD &= ~(1<<ACTIVITY_LED);
+ 8b8:	93 98       	cbi	0x12, 3	; 18
+				receivedChar = USART_Receive();
+ 8ba:	c4 db       	rcall	.-2168   	; 0x44 <USART_Receive>
+ 8bc:	e6 cf       	rjmp	.-52     	; 0x88a <main+0x2b2>
+			
+			gba_mode(); // Set back
+		}
+		
+		// Write 8 bytes to the EEPROM address (and increment)
+		else if (receivedChar == GBA_WRITE_EEPROM) {
+ 8be:	90 37       	cpi	r25, 0x70	; 112
+ 8c0:	c9 f4       	brne	.+50     	; 0x8f4 <main+0x31c>
+			gba_eeprom_mode();
+ 8c2:	60 dc       	rcall	.-1856   	; 0x184 <gba_eeprom_mode>
+ 8c4:	c0 ef       	ldi	r28, 0xF0	; 240
+ 8c6:	d0 e0       	ldi	r29, 0x00	; 0
+			
+			// Read 8 bytes from USART and place in buffer
+			for (uint8_t x = 0; x < 8; x++) {
+				eepromBuffer[x] = USART_Receive();
+ 8c8:	bd db       	rcall	.-2182   	; 0x44 <USART_Receive>
+ 8ca:	89 93       	st	Y+, r24
+		// Write 8 bytes to the EEPROM address (and increment)
+		else if (receivedChar == GBA_WRITE_EEPROM) {
+			gba_eeprom_mode();
+			
+			// Read 8 bytes from USART and place in buffer
+			for (uint8_t x = 0; x < 8; x++) {
+ 8cc:	90 e0       	ldi	r25, 0x00	; 0
+ 8ce:	c8 3f       	cpi	r28, 0xF8	; 248
+ 8d0:	d9 07       	cpc	r29, r25
+ 8d2:	d1 f7       	brne	.-12     	; 0x8c8 <main+0x2f0>
+				eepromBuffer[x] = USART_Receive();
+			}
+			PORTD |= (1<<ACTIVITY_LED);
+ 8d4:	93 9a       	sbi	0x12, 3	; 18
+			
+			gba_eeprom_write(address, eepromSize);
+ 8d6:	69 2d       	mov	r22, r9
+ 8d8:	c6 01       	movw	r24, r12
+ 8da:	be dc       	rcall	.-1668   	; 0x258 <gba_eeprom_write>
+			address++;
+ 8dc:	ef ef       	ldi	r30, 0xFF	; 255
+ 8de:	ce 1a       	sub	r12, r30
+ 8e0:	de 0a       	sbc	r13, r30
+ 8e2:	ee 0a       	sbc	r14, r30
+ 8e4:	fe 0a       	sbc	r15, r30
+ 8e6:	8f e7       	ldi	r24, 0x7F	; 127
+ 8e8:	9e e3       	ldi	r25, 0x3E	; 62
+ 8ea:	01 97       	sbiw	r24, 0x01	; 1
+ 8ec:	f1 f7       	brne	.-4      	; 0x8ea <main+0x312>
+ 8ee:	00 c0       	rjmp	.+0      	; 0x8f0 <main+0x318>
+ 8f0:	00 00       	nop
+ 8f2:	5e cf       	rjmp	.-324    	; 0x7b0 <main+0x1d8>
+		}
+		
+		
+		// ---------- GB FLASH CARTS ----------
+		// Select which pin need to pulse as WE (Audio or WR)
+		else if (receivedChar == GB_FLASH_WE_PIN) {
+ 8f4:	90 35       	cpi	r25, 0x50	; 80
+ 8f6:	49 f4       	brne	.+18     	; 0x90a <main+0x332>
+			flashWriteWePin = USART_Receive();
+ 8f8:	a5 db       	rcall	.-2230   	; 0x44 <USART_Receive>
+ 8fa:	80 93 f8 00 	sts	0x00F8, r24	; 0x8000f8 <flashWriteWePin>
+			
+			if (flashWriteWePin == WE_AS_AUDIO_PIN) {
+ 8fe:	81 34       	cpi	r24, 0x41	; 65
+ 900:	09 f0       	breq	.+2      	; 0x904 <main+0x32c>
+ 902:	78 ce       	rjmp	.-784    	; 0x5f4 <main+0x1c>
+				DDRE |= (1<<AUDIO_PIN);
+ 904:	31 9a       	sbi	0x06, 1	; 6
+				audioPin_high;
+ 906:	39 9a       	sbi	0x07, 1	; 7
+ 908:	75 ce       	rjmp	.-790    	; 0x5f4 <main+0x1c>
+			}
+		}
+		
+		// Load the program method to use
+		else if (receivedChar == GB_FLASH_PROGRAM_METHOD) {
+ 90a:	95 34       	cpi	r25, 0x45	; 69
+ 90c:	f9 f4       	brne	.+62     	; 0x94c <main+0x374>
+ 90e:	c0 e6       	ldi	r28, 0x60	; 96
+ 910:	d0 e0       	ldi	r29, 0x00	; 0
+			for (uint8_t x = 0; x < 3; x++) {
+				usart_read_chars(); // Address
+ 912:	b5 db       	rcall	.-2198   	; 0x7e <usart_read_chars>
+				flashWriteCycle[x][0] = strtol(receivedBuffer, NULL, 16);
+ 914:	40 e1       	ldi	r20, 0x10	; 16
+ 916:	50 e0       	ldi	r21, 0x00	; 0
+ 918:	60 e0       	ldi	r22, 0x00	; 0
+ 91a:	70 e0       	ldi	r23, 0x00	; 0
+ 91c:	8e e6       	ldi	r24, 0x6E	; 110
+ 91e:	90 e0       	ldi	r25, 0x00	; 0
+ 920:	88 d1       	rcall	.+784    	; 0xc32 <strtol>
+ 922:	79 83       	std	Y+1, r23	; 0x01
+ 924:	68 83       	st	Y, r22
+				USART_Transmit(SEND_ACK);
+ 926:	81 e3       	ldi	r24, 0x31	; 49
+ 928:	91 db       	rcall	.-2270   	; 0x4c <USART_Transmit>
+				
+				usart_read_chars(); // Data
+ 92a:	a9 db       	rcall	.-2222   	; 0x7e <usart_read_chars>
+				flashWriteCycle[x][1] = strtol(receivedBuffer, NULL, 16);
+ 92c:	40 e1       	ldi	r20, 0x10	; 16
+ 92e:	50 e0       	ldi	r21, 0x00	; 0
+ 930:	60 e0       	ldi	r22, 0x00	; 0
+ 932:	70 e0       	ldi	r23, 0x00	; 0
+ 934:	8e e6       	ldi	r24, 0x6E	; 110
+ 936:	90 e0       	ldi	r25, 0x00	; 0
+ 938:	7c d1       	rcall	.+760    	; 0xc32 <strtol>
+ 93a:	7b 83       	std	Y+3, r23	; 0x03
+ 93c:	6a 83       	std	Y+2, r22	; 0x02
+				USART_Transmit(SEND_ACK);
+ 93e:	81 e3       	ldi	r24, 0x31	; 49
+ 940:	85 db       	rcall	.-2294   	; 0x4c <USART_Transmit>
+ 942:	24 96       	adiw	r28, 0x04	; 4
+			}
+		}
+		
+		// Load the program method to use
+		else if (receivedChar == GB_FLASH_PROGRAM_METHOD) {
+			for (uint8_t x = 0; x < 3; x++) {
+ 944:	6c 16       	cp	r6, r28
+ 946:	7d 06       	cpc	r7, r29
+ 948:	21 f7       	brne	.-56     	; 0x912 <main+0x33a>
+ 94a:	54 ce       	rjmp	.-856    	; 0x5f4 <main+0x1c>
+				USART_Transmit(SEND_ACK);
+			}
+		}
+		
+		// Write address and one byte to Flash, pulse a pin
+		else if (receivedChar == GB_FLASH_WRITE_BYTE) {
+ 94c:	96 34       	cpi	r25, 0x46	; 70
+ 94e:	b1 f4       	brne	.+44     	; 0x97c <main+0x3a4>
+			usart_read_chars(); // Read address
+ 950:	96 db       	rcall	.-2260   	; 0x7e <usart_read_chars>
+			uint16_t flashAddress = strtol(receivedBuffer, NULL, 16);
+ 952:	40 e1       	ldi	r20, 0x10	; 16
+ 954:	50 e0       	ldi	r21, 0x00	; 0
+ 956:	60 e0       	ldi	r22, 0x00	; 0
+ 958:	70 e0       	ldi	r23, 0x00	; 0
+ 95a:	8e e6       	ldi	r24, 0x6E	; 110
+ 95c:	90 e0       	ldi	r25, 0x00	; 0
+ 95e:	69 d1       	rcall	.+722    	; 0xc32 <strtol>
+ 960:	1b 01       	movw	r2, r22
+ 962:	2c 01       	movw	r4, r24
+			
+			usart_read_chars(); // Read data byte
+ 964:	8c db       	rcall	.-2280   	; 0x7e <usart_read_chars>
+			uint8_t flashByte = strtol(receivedBuffer, NULL, 16);
+ 966:	40 e1       	ldi	r20, 0x10	; 16
+ 968:	50 e0       	ldi	r21, 0x00	; 0
+ 96a:	60 e0       	ldi	r22, 0x00	; 0
+ 96c:	70 e0       	ldi	r23, 0x00	; 0
+ 96e:	8e e6       	ldi	r24, 0x6E	; 110
+ 970:	90 e0       	ldi	r25, 0x00	; 0
+ 972:	5f d1       	rcall	.+702    	; 0xc32 <strtol>
+			
+			PORTD |= (1<<ACTIVITY_LED);
+ 974:	93 9a       	sbi	0x12, 3	; 18
+			gb_flash_write_bus_cycle(flashAddress, flashByte);
+ 976:	c1 01       	movw	r24, r2
+ 978:	6d dd       	rcall	.-1318   	; 0x454 <gb_flash_write_bus_cycle>
+ 97a:	3b c0       	rjmp	.+118    	; 0x9f2 <main+0x41a>
+			
+			USART_Transmit(SEND_ACK); // Send back acknowledgement
+		}
+		
+		// Write 64 bytes to Flash address one byte write at a time (and increment), pulse a pin
+		else if (receivedChar == GB_FLASH_WRITE_64BYTE) {
+ 97c:	94 35       	cpi	r25, 0x54	; 84
+ 97e:	d1 f4       	brne	.+52     	; 0x9b4 <main+0x3dc>
+			usart_read_bytes(64);
+ 980:	80 e4       	ldi	r24, 0x40	; 64
+ 982:	68 db       	rcall	.-2352   	; 0x54 <usart_read_bytes>
+			
+			PORTD |= (1<<ACTIVITY_LED);
+ 984:	93 9a       	sbi	0x12, 3	; 18
+ 986:	9e e6       	ldi	r25, 0x6E	; 110
+ 988:	a9 2e       	mov	r10, r25
+ 98a:	90 e0       	ldi	r25, 0x00	; 0
+ 98c:	b9 2e       	mov	r11, r25
+ 98e:	c0 e0       	ldi	r28, 0x00	; 0
+ 990:	d0 e0       	ldi	r29, 0x00	; 0
+			for (uint8_t x = 0; x < 64; x++) {
+				gb_flash_write_byte(address, receivedBuffer[x]);
+ 992:	f5 01       	movw	r30, r10
+ 994:	61 91       	ld	r22, Z+
+ 996:	5f 01       	movw	r10, r30
+ 998:	ce 01       	movw	r24, r28
+ 99a:	8c 0d       	add	r24, r12
+ 99c:	9d 1d       	adc	r25, r13
+ 99e:	71 dd       	rcall	.-1310   	; 0x482 <gb_flash_write_byte>
+ 9a0:	21 96       	adiw	r28, 0x01	; 1
+		// Write 64 bytes to Flash address one byte write at a time (and increment), pulse a pin
+		else if (receivedChar == GB_FLASH_WRITE_64BYTE) {
+			usart_read_bytes(64);
+			
+			PORTD |= (1<<ACTIVITY_LED);
+			for (uint8_t x = 0; x < 64; x++) {
+ 9a2:	c0 34       	cpi	r28, 0x40	; 64
+ 9a4:	d1 05       	cpc	r29, r1
+ 9a6:	a9 f7       	brne	.-22     	; 0x992 <main+0x3ba>
+ 9a8:	f0 e4       	ldi	r31, 0x40	; 64
+ 9aa:	cf 0e       	add	r12, r31
+ 9ac:	d1 1c       	adc	r13, r1
+ 9ae:	e1 1c       	adc	r14, r1
+ 9b0:	f1 1c       	adc	r15, r1
+ 9b2:	44 c0       	rjmp	.+136    	; 0xa3c <main+0x464>
+		}
+		
+		
+		// ---------- GBA FLASH CARTS ----------
+		// Write 24 bit address, 16 bit data and pulse a pin
+		else if (receivedChar == GBA_FLASH_CART_WRITE_BYTE) {
+ 9b4:	9e 36       	cpi	r25, 0x6E	; 110
+ 9b6:	01 f5       	brne	.+64     	; 0x9f8 <main+0x420>
+			usart_read_chars(); // Read address
+ 9b8:	62 db       	rcall	.-2364   	; 0x7e <usart_read_chars>
+			uint32_t flashAddress = strtol(receivedBuffer, NULL, 16); // Convert address string in hex to dec
+ 9ba:	40 e1       	ldi	r20, 0x10	; 16
+ 9bc:	50 e0       	ldi	r21, 0x00	; 0
+ 9be:	60 e0       	ldi	r22, 0x00	; 0
+ 9c0:	70 e0       	ldi	r23, 0x00	; 0
+ 9c2:	8e e6       	ldi	r24, 0x6E	; 110
+ 9c4:	90 e0       	ldi	r25, 0x00	; 0
+ 9c6:	35 d1       	rcall	.+618    	; 0xc32 <strtol>
+ 9c8:	1b 01       	movw	r2, r22
+ 9ca:	2c 01       	movw	r4, r24
+			
+			receivedChar = USART_Receive(); // Wait for byte
+ 9cc:	3b db       	rcall	.-2442   	; 0x44 <USART_Receive>
+ 9ce:	80 93 ef 00 	sts	0x00EF, r24	; 0x8000ef <receivedChar>
+			if (receivedChar == GBA_FLASH_CART_WRITE_BYTE) {
+ 9d2:	8e 36       	cpi	r24, 0x6E	; 110
+ 9d4:	09 f0       	breq	.+2      	; 0x9d8 <main+0x400>
+ 9d6:	0e ce       	rjmp	.-996    	; 0x5f4 <main+0x1c>
+				usart_read_chars(); // Read data
+ 9d8:	52 db       	rcall	.-2396   	; 0x7e <usart_read_chars>
+				uint16_t flashByte = strtol(receivedBuffer, NULL, 16); // Convert data byte in hex to dec
+ 9da:	40 e1       	ldi	r20, 0x10	; 16
+ 9dc:	50 e0       	ldi	r21, 0x00	; 0
+ 9de:	60 e0       	ldi	r22, 0x00	; 0
+ 9e0:	70 e0       	ldi	r23, 0x00	; 0
+ 9e2:	8e e6       	ldi	r24, 0x6E	; 110
+ 9e4:	90 e0       	ldi	r25, 0x00	; 0
+ 9e6:	25 d1       	rcall	.+586    	; 0xc32 <strtol>
+				
+				PORTD |= (1<<ACTIVITY_LED);
+ 9e8:	93 9a       	sbi	0x12, 3	; 18
+				gba_flash_write_bus_cycle(flashAddress, flashByte);
+ 9ea:	ab 01       	movw	r20, r22
+ 9ec:	c2 01       	movw	r24, r4
+ 9ee:	b1 01       	movw	r22, r2
+ 9f0:	7a dd       	rcall	.-1292   	; 0x4e6 <gba_flash_write_bus_cycle>
+				PORTD &= ~(1<<ACTIVITY_LED);
+ 9f2:	93 98       	cbi	0x12, 3	; 18
+				
+				USART_Transmit(SEND_ACK); // Send back acknowledgement
+ 9f4:	81 e3       	ldi	r24, 0x31	; 49
+ 9f6:	fe c0       	rjmp	.+508    	; 0xbf4 <main+0x61c>
+			}
+		}
+		
+		// Write 64 bytes to Flash address, combine 2 bytes and write at a time (and increment address by 2), pulse a pin
+		else if (receivedChar == GBA_FLASH_WRITE_64BYTE) {
+ 9f8:	91 37       	cpi	r25, 0x71	; 113
+ 9fa:	11 f5       	brne	.+68     	; 0xa40 <main+0x468>
+			usart_read_bytes(64);
+ 9fc:	80 e4       	ldi	r24, 0x40	; 64
+ 9fe:	2a db       	rcall	.-2476   	; 0x54 <usart_read_bytes>
+			
+			PORTD |= (1<<ACTIVITY_LED);
+ a00:	93 9a       	sbi	0x12, 3	; 18
+ a02:	ce e6       	ldi	r28, 0x6E	; 110
+ a04:	d0 e0       	ldi	r29, 0x00	; 0
+ a06:	16 01       	movw	r2, r12
+ a08:	27 01       	movw	r4, r14
+			for (uint8_t x = 0; x < 64; x += 2) {
+				uint16_t combinedBytes = (uint16_t) receivedBuffer[x+1] << 8 | (uint16_t) receivedBuffer[x];
+				gba_flash_write_byte_swapped(address, combinedBytes);
+ a0a:	49 81       	ldd	r20, Y+1	; 0x01
+ a0c:	50 e0       	ldi	r21, 0x00	; 0
+ a0e:	54 2f       	mov	r21, r20
+ a10:	44 27       	eor	r20, r20
+ a12:	88 81       	ld	r24, Y
+ a14:	48 2b       	or	r20, r24
+ a16:	c2 01       	movw	r24, r4
+ a18:	b1 01       	movw	r22, r2
+ a1a:	78 dd       	rcall	.-1296   	; 0x50c <gba_flash_write_byte_swapped>
+				address++;
+ a1c:	2f ef       	ldi	r18, 0xFF	; 255
+ a1e:	22 1a       	sub	r2, r18
+ a20:	32 0a       	sbc	r3, r18
+ a22:	42 0a       	sbc	r4, r18
+ a24:	52 0a       	sbc	r5, r18
+ a26:	22 96       	adiw	r28, 0x02	; 2
+		// Write 64 bytes to Flash address, combine 2 bytes and write at a time (and increment address by 2), pulse a pin
+		else if (receivedChar == GBA_FLASH_WRITE_64BYTE) {
+			usart_read_bytes(64);
+			
+			PORTD |= (1<<ACTIVITY_LED);
+			for (uint8_t x = 0; x < 64; x += 2) {
+ a28:	8e ea       	ldi	r24, 0xAE	; 174
+ a2a:	90 e0       	ldi	r25, 0x00	; 0
+ a2c:	8c 17       	cp	r24, r28
+ a2e:	9d 07       	cpc	r25, r29
+ a30:	61 f7       	brne	.-40     	; 0xa0a <main+0x432>
+ a32:	90 e2       	ldi	r25, 0x20	; 32
+ a34:	c9 0e       	add	r12, r25
+ a36:	d1 1c       	adc	r13, r1
+ a38:	e1 1c       	adc	r14, r1
+ a3a:	f1 1c       	adc	r15, r1
+				uint16_t combinedBytes = (uint16_t) receivedBuffer[x+1] << 8 | (uint16_t) receivedBuffer[x];
+				gba_flash_write_byte_swapped(address, combinedBytes);
+				address++;
+			}
+			USART_Transmit(SEND_ACK); // Send back acknowledgement
+ a3c:	81 e3       	ldi	r24, 0x31	; 49
+ a3e:	c3 c0       	rjmp	.+390    	; 0xbc6 <main+0x5ee>
+		
+		
+		// ---------- General commands ----------
+		// Set any pin as input/output
+		// Reads the DDR/PORT (e.g. DDRB/PORTB is 'B') and the hex value that represents pins to set to an input (e.g. PB7 is 0x80)
+		else if (receivedChar == SET_INPUT || receivedChar == SET_OUTPUT) {
+ a40:	99 34       	cpi	r25, 0x49	; 73
+ a42:	19 f0       	breq	.+6      	; 0xa4a <main+0x472>
+ a44:	9f 34       	cpi	r25, 0x4F	; 79
+ a46:	09 f0       	breq	.+2      	; 0xa4a <main+0x472>
+ a48:	50 c0       	rjmp	.+160    	; 0xaea <main+0x512>
+			char portChar = USART_Receive();
+ a4a:	fc da       	rcall	.-2568   	; 0x44 <USART_Receive>
+ a4c:	c8 2f       	mov	r28, r24
+			usart_read_chars();
+ a4e:	17 db       	rcall	.-2514   	; 0x7e <usart_read_chars>
+			uint8_t setValue = strtol(receivedBuffer, NULL, 16);
+ a50:	40 e1       	ldi	r20, 0x10	; 16
+ a52:	50 e0       	ldi	r21, 0x00	; 0
+ a54:	60 e0       	ldi	r22, 0x00	; 0
+ a56:	70 e0       	ldi	r23, 0x00	; 0
+ a58:	8e e6       	ldi	r24, 0x6E	; 110
+ a5a:	90 e0       	ldi	r25, 0x00	; 0
+ a5c:	ea d0       	rcall	.+468    	; 0xc32 <strtol>
+			
+			PORTD |= (1<<ACTIVITY_LED);
+ a5e:	93 9a       	sbi	0x12, 3	; 18
+			if (receivedChar == SET_INPUT) {
+ a60:	80 91 ef 00 	lds	r24, 0x00EF	; 0x8000ef <receivedChar>
+ a64:	89 34       	cpi	r24, 0x49	; 73
+ a66:	f9 f4       	brne	.+62     	; 0xaa6 <main+0x4ce>
+				if (portChar == 'A') {
+ a68:	c1 34       	cpi	r28, 0x41	; 65
+ a6a:	21 f4       	brne	.+8      	; 0xa74 <main+0x49c>
+					DDRA &= ~(setValue);
+ a6c:	8a b3       	in	r24, 0x1a	; 26
+ a6e:	60 95       	com	r22
+ a70:	68 23       	and	r22, r24
+ a72:	20 c0       	rjmp	.+64     	; 0xab4 <main+0x4dc>
+				}
+				else if (portChar == 'B') {
+ a74:	c2 34       	cpi	r28, 0x42	; 66
+ a76:	21 f4       	brne	.+8      	; 0xa80 <main+0x4a8>
+					DDRB &= ~(setValue);
+ a78:	87 b3       	in	r24, 0x17	; 23
+ a7a:	60 95       	com	r22
+ a7c:	68 23       	and	r22, r24
+ a7e:	20 c0       	rjmp	.+64     	; 0xac0 <main+0x4e8>
+				}
+				else if (portChar == 'C') {
+ a80:	c3 34       	cpi	r28, 0x43	; 67
+ a82:	21 f4       	brne	.+8      	; 0xa8c <main+0x4b4>
+					DDRC &= ~(setValue);
+ a84:	84 b3       	in	r24, 0x14	; 20
+ a86:	60 95       	com	r22
+ a88:	68 23       	and	r22, r24
+ a8a:	20 c0       	rjmp	.+64     	; 0xacc <main+0x4f4>
+				}
+				else if (portChar == 'D') {
+ a8c:	c4 34       	cpi	r28, 0x44	; 68
+ a8e:	21 f4       	brne	.+8      	; 0xa98 <main+0x4c0>
+					DDRD &= ~(setValue);
+ a90:	81 b3       	in	r24, 0x11	; 17
+ a92:	60 95       	com	r22
+ a94:	68 23       	and	r22, r24
+ a96:	20 c0       	rjmp	.+64     	; 0xad8 <main+0x500>
+				}
+				else if (portChar == 'E') {
+ a98:	c5 34       	cpi	r28, 0x45	; 69
+ a9a:	09 f0       	breq	.+2      	; 0xa9e <main+0x4c6>
+ a9c:	95 c0       	rjmp	.+298    	; 0xbc8 <main+0x5f0>
+					DDRE &= ~(setValue);
+ a9e:	86 b1       	in	r24, 0x06	; 6
+ aa0:	60 95       	com	r22
+ aa2:	68 23       	and	r22, r24
+ aa4:	20 c0       	rjmp	.+64     	; 0xae6 <main+0x50e>
+				}
+			}
+			else if (receivedChar == SET_OUTPUT) {
+ aa6:	8f 34       	cpi	r24, 0x4F	; 79
+ aa8:	09 f0       	breq	.+2      	; 0xaac <main+0x4d4>
+ aaa:	8e c0       	rjmp	.+284    	; 0xbc8 <main+0x5f0>
+				if (portChar == 'A') {
+ aac:	c1 34       	cpi	r28, 0x41	; 65
+ aae:	21 f4       	brne	.+8      	; 0xab8 <main+0x4e0>
+					DDRA |= (setValue);
+ ab0:	8a b3       	in	r24, 0x1a	; 26
+ ab2:	68 2b       	or	r22, r24
+ ab4:	6a bb       	out	0x1a, r22	; 26
+ ab6:	88 c0       	rjmp	.+272    	; 0xbc8 <main+0x5f0>
+				}
+				else if (portChar == 'B') {
+ ab8:	c2 34       	cpi	r28, 0x42	; 66
+ aba:	21 f4       	brne	.+8      	; 0xac4 <main+0x4ec>
+					DDRB |= (setValue);
+ abc:	87 b3       	in	r24, 0x17	; 23
+ abe:	68 2b       	or	r22, r24
+ ac0:	67 bb       	out	0x17, r22	; 23
+ ac2:	82 c0       	rjmp	.+260    	; 0xbc8 <main+0x5f0>
+				}
+				else if (portChar == 'C') {
+ ac4:	c3 34       	cpi	r28, 0x43	; 67
+ ac6:	21 f4       	brne	.+8      	; 0xad0 <main+0x4f8>
+					DDRC |= (setValue);
+ ac8:	84 b3       	in	r24, 0x14	; 20
+ aca:	68 2b       	or	r22, r24
+ acc:	64 bb       	out	0x14, r22	; 20
+ ace:	7c c0       	rjmp	.+248    	; 0xbc8 <main+0x5f0>
+				}
+				else if (portChar == 'D') {
+ ad0:	c4 34       	cpi	r28, 0x44	; 68
+ ad2:	21 f4       	brne	.+8      	; 0xadc <main+0x504>
+					DDRD |= (setValue);
+ ad4:	81 b3       	in	r24, 0x11	; 17
+ ad6:	68 2b       	or	r22, r24
+ ad8:	61 bb       	out	0x11, r22	; 17
+ ada:	76 c0       	rjmp	.+236    	; 0xbc8 <main+0x5f0>
+				}
+				else if (portChar == 'E') {
+ adc:	c5 34       	cpi	r28, 0x45	; 69
+ ade:	09 f0       	breq	.+2      	; 0xae2 <main+0x50a>
+ ae0:	73 c0       	rjmp	.+230    	; 0xbc8 <main+0x5f0>
+					DDRE |= (setValue);
+ ae2:	86 b1       	in	r24, 0x06	; 6
+ ae4:	68 2b       	or	r22, r24
+ ae6:	66 b9       	out	0x06, r22	; 6
+ ae8:	6f c0       	rjmp	.+222    	; 0xbc8 <main+0x5f0>
+			}
+			PORTD &= ~(1<<ACTIVITY_LED);
+		}
+		
+		// Set pin output as low
+		else if (receivedChar == SET_OUTPUT_LOW) {
+ aea:	9c 34       	cpi	r25, 0x4C	; 76
+ aec:	51 f5       	brne	.+84     	; 0xb42 <main+0x56a>
+			char portChar = USART_Receive();			
+ aee:	aa da       	rcall	.-2732   	; 0x44 <USART_Receive>
+ af0:	c8 2f       	mov	r28, r24
+			usart_read_chars();
+ af2:	c5 da       	rcall	.-2678   	; 0x7e <usart_read_chars>
+			uint8_t setValue = strtol(receivedBuffer, NULL, 16);
+ af4:	40 e1       	ldi	r20, 0x10	; 16
+ af6:	50 e0       	ldi	r21, 0x00	; 0
+ af8:	60 e0       	ldi	r22, 0x00	; 0
+ afa:	70 e0       	ldi	r23, 0x00	; 0
+ afc:	8e e6       	ldi	r24, 0x6E	; 110
+ afe:	90 e0       	ldi	r25, 0x00	; 0
+ b00:	98 d0       	rcall	.+304    	; 0xc32 <strtol>
+			
+			PORTD |= (1<<ACTIVITY_LED);
+ b02:	93 9a       	sbi	0x12, 3	; 18
+			if (portChar == 'A') {
+ b04:	c1 34       	cpi	r28, 0x41	; 65
+ b06:	21 f4       	brne	.+8      	; 0xb10 <main+0x538>
+				PORTA &= ~(setValue);
+ b08:	8b b3       	in	r24, 0x1b	; 27
+ b0a:	60 95       	com	r22
+ b0c:	68 23       	and	r22, r24
+ b0e:	2a c0       	rjmp	.+84     	; 0xb64 <main+0x58c>
+			}
+			else if (portChar == 'B') {
+ b10:	c2 34       	cpi	r28, 0x42	; 66
+ b12:	21 f4       	brne	.+8      	; 0xb1c <main+0x544>
+				PORTB &= ~(setValue);
+ b14:	88 b3       	in	r24, 0x18	; 24
+ b16:	60 95       	com	r22
+ b18:	68 23       	and	r22, r24
+ b1a:	2a c0       	rjmp	.+84     	; 0xb70 <main+0x598>
+			}
+			else if (portChar == 'C') {
+ b1c:	c3 34       	cpi	r28, 0x43	; 67
+ b1e:	21 f4       	brne	.+8      	; 0xb28 <main+0x550>
+				PORTC &= ~(setValue);
+ b20:	85 b3       	in	r24, 0x15	; 21
+ b22:	60 95       	com	r22
+ b24:	68 23       	and	r22, r24
+ b26:	2a c0       	rjmp	.+84     	; 0xb7c <main+0x5a4>
+			}
+			else if (portChar == 'D') {
+ b28:	c4 34       	cpi	r28, 0x44	; 68
+ b2a:	21 f4       	brne	.+8      	; 0xb34 <main+0x55c>
+				PORTD &= ~(setValue);
+ b2c:	82 b3       	in	r24, 0x12	; 18
+ b2e:	60 95       	com	r22
+ b30:	68 23       	and	r22, r24
+ b32:	2a c0       	rjmp	.+84     	; 0xb88 <main+0x5b0>
+			}
+			else if (portChar == 'E') {
+ b34:	c5 34       	cpi	r28, 0x45	; 69
+ b36:	09 f0       	breq	.+2      	; 0xb3a <main+0x562>
+ b38:	47 c0       	rjmp	.+142    	; 0xbc8 <main+0x5f0>
+				PORTE &= ~(setValue);
+ b3a:	87 b1       	in	r24, 0x07	; 7
+ b3c:	60 95       	com	r22
+ b3e:	68 23       	and	r22, r24
+ b40:	29 c0       	rjmp	.+82     	; 0xb94 <main+0x5bc>
+			}
+			PORTD &= ~(1<<ACTIVITY_LED);
+		}
+		
+		// Set pin output as high
+		else if (receivedChar == SET_OUTPUT_HIGH) {
+ b42:	98 34       	cpi	r25, 0x48	; 72
+ b44:	49 f5       	brne	.+82     	; 0xb98 <main+0x5c0>
+			char portChar = USART_Receive();			
+ b46:	7e da       	rcall	.-2820   	; 0x44 <USART_Receive>
+ b48:	c8 2f       	mov	r28, r24
+			usart_read_chars();
+ b4a:	99 da       	rcall	.-2766   	; 0x7e <usart_read_chars>
+			uint8_t setValue = strtol(receivedBuffer, NULL, 16);
+ b4c:	40 e1       	ldi	r20, 0x10	; 16
+ b4e:	50 e0       	ldi	r21, 0x00	; 0
+ b50:	60 e0       	ldi	r22, 0x00	; 0
+ b52:	70 e0       	ldi	r23, 0x00	; 0
+ b54:	8e e6       	ldi	r24, 0x6E	; 110
+ b56:	90 e0       	ldi	r25, 0x00	; 0
+ b58:	6c d0       	rcall	.+216    	; 0xc32 <strtol>
+			
+			PORTD |= (1<<ACTIVITY_LED);
+ b5a:	93 9a       	sbi	0x12, 3	; 18
+			if (portChar == 'A') {
+ b5c:	c1 34       	cpi	r28, 0x41	; 65
+ b5e:	21 f4       	brne	.+8      	; 0xb68 <main+0x590>
+				PORTA |= (setValue);
+ b60:	8b b3       	in	r24, 0x1b	; 27
+ b62:	68 2b       	or	r22, r24
+ b64:	6b bb       	out	0x1b, r22	; 27
+ b66:	30 c0       	rjmp	.+96     	; 0xbc8 <main+0x5f0>
+			}
+			else if (portChar == 'B') {
+ b68:	c2 34       	cpi	r28, 0x42	; 66
+ b6a:	21 f4       	brne	.+8      	; 0xb74 <main+0x59c>
+				PORTB |= (setValue);
+ b6c:	88 b3       	in	r24, 0x18	; 24
+ b6e:	68 2b       	or	r22, r24
+ b70:	68 bb       	out	0x18, r22	; 24
+ b72:	2a c0       	rjmp	.+84     	; 0xbc8 <main+0x5f0>
+			}
+			else if (portChar == 'C') {
+ b74:	c3 34       	cpi	r28, 0x43	; 67
+ b76:	21 f4       	brne	.+8      	; 0xb80 <main+0x5a8>
+				PORTC |= (setValue);
+ b78:	85 b3       	in	r24, 0x15	; 21
+ b7a:	68 2b       	or	r22, r24
+ b7c:	65 bb       	out	0x15, r22	; 21
+ b7e:	24 c0       	rjmp	.+72     	; 0xbc8 <main+0x5f0>
+			}
+			else if (portChar == 'D') {
+ b80:	c4 34       	cpi	r28, 0x44	; 68
+ b82:	21 f4       	brne	.+8      	; 0xb8c <main+0x5b4>
+				PORTD |= (setValue);
+ b84:	82 b3       	in	r24, 0x12	; 18
+ b86:	68 2b       	or	r22, r24
+ b88:	62 bb       	out	0x12, r22	; 18
+ b8a:	1e c0       	rjmp	.+60     	; 0xbc8 <main+0x5f0>
+			}
+			else if (portChar == 'E') {
+ b8c:	c5 34       	cpi	r28, 0x45	; 69
+ b8e:	e1 f4       	brne	.+56     	; 0xbc8 <main+0x5f0>
+				PORTE |= (setValue);
+ b90:	87 b1       	in	r24, 0x07	; 7
+ b92:	68 2b       	or	r22, r24
+ b94:	67 b9       	out	0x07, r22	; 7
+ b96:	18 c0       	rjmp	.+48     	; 0xbc8 <main+0x5f0>
+			}
+			PORTD &= ~(1<<ACTIVITY_LED);
+		}
+		
+		// Read all pins of a PORT and return the value
+		else if (receivedChar == READ_INPUT) {
+ b98:	94 34       	cpi	r25, 0x44	; 68
+ b9a:	c1 f4       	brne	.+48     	; 0xbcc <main+0x5f4>
+			char portChar = USART_Receive();			
+ b9c:	53 da       	rcall	.-2906   	; 0x44 <USART_Receive>
+			
+			PORTD |= (1<<ACTIVITY_LED);
+ b9e:	93 9a       	sbi	0x12, 3	; 18
+			if (portChar == 'A') {
+ ba0:	81 34       	cpi	r24, 0x41	; 65
+ ba2:	11 f4       	brne	.+4      	; 0xba8 <main+0x5d0>
+				USART_Transmit(PINA);
+ ba4:	89 b3       	in	r24, 0x19	; 25
+ ba6:	0f c0       	rjmp	.+30     	; 0xbc6 <main+0x5ee>
+			}
+			else if (portChar == 'B') {
+ ba8:	82 34       	cpi	r24, 0x42	; 66
+ baa:	11 f4       	brne	.+4      	; 0xbb0 <main+0x5d8>
+				USART_Transmit(PINB);
+ bac:	86 b3       	in	r24, 0x16	; 22
+ bae:	0b c0       	rjmp	.+22     	; 0xbc6 <main+0x5ee>
+			}
+			else if (portChar == 'C') {
+ bb0:	83 34       	cpi	r24, 0x43	; 67
+ bb2:	11 f4       	brne	.+4      	; 0xbb8 <main+0x5e0>
+				USART_Transmit(PINC);
+ bb4:	83 b3       	in	r24, 0x13	; 19
+ bb6:	07 c0       	rjmp	.+14     	; 0xbc6 <main+0x5ee>
+			}
+			else if (portChar == 'D') {
+ bb8:	84 34       	cpi	r24, 0x44	; 68
+ bba:	11 f4       	brne	.+4      	; 0xbc0 <main+0x5e8>
+				USART_Transmit(PIND);
+ bbc:	80 b3       	in	r24, 0x10	; 16
+ bbe:	03 c0       	rjmp	.+6      	; 0xbc6 <main+0x5ee>
+			}
+			else if (portChar == 'E') {
+ bc0:	85 34       	cpi	r24, 0x45	; 69
+ bc2:	11 f4       	brne	.+4      	; 0xbc8 <main+0x5f0>
+				USART_Transmit(PINE);
+ bc4:	85 b1       	in	r24, 0x05	; 5
+ bc6:	42 da       	rcall	.-2940   	; 0x4c <USART_Transmit>
+			}
+			PORTD &= ~(1<<ACTIVITY_LED);
+ bc8:	93 98       	cbi	0x12, 3	; 18
+ bca:	14 cd       	rjmp	.-1496   	; 0x5f4 <main+0x1c>
+		}
+		
+		// Set the reset common lines variable on or off, useful if you are controlling all the pins directly
+		else if (receivedChar == RESET_COMMON_LINES) {
+ bcc:	9d 34       	cpi	r25, 0x4D	; 77
+ bce:	59 f4       	brne	.+22     	; 0xbe6 <main+0x60e>
+			char commonChar = USART_Receive();
+ bd0:	39 da       	rcall	.-2958   	; 0x44 <USART_Receive>
+			if (commonChar == '1') {
+ bd2:	81 33       	cpi	r24, 0x31	; 49
+ bd4:	19 f4       	brne	.+6      	; 0xbdc <main+0x604>
+				resetCommonLines = 1;
+ bd6:	88 24       	eor	r8, r8
+ bd8:	83 94       	inc	r8
+ bda:	0f cd       	rjmp	.-1506   	; 0x5fa <main+0x22>
+			}
+			else if (commonChar == '0') {
+ bdc:	80 33       	cpi	r24, 0x30	; 48
+ bde:	09 f0       	breq	.+2      	; 0xbe2 <main+0x60a>
+ be0:	09 cd       	rjmp	.-1518   	; 0x5f4 <main+0x1c>
+				resetCommonLines = 0;
+ be2:	81 2c       	mov	r8, r1
+ be4:	0b cd       	rjmp	.-1514   	; 0x5fc <main+0x24>
+			}
+		}
+		
+		// Send back the PCB version number
+		else if (receivedChar == READ_PCB_VERSION) {
+ be6:	98 36       	cpi	r25, 0x68	; 104
+ be8:	11 f4       	brne	.+4      	; 0xbee <main+0x616>
+			USART_Transmit(PCB_VERSION);
+ bea:	82 e0       	ldi	r24, 0x02	; 2
+ bec:	03 c0       	rjmp	.+6      	; 0xbf4 <main+0x61c>
+		}
+		
+		// Send back the firmware version number
+		else if (receivedChar == READ_FIRMWARE_VERSION) {
+ bee:	96 35       	cpi	r25, 0x56	; 86
+ bf0:	19 f4       	brne	.+6      	; 0xbf8 <main+0x620>
+			USART_Transmit(FIRMWARE_VERSION);
+ bf2:	89 e0       	ldi	r24, 0x09	; 9
+ bf4:	2b da       	rcall	.-2986   	; 0x4c <USART_Transmit>
+ bf6:	fe cc       	rjmp	.-1540   	; 0x5f4 <main+0x1c>
+		}
+		
+		// Reset the AVR if it matches the number
+		else if (receivedChar == RESET_AVR) {
+ bf8:	9a 32       	cpi	r25, 0x2A	; 42
+ bfa:	09 f0       	breq	.+2      	; 0xbfe <main+0x626>
+ bfc:	fb cc       	rjmp	.-1546   	; 0x5f4 <main+0x1c>
+			usart_read_chars();
+ bfe:	3f da       	rcall	.-2946   	; 0x7e <usart_read_chars>
+			uint32_t resetValue = strtol(receivedBuffer, NULL, 16);
+ c00:	40 e1       	ldi	r20, 0x10	; 16
+ c02:	50 e0       	ldi	r21, 0x00	; 0
+ c04:	60 e0       	ldi	r22, 0x00	; 0
+ c06:	70 e0       	ldi	r23, 0x00	; 0
+ c08:	8e e6       	ldi	r24, 0x6E	; 110
+ c0a:	90 e0       	ldi	r25, 0x00	; 0
+ c0c:	12 d0       	rcall	.+36     	; 0xc32 <strtol>
+			if (resetValue == RESET_VALUE) {
+ c0e:	61 3e       	cpi	r22, 0xE1	; 225
+ c10:	75 4e       	sbci	r23, 0xE5	; 229
+ c12:	87 40       	sbci	r24, 0x07	; 7
+ c14:	91 05       	cpc	r25, r1
+ c16:	09 f0       	breq	.+2      	; 0xc1a <main+0x642>
+ c18:	ed cc       	rjmp	.-1574   	; 0x5f4 <main+0x1c>
+				// Clear watchdog flag
+				MCUCSR &= ~(1<<WDRF);
+ c1a:	84 b7       	in	r24, 0x34	; 52
+ c1c:	87 7f       	andi	r24, 0xF7	; 247
+ c1e:	84 bf       	out	0x34, r24	; 52
+				
+				// Start timed sequence
+				WDTCR = (1<<WDCE) | (1<<WDE);
+ c20:	f8 e1       	ldi	r31, 0x18	; 24
+ c22:	f1 bd       	out	0x21, r31	; 33
+				
+				// Reset in 250 ms
+				WDTCR = (1<<WDP2) | (1<<WDE);
+ c24:	2c e0       	ldi	r18, 0x0C	; 12
+ c26:	21 bd       	out	0x21, r18	; 33
+    milliseconds can be achieved.
+ */
+void
+_delay_loop_2(uint16_t __count)
+{
+	__asm__ volatile (
+ c28:	8f ef       	ldi	r24, 0xFF	; 255
+ c2a:	9f ef       	ldi	r25, 0xFF	; 255
+ c2c:	01 97       	sbiw	r24, 0x01	; 1
+ c2e:	f1 f7       	brne	.-4      	; 0xc2c <main+0x654>
+ c30:	e1 cc       	rjmp	.-1598   	; 0x5f4 <main+0x1c>
+
+00000c32 <strtol>:
+ c32:	a0 e0       	ldi	r26, 0x00	; 0
+ c34:	b0 e0       	ldi	r27, 0x00	; 0
+ c36:	ee e1       	ldi	r30, 0x1E	; 30
+ c38:	f6 e0       	ldi	r31, 0x06	; 6
+ c3a:	78 c1       	rjmp	.+752    	; 0xf2c <__prologue_saves__+0x2>
+ c3c:	5c 01       	movw	r10, r24
+ c3e:	6b 01       	movw	r12, r22
+ c40:	7a 01       	movw	r14, r20
+ c42:	61 15       	cp	r22, r1
+ c44:	71 05       	cpc	r23, r1
+ c46:	19 f0       	breq	.+6      	; 0xc4e <strtol+0x1c>
+ c48:	fb 01       	movw	r30, r22
+ c4a:	91 83       	std	Z+1, r25	; 0x01
+ c4c:	80 83       	st	Z, r24
+ c4e:	e1 14       	cp	r14, r1
+ c50:	f1 04       	cpc	r15, r1
+ c52:	29 f0       	breq	.+10     	; 0xc5e <strtol+0x2c>
+ c54:	c7 01       	movw	r24, r14
+ c56:	02 97       	sbiw	r24, 0x02	; 2
+ c58:	83 97       	sbiw	r24, 0x23	; 35
+ c5a:	08 f0       	brcs	.+2      	; 0xc5e <strtol+0x2c>
+ c5c:	e2 c0       	rjmp	.+452    	; 0xe22 <strtol+0x1f0>
+ c5e:	e5 01       	movw	r28, r10
+ c60:	21 96       	adiw	r28, 0x01	; 1
+ c62:	f5 01       	movw	r30, r10
+ c64:	10 81       	ld	r17, Z
+ c66:	81 2f       	mov	r24, r17
+ c68:	90 e0       	ldi	r25, 0x00	; 0
+ c6a:	11 d1       	rcall	.+546    	; 0xe8e <isspace>
+ c6c:	89 2b       	or	r24, r25
+ c6e:	11 f0       	breq	.+4      	; 0xc74 <strtol+0x42>
+ c70:	5e 01       	movw	r10, r28
+ c72:	f5 cf       	rjmp	.-22     	; 0xc5e <strtol+0x2c>
+ c74:	1d 32       	cpi	r17, 0x2D	; 45
+ c76:	29 f4       	brne	.+10     	; 0xc82 <strtol+0x50>
+ c78:	21 96       	adiw	r28, 0x01	; 1
+ c7a:	f5 01       	movw	r30, r10
+ c7c:	11 81       	ldd	r17, Z+1	; 0x01
+ c7e:	01 e0       	ldi	r16, 0x01	; 1
+ c80:	07 c0       	rjmp	.+14     	; 0xc90 <strtol+0x5e>
+ c82:	1b 32       	cpi	r17, 0x2B	; 43
+ c84:	21 f4       	brne	.+8      	; 0xc8e <strtol+0x5c>
+ c86:	e5 01       	movw	r28, r10
+ c88:	22 96       	adiw	r28, 0x02	; 2
+ c8a:	f5 01       	movw	r30, r10
+ c8c:	11 81       	ldd	r17, Z+1	; 0x01
+ c8e:	00 e0       	ldi	r16, 0x00	; 0
+ c90:	e1 14       	cp	r14, r1
+ c92:	f1 04       	cpc	r15, r1
+ c94:	09 f1       	breq	.+66     	; 0xcd8 <strtol+0xa6>
+ c96:	f0 e1       	ldi	r31, 0x10	; 16
+ c98:	ef 16       	cp	r14, r31
+ c9a:	f1 04       	cpc	r15, r1
+ c9c:	29 f4       	brne	.+10     	; 0xca8 <strtol+0x76>
+ c9e:	3e c0       	rjmp	.+124    	; 0xd1c <strtol+0xea>
+ ca0:	10 e3       	ldi	r17, 0x30	; 48
+ ca2:	e1 14       	cp	r14, r1
+ ca4:	f1 04       	cpc	r15, r1
+ ca6:	21 f1       	breq	.+72     	; 0xcf0 <strtol+0xbe>
+ ca8:	28 e0       	ldi	r18, 0x08	; 8
+ caa:	e2 16       	cp	r14, r18
+ cac:	f1 04       	cpc	r15, r1
+ cae:	01 f1       	breq	.+64     	; 0xcf0 <strtol+0xbe>
+ cb0:	54 f4       	brge	.+20     	; 0xcc6 <strtol+0x94>
+ cb2:	e2 e0       	ldi	r30, 0x02	; 2
+ cb4:	ee 16       	cp	r14, r30
+ cb6:	f1 04       	cpc	r15, r1
+ cb8:	21 f5       	brne	.+72     	; 0xd02 <strtol+0xd0>
+ cba:	81 2c       	mov	r8, r1
+ cbc:	91 2c       	mov	r9, r1
+ cbe:	a1 2c       	mov	r10, r1
+ cc0:	b0 e4       	ldi	r27, 0x40	; 64
+ cc2:	bb 2e       	mov	r11, r27
+ cc4:	3d c0       	rjmp	.+122    	; 0xd40 <strtol+0x10e>
+ cc6:	fa e0       	ldi	r31, 0x0A	; 10
+ cc8:	ef 16       	cp	r14, r31
+ cca:	f1 04       	cpc	r15, r1
+ ccc:	39 f0       	breq	.+14     	; 0xcdc <strtol+0xaa>
+ cce:	20 e1       	ldi	r18, 0x10	; 16
+ cd0:	e2 16       	cp	r14, r18
+ cd2:	f1 04       	cpc	r15, r1
+ cd4:	b1 f4       	brne	.+44     	; 0xd02 <strtol+0xd0>
+ cd6:	2f c0       	rjmp	.+94     	; 0xd36 <strtol+0x104>
+ cd8:	10 33       	cpi	r17, 0x30	; 48
+ cda:	11 f1       	breq	.+68     	; 0xd20 <strtol+0xee>
+ cdc:	fa e0       	ldi	r31, 0x0A	; 10
+ cde:	ef 2e       	mov	r14, r31
+ ce0:	f1 2c       	mov	r15, r1
+ ce2:	ac ec       	ldi	r26, 0xCC	; 204
+ ce4:	8a 2e       	mov	r8, r26
+ ce6:	98 2c       	mov	r9, r8
+ ce8:	a8 2c       	mov	r10, r8
+ cea:	ac e0       	ldi	r26, 0x0C	; 12
+ cec:	ba 2e       	mov	r11, r26
+ cee:	28 c0       	rjmp	.+80     	; 0xd40 <strtol+0x10e>
+ cf0:	78 e0       	ldi	r23, 0x08	; 8
+ cf2:	e7 2e       	mov	r14, r23
+ cf4:	f1 2c       	mov	r15, r1
+ cf6:	81 2c       	mov	r8, r1
+ cf8:	91 2c       	mov	r9, r1
+ cfa:	a1 2c       	mov	r10, r1
+ cfc:	e0 e1       	ldi	r30, 0x10	; 16
+ cfe:	be 2e       	mov	r11, r30
+ d00:	1f c0       	rjmp	.+62     	; 0xd40 <strtol+0x10e>
+ d02:	60 e0       	ldi	r22, 0x00	; 0
+ d04:	70 e0       	ldi	r23, 0x00	; 0
+ d06:	80 e0       	ldi	r24, 0x00	; 0
+ d08:	90 e8       	ldi	r25, 0x80	; 128
+ d0a:	97 01       	movw	r18, r14
+ d0c:	0f 2c       	mov	r0, r15
+ d0e:	00 0c       	add	r0, r0
+ d10:	44 0b       	sbc	r20, r20
+ d12:	55 0b       	sbc	r21, r21
+ d14:	de d0       	rcall	.+444    	; 0xed2 <__udivmodsi4>
+ d16:	49 01       	movw	r8, r18
+ d18:	5a 01       	movw	r10, r20
+ d1a:	12 c0       	rjmp	.+36     	; 0xd40 <strtol+0x10e>
+ d1c:	10 33       	cpi	r17, 0x30	; 48
+ d1e:	59 f4       	brne	.+22     	; 0xd36 <strtol+0x104>
+ d20:	88 81       	ld	r24, Y
+ d22:	8f 7d       	andi	r24, 0xDF	; 223
+ d24:	88 35       	cpi	r24, 0x58	; 88
+ d26:	09 f0       	breq	.+2      	; 0xd2a <strtol+0xf8>
+ d28:	bb cf       	rjmp	.-138    	; 0xca0 <strtol+0x6e>
+ d2a:	19 81       	ldd	r17, Y+1	; 0x01
+ d2c:	22 96       	adiw	r28, 0x02	; 2
+ d2e:	02 60       	ori	r16, 0x02	; 2
+ d30:	80 e1       	ldi	r24, 0x10	; 16
+ d32:	e8 2e       	mov	r14, r24
+ d34:	f1 2c       	mov	r15, r1
+ d36:	81 2c       	mov	r8, r1
+ d38:	91 2c       	mov	r9, r1
+ d3a:	a1 2c       	mov	r10, r1
+ d3c:	68 e0       	ldi	r22, 0x08	; 8
+ d3e:	b6 2e       	mov	r11, r22
+ d40:	40 e0       	ldi	r20, 0x00	; 0
+ d42:	60 e0       	ldi	r22, 0x00	; 0
+ d44:	70 e0       	ldi	r23, 0x00	; 0
+ d46:	cb 01       	movw	r24, r22
+ d48:	27 01       	movw	r4, r14
+ d4a:	0f 2c       	mov	r0, r15
+ d4c:	00 0c       	add	r0, r0
+ d4e:	66 08       	sbc	r6, r6
+ d50:	77 08       	sbc	r7, r7
+ d52:	fe 01       	movw	r30, r28
+ d54:	50 ed       	ldi	r21, 0xD0	; 208
+ d56:	35 2e       	mov	r3, r21
+ d58:	31 0e       	add	r3, r17
+ d5a:	29 e0       	ldi	r18, 0x09	; 9
+ d5c:	23 15       	cp	r18, r3
+ d5e:	70 f4       	brcc	.+28     	; 0xd7c <strtol+0x14a>
+ d60:	2f eb       	ldi	r18, 0xBF	; 191
+ d62:	21 0f       	add	r18, r17
+ d64:	2a 31       	cpi	r18, 0x1A	; 26
+ d66:	18 f4       	brcc	.+6      	; 0xd6e <strtol+0x13c>
+ d68:	39 ec       	ldi	r19, 0xC9	; 201
+ d6a:	33 2e       	mov	r3, r19
+ d6c:	06 c0       	rjmp	.+12     	; 0xd7a <strtol+0x148>
+ d6e:	2f e9       	ldi	r18, 0x9F	; 159
+ d70:	21 0f       	add	r18, r17
+ d72:	2a 31       	cpi	r18, 0x1A	; 26
+ d74:	10 f5       	brcc	.+68     	; 0xdba <strtol+0x188>
+ d76:	29 ea       	ldi	r18, 0xA9	; 169
+ d78:	32 2e       	mov	r3, r18
+ d7a:	31 0e       	add	r3, r17
+ d7c:	23 2d       	mov	r18, r3
+ d7e:	30 e0       	ldi	r19, 0x00	; 0
+ d80:	2e 15       	cp	r18, r14
+ d82:	3f 05       	cpc	r19, r15
+ d84:	d4 f4       	brge	.+52     	; 0xdba <strtol+0x188>
+ d86:	47 fd       	sbrc	r20, 7
+ d88:	15 c0       	rjmp	.+42     	; 0xdb4 <strtol+0x182>
+ d8a:	86 16       	cp	r8, r22
+ d8c:	97 06       	cpc	r9, r23
+ d8e:	a8 06       	cpc	r10, r24
+ d90:	b9 06       	cpc	r11, r25
+ d92:	68 f0       	brcs	.+26     	; 0xdae <strtol+0x17c>
+ d94:	a3 01       	movw	r20, r6
+ d96:	92 01       	movw	r18, r4
+ d98:	8d d0       	rcall	.+282    	; 0xeb4 <__mulsi3>
+ d9a:	63 0d       	add	r22, r3
+ d9c:	71 1d       	adc	r23, r1
+ d9e:	81 1d       	adc	r24, r1
+ da0:	91 1d       	adc	r25, r1
+ da2:	61 30       	cpi	r22, 0x01	; 1
+ da4:	71 05       	cpc	r23, r1
+ da6:	81 05       	cpc	r24, r1
+ da8:	20 e8       	ldi	r18, 0x80	; 128
+ daa:	92 07       	cpc	r25, r18
+ dac:	10 f0       	brcs	.+4      	; 0xdb2 <strtol+0x180>
+ dae:	4f ef       	ldi	r20, 0xFF	; 255
+ db0:	01 c0       	rjmp	.+2      	; 0xdb4 <strtol+0x182>
+ db2:	41 e0       	ldi	r20, 0x01	; 1
+ db4:	21 96       	adiw	r28, 0x01	; 1
+ db6:	10 81       	ld	r17, Z
+ db8:	cc cf       	rjmp	.-104    	; 0xd52 <strtol+0x120>
+ dba:	20 2f       	mov	r18, r16
+ dbc:	21 70       	andi	r18, 0x01	; 1
+ dbe:	c1 14       	cp	r12, r1
+ dc0:	d1 04       	cpc	r13, r1
+ dc2:	71 f0       	breq	.+28     	; 0xde0 <strtol+0x1ae>
+ dc4:	44 23       	and	r20, r20
+ dc6:	29 f0       	breq	.+10     	; 0xdd2 <strtol+0x1a0>
+ dc8:	21 97       	sbiw	r28, 0x01	; 1
+ dca:	f6 01       	movw	r30, r12
+ dcc:	d1 83       	std	Z+1, r29	; 0x01
+ dce:	c0 83       	st	Z, r28
+ dd0:	07 c0       	rjmp	.+14     	; 0xde0 <strtol+0x1ae>
+ dd2:	01 ff       	sbrs	r16, 1
+ dd4:	19 c0       	rjmp	.+50     	; 0xe08 <strtol+0x1d6>
+ dd6:	22 97       	sbiw	r28, 0x02	; 2
+ dd8:	f6 01       	movw	r30, r12
+ dda:	d1 83       	std	Z+1, r29	; 0x01
+ ddc:	c0 83       	st	Z, r28
+ dde:	14 c0       	rjmp	.+40     	; 0xe08 <strtol+0x1d6>
+ de0:	47 ff       	sbrs	r20, 7
+ de2:	12 c0       	rjmp	.+36     	; 0xe08 <strtol+0x1d6>
+ de4:	22 23       	and	r18, r18
+ de6:	29 f0       	breq	.+10     	; 0xdf2 <strtol+0x1c0>
+ de8:	60 e0       	ldi	r22, 0x00	; 0
+ dea:	70 e0       	ldi	r23, 0x00	; 0
+ dec:	80 e0       	ldi	r24, 0x00	; 0
+ dee:	90 e8       	ldi	r25, 0x80	; 128
+ df0:	04 c0       	rjmp	.+8      	; 0xdfa <strtol+0x1c8>
+ df2:	6f ef       	ldi	r22, 0xFF	; 255
+ df4:	7f ef       	ldi	r23, 0xFF	; 255
+ df6:	8f ef       	ldi	r24, 0xFF	; 255
+ df8:	9f e7       	ldi	r25, 0x7F	; 127
+ dfa:	22 e2       	ldi	r18, 0x22	; 34
+ dfc:	30 e0       	ldi	r19, 0x00	; 0
+ dfe:	30 93 fa 00 	sts	0x00FA, r19	; 0x8000fa <errno+0x1>
+ e02:	20 93 f9 00 	sts	0x00F9, r18	; 0x8000f9 <errno>
+ e06:	09 c0       	rjmp	.+18     	; 0xe1a <strtol+0x1e8>
+ e08:	22 23       	and	r18, r18
+ e0a:	81 f0       	breq	.+32     	; 0xe2c <strtol+0x1fa>
+ e0c:	90 95       	com	r25
+ e0e:	80 95       	com	r24
+ e10:	70 95       	com	r23
+ e12:	61 95       	neg	r22
+ e14:	7f 4f       	sbci	r23, 0xFF	; 255
+ e16:	8f 4f       	sbci	r24, 0xFF	; 255
+ e18:	9f 4f       	sbci	r25, 0xFF	; 255
+ e1a:	46 2f       	mov	r20, r22
+ e1c:	37 2f       	mov	r19, r23
+ e1e:	28 2f       	mov	r18, r24
+ e20:	12 c0       	rjmp	.+36     	; 0xe46 <strtol+0x214>
+ e22:	40 e0       	ldi	r20, 0x00	; 0
+ e24:	30 e0       	ldi	r19, 0x00	; 0
+ e26:	20 e0       	ldi	r18, 0x00	; 0
+ e28:	90 e0       	ldi	r25, 0x00	; 0
+ e2a:	0d c0       	rjmp	.+26     	; 0xe46 <strtol+0x214>
+ e2c:	97 ff       	sbrs	r25, 7
+ e2e:	f5 cf       	rjmp	.-22     	; 0xe1a <strtol+0x1e8>
+ e30:	82 e2       	ldi	r24, 0x22	; 34
+ e32:	90 e0       	ldi	r25, 0x00	; 0
+ e34:	90 93 fa 00 	sts	0x00FA, r25	; 0x8000fa <errno+0x1>
+ e38:	80 93 f9 00 	sts	0x00F9, r24	; 0x8000f9 <errno>
+ e3c:	6f ef       	ldi	r22, 0xFF	; 255
+ e3e:	7f ef       	ldi	r23, 0xFF	; 255
+ e40:	8f ef       	ldi	r24, 0xFF	; 255
+ e42:	9f e7       	ldi	r25, 0x7F	; 127
+ e44:	ea cf       	rjmp	.-44     	; 0xe1a <strtol+0x1e8>
+ e46:	64 2f       	mov	r22, r20
+ e48:	73 2f       	mov	r23, r19
+ e4a:	82 2f       	mov	r24, r18
+ e4c:	cd b7       	in	r28, 0x3d	; 61
+ e4e:	de b7       	in	r29, 0x3e	; 62
+ e50:	e1 e1       	ldi	r30, 0x11	; 17
+ e52:	88 c0       	rjmp	.+272    	; 0xf64 <__epilogue_restores__+0x2>
+
+00000e54 <atoi>:
+ e54:	fc 01       	movw	r30, r24
+ e56:	88 27       	eor	r24, r24
+ e58:	99 27       	eor	r25, r25
+ e5a:	e8 94       	clt
+ e5c:	21 91       	ld	r18, Z+
+ e5e:	20 32       	cpi	r18, 0x20	; 32
+ e60:	e9 f3       	breq	.-6      	; 0xe5c <atoi+0x8>
+ e62:	29 30       	cpi	r18, 0x09	; 9
+ e64:	10 f0       	brcs	.+4      	; 0xe6a <atoi+0x16>
+ e66:	2e 30       	cpi	r18, 0x0E	; 14
+ e68:	c8 f3       	brcs	.-14     	; 0xe5c <atoi+0x8>
+ e6a:	2b 32       	cpi	r18, 0x2B	; 43
+ e6c:	39 f0       	breq	.+14     	; 0xe7c <atoi+0x28>
+ e6e:	2d 32       	cpi	r18, 0x2D	; 45
+ e70:	31 f4       	brne	.+12     	; 0xe7e <atoi+0x2a>
+ e72:	68 94       	set
+ e74:	03 c0       	rjmp	.+6      	; 0xe7c <atoi+0x28>
+ e76:	13 d0       	rcall	.+38     	; 0xe9e <__mulhi_const_10>
+ e78:	82 0f       	add	r24, r18
+ e7a:	91 1d       	adc	r25, r1
+ e7c:	21 91       	ld	r18, Z+
+ e7e:	20 53       	subi	r18, 0x30	; 48
+ e80:	2a 30       	cpi	r18, 0x0A	; 10
+ e82:	c8 f3       	brcs	.-14     	; 0xe76 <atoi+0x22>
+ e84:	1e f4       	brtc	.+6      	; 0xe8c <atoi+0x38>
+ e86:	90 95       	com	r25
+ e88:	81 95       	neg	r24
+ e8a:	9f 4f       	sbci	r25, 0xFF	; 255
+ e8c:	08 95       	ret
+
+00000e8e <isspace>:
+ e8e:	91 11       	cpse	r25, r1
+ e90:	0e c0       	rjmp	.+28     	; 0xeae <__ctype_isfalse>
+ e92:	80 32       	cpi	r24, 0x20	; 32
+ e94:	19 f0       	breq	.+6      	; 0xe9c <isspace+0xe>
+ e96:	89 50       	subi	r24, 0x09	; 9
+ e98:	85 50       	subi	r24, 0x05	; 5
+ e9a:	d0 f7       	brcc	.-12     	; 0xe90 <isspace+0x2>
+ e9c:	08 95       	ret
+
+00000e9e <__mulhi_const_10>:
+ e9e:	7a e0       	ldi	r23, 0x0A	; 10
+ ea0:	97 9f       	mul	r25, r23
+ ea2:	90 2d       	mov	r25, r0
+ ea4:	87 9f       	mul	r24, r23
+ ea6:	80 2d       	mov	r24, r0
+ ea8:	91 0d       	add	r25, r1
+ eaa:	11 24       	eor	r1, r1
+ eac:	08 95       	ret
+
+00000eae <__ctype_isfalse>:
+ eae:	99 27       	eor	r25, r25
+ eb0:	88 27       	eor	r24, r24
+
+00000eb2 <__ctype_istrue>:
+ eb2:	08 95       	ret
+
+00000eb4 <__mulsi3>:
+ eb4:	db 01       	movw	r26, r22
+ eb6:	8f 93       	push	r24
+ eb8:	9f 93       	push	r25
+ eba:	2d d0       	rcall	.+90     	; 0xf16 <__muluhisi3>
+ ebc:	bf 91       	pop	r27
+ ebe:	af 91       	pop	r26
+ ec0:	a2 9f       	mul	r26, r18
+ ec2:	80 0d       	add	r24, r0
+ ec4:	91 1d       	adc	r25, r1
+ ec6:	a3 9f       	mul	r26, r19
+ ec8:	90 0d       	add	r25, r0
+ eca:	b2 9f       	mul	r27, r18
+ ecc:	90 0d       	add	r25, r0
+ ece:	11 24       	eor	r1, r1
+ ed0:	08 95       	ret
+
+00000ed2 <__udivmodsi4>:
+ ed2:	a1 e2       	ldi	r26, 0x21	; 33
+ ed4:	1a 2e       	mov	r1, r26
+ ed6:	aa 1b       	sub	r26, r26
+ ed8:	bb 1b       	sub	r27, r27
+ eda:	fd 01       	movw	r30, r26
+ edc:	0d c0       	rjmp	.+26     	; 0xef8 <__udivmodsi4_ep>
+
+00000ede <__udivmodsi4_loop>:
+ ede:	aa 1f       	adc	r26, r26
+ ee0:	bb 1f       	adc	r27, r27
+ ee2:	ee 1f       	adc	r30, r30
+ ee4:	ff 1f       	adc	r31, r31
+ ee6:	a2 17       	cp	r26, r18
+ ee8:	b3 07       	cpc	r27, r19
+ eea:	e4 07       	cpc	r30, r20
+ eec:	f5 07       	cpc	r31, r21
+ eee:	20 f0       	brcs	.+8      	; 0xef8 <__udivmodsi4_ep>
+ ef0:	a2 1b       	sub	r26, r18
+ ef2:	b3 0b       	sbc	r27, r19
+ ef4:	e4 0b       	sbc	r30, r20
+ ef6:	f5 0b       	sbc	r31, r21
+
+00000ef8 <__udivmodsi4_ep>:
+ ef8:	66 1f       	adc	r22, r22
+ efa:	77 1f       	adc	r23, r23
+ efc:	88 1f       	adc	r24, r24
+ efe:	99 1f       	adc	r25, r25
+ f00:	1a 94       	dec	r1
+ f02:	69 f7       	brne	.-38     	; 0xede <__udivmodsi4_loop>
+ f04:	60 95       	com	r22
+ f06:	70 95       	com	r23
+ f08:	80 95       	com	r24
+ f0a:	90 95       	com	r25
+ f0c:	9b 01       	movw	r18, r22
+ f0e:	ac 01       	movw	r20, r24
+ f10:	bd 01       	movw	r22, r26
+ f12:	cf 01       	movw	r24, r30
+ f14:	08 95       	ret
+
+00000f16 <__muluhisi3>:
+ f16:	40 d0       	rcall	.+128    	; 0xf98 <__umulhisi3>
+ f18:	a5 9f       	mul	r26, r21
+ f1a:	90 0d       	add	r25, r0
+ f1c:	b4 9f       	mul	r27, r20
+ f1e:	90 0d       	add	r25, r0
+ f20:	a4 9f       	mul	r26, r20
+ f22:	80 0d       	add	r24, r0
+ f24:	91 1d       	adc	r25, r1
+ f26:	11 24       	eor	r1, r1
+ f28:	08 95       	ret
+
+00000f2a <__prologue_saves__>:
+ f2a:	2f 92       	push	r2
+ f2c:	3f 92       	push	r3
+ f2e:	4f 92       	push	r4
+ f30:	5f 92       	push	r5
+ f32:	6f 92       	push	r6
+ f34:	7f 92       	push	r7
+ f36:	8f 92       	push	r8
+ f38:	9f 92       	push	r9
+ f3a:	af 92       	push	r10
+ f3c:	bf 92       	push	r11
+ f3e:	cf 92       	push	r12
+ f40:	df 92       	push	r13
+ f42:	ef 92       	push	r14
+ f44:	ff 92       	push	r15
+ f46:	0f 93       	push	r16
+ f48:	1f 93       	push	r17
+ f4a:	cf 93       	push	r28
+ f4c:	df 93       	push	r29
+ f4e:	cd b7       	in	r28, 0x3d	; 61
+ f50:	de b7       	in	r29, 0x3e	; 62
+ f52:	ca 1b       	sub	r28, r26
+ f54:	db 0b       	sbc	r29, r27
+ f56:	0f b6       	in	r0, 0x3f	; 63
+ f58:	f8 94       	cli
+ f5a:	de bf       	out	0x3e, r29	; 62
+ f5c:	0f be       	out	0x3f, r0	; 63
+ f5e:	cd bf       	out	0x3d, r28	; 61
+ f60:	09 94       	ijmp
+
+00000f62 <__epilogue_restores__>:
+ f62:	2a 88       	ldd	r2, Y+18	; 0x12
+ f64:	39 88       	ldd	r3, Y+17	; 0x11
+ f66:	48 88       	ldd	r4, Y+16	; 0x10
+ f68:	5f 84       	ldd	r5, Y+15	; 0x0f
+ f6a:	6e 84       	ldd	r6, Y+14	; 0x0e
+ f6c:	7d 84       	ldd	r7, Y+13	; 0x0d
+ f6e:	8c 84       	ldd	r8, Y+12	; 0x0c
+ f70:	9b 84       	ldd	r9, Y+11	; 0x0b
+ f72:	aa 84       	ldd	r10, Y+10	; 0x0a
+ f74:	b9 84       	ldd	r11, Y+9	; 0x09
+ f76:	c8 84       	ldd	r12, Y+8	; 0x08
+ f78:	df 80       	ldd	r13, Y+7	; 0x07
+ f7a:	ee 80       	ldd	r14, Y+6	; 0x06
+ f7c:	fd 80       	ldd	r15, Y+5	; 0x05
+ f7e:	0c 81       	ldd	r16, Y+4	; 0x04
+ f80:	1b 81       	ldd	r17, Y+3	; 0x03
+ f82:	aa 81       	ldd	r26, Y+2	; 0x02
+ f84:	b9 81       	ldd	r27, Y+1	; 0x01
+ f86:	ce 0f       	add	r28, r30
+ f88:	d1 1d       	adc	r29, r1
+ f8a:	0f b6       	in	r0, 0x3f	; 63
+ f8c:	f8 94       	cli
+ f8e:	de bf       	out	0x3e, r29	; 62
+ f90:	0f be       	out	0x3f, r0	; 63
+ f92:	cd bf       	out	0x3d, r28	; 61
+ f94:	ed 01       	movw	r28, r26
+ f96:	08 95       	ret
+
+00000f98 <__umulhisi3>:
+ f98:	a2 9f       	mul	r26, r18
+ f9a:	b0 01       	movw	r22, r0
+ f9c:	b3 9f       	mul	r27, r19
+ f9e:	c0 01       	movw	r24, r0
+ fa0:	a3 9f       	mul	r26, r19
+ fa2:	01 d0       	rcall	.+2      	; 0xfa6 <__umulhisi3+0xe>
+ fa4:	b2 9f       	mul	r27, r18
+ fa6:	70 0d       	add	r23, r0
+ fa8:	81 1d       	adc	r24, r1
+ faa:	11 24       	eor	r1, r1
+ fac:	91 1d       	adc	r25, r1
+ fae:	08 95       	ret
+
+00000fb0 <_exit>:
+ fb0:	f8 94       	cli
+
+00000fb2 <__stop_program>:
+ fb2:	ff cf       	rjmp	.-2      	; 0xfb2 <__stop_program>
