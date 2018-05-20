@@ -42,7 +42,7 @@ extern "C" {
 
 
 
-#if defined(__linux__) || defined(__FreeBSD__)
+#ifndef _WIN32
 
 #include <termios.h>
 #include <sys/ioctl.h>

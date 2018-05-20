@@ -34,9 +34,13 @@
 #include "rs232.h"
 
 
-#if defined(__linux__) || defined(__FreeBSD__)   /* Linux & FreeBSD */
+#ifndef _WIN32
 
-#define RS232_PORTNR  38
+#if defined(__APPLE__)
+#include <IOKit/serial/ioss.h>
+#endif
+
+#define RS232_PORTNR  39
 
 
 int Cport[RS232_PORTNR],
@@ -52,7 +56,8 @@ char *comports[RS232_PORTNR]={"/dev/ttyS0","/dev/ttyS1","/dev/ttyS2","/dev/ttyS3
                        "/dev/ttyAMA0","/dev/ttyAMA1","/dev/ttyACM0","/dev/ttyACM1",
                        "/dev/rfcomm0","/dev/rfcomm1","/dev/ircomm0","/dev/ircomm1",
                        "/dev/cuau0","/dev/cuau1","/dev/cuau2","/dev/cuau3",
-                       "/dev/cuaU0","/dev/cuaU1","/dev/cuaU2","/dev/cuaU3"};
+                       "/dev/cuaU0","/dev/cuaU1","/dev/cuaU2","/dev/cuaU3",
+                       "/dev/tty.wchusbserial1430",};
 
 int RS232_OpenComport(int comport_number, int baudrate, const char *mode)
 {
@@ -64,6 +69,8 @@ int RS232_OpenComport(int comport_number, int baudrate, const char *mode)
     printf("illegal comport number\n");
     return(1);
   }
+
+  int macos_baud = 0;
 
   switch(baudrate)
   {
@@ -103,6 +110,26 @@ int RS232_OpenComport(int comport_number, int baudrate, const char *mode)
                    break;
     case  230400 : baudr = B230400;
                    break;
+
+#ifdef __APPLE__
+
+    case  460800 :
+    case  500000 :
+    case  576000 :
+    case  921600 :
+    case 1000000 :
+    case 1152000 :
+    case 1500000 :
+    case 2000000 :
+    case 2500000 :
+    case 3000000 :
+    case 3500000 :
+    case 4000000 :
+          macos_baud = baudrate;
+          baudr = B9600;
+          break;
+
+#else
     case  460800 : baudr = B460800;
                    break;
     case  500000 : baudr = B500000;
@@ -127,6 +154,7 @@ int RS232_OpenComport(int comport_number, int baudrate, const char *mode)
                    break;
     case 4000000 : baudr = B4000000;
                    break;
+#endif
     default      : printf("invalid baudrate\n");
                    return(1);
                    break;
@@ -237,6 +265,16 @@ http://man7.org/linux/man-pages/man3/termios.3.html
     flock(Cport[comport_number], LOCK_UN);  /* free the port so that others can use it. */
     perror("unable to adjust portsettings ");
     return(1);
+  }
+
+  if(macos_baud){
+    if(ioctl(Cport[comport_number], IOSSIOSPEED, &macos_baud) == -1)
+    {
+      tcsetattr(Cport[comport_number], TCSANOW, old_port_settings + comport_number);
+      flock(Cport[comport_number], LOCK_UN);  /* free the port so that others can use it. */
+      perror("unable to set high speed baud");
+      return(1);
+    }
   }
 
 /* http://man7.org/linux/man-pages/man4/tty_ioctl.4.html */
