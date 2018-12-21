@@ -1,0 +1,3468 @@
+   1               		.file	"main.c"
+   2               	__SP_H__ = 0x3e
+   3               	__SP_L__ = 0x3d
+   4               	__SREG__ = 0x3f
+   5               	__tmp_reg__ = 0
+   6               	__zero_reg__ = 1
+   7               		.text
+   8               	.Ltext0:
+   9               		.cfi_sections	.debug_frame
+  10               	.global	USART_Receive
+  12               	USART_Receive:
+  13               	.LFB12:
+  14               		.file 1 "setup.c"
+   1:setup.c       **** /*
+   2:setup.c       ****  GBxCart RW Mini
+   3:setup.c       ****  PCB version: 1.0
+   4:setup.c       ****  Firmware version: R12
+   5:setup.c       ****  Author: Alex from insideGadgets (www.insidegadgets.com)
+   6:setup.c       ****  Created: 7/11/2016
+   7:setup.c       ****  Last Modified: 4/12/2018
+   8:setup.c       ****  
+   9:setup.c       ****  */
+  10:setup.c       ****  
+  11:setup.c       **** #ifndef cbi
+  12:setup.c       **** #define cbi(sfr, bit) (_SFR_BYTE(sfr) &= ~_BV(bit))
+  13:setup.c       **** #endif
+  14:setup.c       **** #ifndef sbi
+  15:setup.c       **** #define sbi(sfr, bit) (_SFR_BYTE(sfr) |= _BV(bit))
+  16:setup.c       **** #endif
+  17:setup.c       **** 
+  18:setup.c       **** #ifndef NULL
+  19:setup.c       **** #define NULL ((void *)0)
+  20:setup.c       **** #endif
+  21:setup.c       **** 
+  22:setup.c       **** #define LOW 0
+  23:setup.c       **** #define HIGH 1
+  24:setup.c       **** #define false 0
+  25:setup.c       **** #define true 1
+  26:setup.c       **** 
+  27:setup.c       **** #define ACTIVITY_LED PD3
+  28:setup.c       **** 
+  29:setup.c       **** #define WR_PIN PD6
+  30:setup.c       **** #define RD_PIN PD5
+  31:setup.c       **** #define CS_MREQ_PIN PD4
+  32:setup.c       **** #define CS2_PIN PE2
+  33:setup.c       **** #define AUDIO_PIN PE1
+  34:setup.c       **** 
+  35:setup.c       **** #define wrPin_high	PORTD |= (1<<WR_PIN);
+  36:setup.c       **** #define wrPin_low		PORTD &= ~(1<<WR_PIN);
+  37:setup.c       **** #define rdPin_high	PORTD |= (1<<RD_PIN);
+  38:setup.c       **** #define rdPin_low		PORTD &= ~(1<<RD_PIN);
+  39:setup.c       **** #define cs_mreqPin_high		PORTD |= (1<<CS_MREQ_PIN);
+  40:setup.c       **** #define cs_mreqPin_low		PORTD &= ~(1<<CS_MREQ_PIN);
+  41:setup.c       **** #define cs2Pin_high		PORTE |= (1<<CS2_PIN);
+  42:setup.c       **** #define cs2Pin_low		PORTE &= ~(1<<CS2_PIN);
+  43:setup.c       **** #define audioPin_high	PORTE |= (1<<AUDIO_PIN);
+  44:setup.c       **** #define audioPin_low		PORTE &= ~(1<<AUDIO_PIN);
+  45:setup.c       **** 
+  46:setup.c       **** #define GB_MODE 1
+  47:setup.c       **** 
+  48:setup.c       **** // GB/GBC
+  49:setup.c       **** #define PORT_ADDR7_0 PORTB
+  50:setup.c       **** #define PORT_ADDR15_8 PORTA
+  51:setup.c       **** #define PORT_DATA7_0 PORTC
+  52:setup.c       **** 
+  53:setup.c       **** #define DDR_ADDR7_0 DDRB
+  54:setup.c       **** #define DDR_ADDR15_8 DDRA
+  55:setup.c       **** #define DDR_DATA7_0 DDRC
+  56:setup.c       **** 
+  57:setup.c       **** #define PIN_ADDR7_0 PINB
+  58:setup.c       **** #define PIN_ADDR15_8 PINA
+  59:setup.c       **** #define PIN_DATA7_0 PINC
+  60:setup.c       **** 
+  61:setup.c       **** #define BANK_WRITE 0
+  62:setup.c       **** #define MEMORY_WRITE 1
+  63:setup.c       **** 
+  64:setup.c       **** 
+  65:setup.c       **** // GB/GBC commands
+  66:setup.c       **** #define SET_START_ADDRESS 'A'
+  67:setup.c       **** #define READ_ROM_RAM 'R'
+  68:setup.c       **** #define WRITE_RAM 'W'
+  69:setup.c       **** #define SET_BANK 'B'
+  70:setup.c       **** #define GB_CART_MODE 'G'
+  71:setup.c       **** 
+  72:setup.c       **** // Flash Cart commands
+  73:setup.c       **** #define GB_FLASH_WE_PIN 'P'
+  74:setup.c       **** 	#define WE_AS_AUDIO_PIN 'A'
+  75:setup.c       **** 	#define WE_AS_WR_PIN 'W'
+  76:setup.c       **** 
+  77:setup.c       **** #define GB_FLASH_PROGRAM_METHOD 'E'
+  78:setup.c       **** 	#define GB_FLASH_PROGRAM_555 0
+  79:setup.c       **** 	#define GB_FLASH_PROGRAM_AAA 1
+  80:setup.c       **** 	#define GB_FLASH_PROGRAM_555_BIT01_SWAPPED 2
+  81:setup.c       **** 	#define GB_FLASH_PROGRAM_AAA_BIT01_SWAPPED 3
+  82:setup.c       **** 	#define GB_FLASH_PROGRAM_5555 4
+  83:setup.c       **** 
+  84:setup.c       **** #define GB_FLASH_WRITE_BYTE 'F'
+  85:setup.c       **** #define GB_FLASH_WRITE_BUFFERED_32BYTE 'Y'
+  86:setup.c       **** #define GB_FLASH_WRITE_64BYTE 'T'
+  87:setup.c       **** #define GB_FLASH_WRITE_256BYTE 'X'
+  88:setup.c       **** 
+  89:setup.c       **** #define GB_FLASH_BANK_1_COMMAND_WRITES 'N'
+  90:setup.c       **** 
+  91:setup.c       **** #define D0D1_NOT_SWAPPED 0
+  92:setup.c       **** #define D0D1_SWAPPED 1
+  93:setup.c       **** 
+  94:setup.c       **** // General commands
+  95:setup.c       **** #define SEND_ACK '1'
+  96:setup.c       **** #define CART_MODE 'C'
+  97:setup.c       **** #define SET_INPUT 'I'
+  98:setup.c       **** #define SET_OUTPUT 'O'
+  99:setup.c       **** #define SET_OUTPUT_LOW 'L'
+ 100:setup.c       **** #define SET_OUTPUT_HIGH 'H'
+ 101:setup.c       **** #define READ_INPUT 'D'
+ 102:setup.c       **** #define RESET_COMMON_LINES 'M'
+ 103:setup.c       **** #define READ_FIRMWARE_VERSION 'V'
+ 104:setup.c       **** #define READ_PCB_VERSION 'h'
+ 105:setup.c       **** 
+ 106:setup.c       **** #define RESET_AVR '*'
+ 107:setup.c       **** #define RESET_VALUE 0x7E5E1
+ 108:setup.c       **** 
+ 109:setup.c       **** 
+ 110:setup.c       **** char receivedBuffer[256];
+ 111:setup.c       **** char receivedChar;
+ 112:setup.c       **** 
+ 113:setup.c       **** char flashWriteWePin;
+ 114:setup.c       **** uint16_t flashWriteCycle[3][2];
+ 115:setup.c       **** uint8_t flashBank1CommandWrites = 0;
+ 116:setup.c       **** uint8_t lastBankAccessed = 0;
+ 117:setup.c       **** 
+ 118:setup.c       **** uint8_t cartMode = GB_MODE;
+ 119:setup.c       **** 
+ 120:setup.c       **** // Receive USART data
+ 121:setup.c       **** uint8_t USART_Receive(void) {
+  15               		.loc 1 121 0
+  16               		.cfi_startproc
+  17               	/* prologue: function */
+  18               	/* frame size = 0 */
+  19               	/* stack size = 0 */
+  20               	.L__stack_usage = 0
+  21               	.L2:
+ 122:setup.c       **** 	while ( !(UCSRA & (1<<RXC)) ); // Wait for data to be received
+  22               		.loc 1 122 0 discriminator 1
+  23 0000 5F9B      		sbis 0xb,7
+  24 0002 00C0      		rjmp .L2
+ 123:setup.c       **** 	return UDR; // Get and return received data from buffer
+  25               		.loc 1 123 0
+  26 0004 8CB1      		in r24,0xc
+ 124:setup.c       **** }
+  27               		.loc 1 124 0
+  28 0006 0895      		ret
+  29               		.cfi_endproc
+  30               	.LFE12:
+  32               	.global	USART_Transmit
+  34               	USART_Transmit:
+  35               	.LFB13:
+ 125:setup.c       **** 
+ 126:setup.c       **** // Transmit USART data
+ 127:setup.c       **** void USART_Transmit(unsigned char data) {
+  36               		.loc 1 127 0
+  37               		.cfi_startproc
+  38               	/* prologue: function */
+  39               	/* frame size = 0 */
+  40               	/* stack size = 0 */
+  41               	.L__stack_usage = 0
+  42               	.LVL0:
+  43               	.L6:
+ 128:setup.c       **** 	while ( !( UCSRA & (1<<UDRE)) ); // Wait for empty transmit buffer
+  44               		.loc 1 128 0 discriminator 1
+  45 0008 5D9B      		sbis 0xb,5
+  46 000a 00C0      		rjmp .L6
+ 129:setup.c       **** 	UDR = data;
+  47               		.loc 1 129 0
+  48 000c 8CB9      		out 0xc,r24
+  49 000e 0895      		ret
+  50               		.cfi_endproc
+  51               	.LFE13:
+  53               	.global	usart_read_bytes
+  55               	usart_read_bytes:
+  56               	.LFB14:
+ 130:setup.c       **** }
+ 131:setup.c       **** 
+ 132:setup.c       **** // Read 1-256 bytes from the USART 
+ 133:setup.c       **** void usart_read_bytes(int count) {
+  57               		.loc 1 133 0
+  58               		.cfi_startproc
+  59               	.LVL1:
+  60 0010 0F93      		push r16
+  61               	.LCFI0:
+  62               		.cfi_def_cfa_offset 3
+  63               		.cfi_offset 16, -2
+  64 0012 1F93      		push r17
+  65               	.LCFI1:
+  66               		.cfi_def_cfa_offset 4
+  67               		.cfi_offset 17, -3
+  68 0014 CF93      		push r28
+  69               	.LCFI2:
+  70               		.cfi_def_cfa_offset 5
+  71               		.cfi_offset 28, -4
+  72 0016 DF93      		push r29
+  73               	.LCFI3:
+  74               		.cfi_def_cfa_offset 6
+  75               		.cfi_offset 29, -5
+  76               	/* prologue: function */
+  77               	/* frame size = 0 */
+  78               	/* stack size = 4 */
+  79               	.L__stack_usage = 4
+  80 0018 8C01      		movw r16,r24
+  81               	.LVL2:
+  82               	.LBB53:
+ 134:setup.c       **** 	for (int x = 0; x < count; x++) {
+  83               		.loc 1 134 0
+  84 001a C0E0      		ldi r28,lo8(receivedBuffer)
+  85 001c D0E0      		ldi r29,hi8(receivedBuffer)
+  86               	.LVL3:
+  87               	.L10:
+  88               		.loc 1 134 0 is_stmt 0 discriminator 1
+  89 001e CE01      		movw r24,r28
+  90 0020 8050      		subi r24,lo8(receivedBuffer)
+  91 0022 9040      		sbci r25,hi8(receivedBuffer)
+  92               	.LVL4:
+  93 0024 8017      		cp r24,r16
+  94 0026 9107      		cpc r25,r17
+  95 0028 04F4      		brge .L12
+ 135:setup.c       **** 		receivedBuffer[x] = USART_Receive();
+  96               		.loc 1 135 0 is_stmt 1 discriminator 3
+  97 002a 00D0      		rcall USART_Receive
+  98               	.LVL5:
+  99 002c 8993      		st Y+,r24
+ 100               	.LVL6:
+ 101 002e 00C0      		rjmp .L10
+ 102               	.LVL7:
+ 103               	.L12:
+ 104               	/* epilogue start */
+ 105               	.LBE53:
+ 136:setup.c       **** 	}
+ 137:setup.c       **** }
+ 106               		.loc 1 137 0
+ 107 0030 DF91      		pop r29
+ 108 0032 CF91      		pop r28
+ 109 0034 1F91      		pop r17
+ 110 0036 0F91      		pop r16
+ 111               	.LVL8:
+ 112 0038 0895      		ret
+ 113               		.cfi_endproc
+ 114               	.LFE14:
+ 116               	.global	usart_read_chars
+ 118               	usart_read_chars:
+ 119               	.LFB15:
+ 138:setup.c       **** 
+ 139:setup.c       **** // Read the USART until a 0 (string terminator byte) is received
+ 140:setup.c       **** void usart_read_chars(void) {
+ 120               		.loc 1 140 0
+ 121               		.cfi_startproc
+ 122 003a CF93      		push r28
+ 123               	.LCFI4:
+ 124               		.cfi_def_cfa_offset 3
+ 125               		.cfi_offset 28, -2
+ 126 003c DF93      		push r29
+ 127               	.LCFI5:
+ 128               		.cfi_def_cfa_offset 4
+ 129               		.cfi_offset 29, -3
+ 130               	/* prologue: function */
+ 131               	/* frame size = 0 */
+ 132               	/* stack size = 2 */
+ 133               	.L__stack_usage = 2
+ 134               	.LVL9:
+ 135 003e C0E0      		ldi r28,lo8(receivedBuffer)
+ 136 0040 D0E0      		ldi r29,hi8(receivedBuffer)
+ 137               	.LVL10:
+ 138               	.L14:
+ 141:setup.c       **** 	int x = 0;
+ 142:setup.c       **** 	while (1) {
+ 143:setup.c       **** 		receivedBuffer[x] = USART_Receive();
+ 139               		.loc 1 143 0
+ 140 0042 00D0      		rcall USART_Receive
+ 141               	.LVL11:
+ 142 0044 8993      		st Y+,r24
+ 143               	.LVL12:
+ 144:setup.c       **** 		if (receivedBuffer[x] == 0) {
+ 144               		.loc 1 144 0
+ 145 0046 8111      		cpse r24,__zero_reg__
+ 146 0048 00C0      		rjmp .L14
+ 147               	/* epilogue start */
+ 145:setup.c       **** 			break;
+ 146:setup.c       **** 		}
+ 147:setup.c       **** 		x++;
+ 148:setup.c       **** 	}
+ 149:setup.c       **** }
+ 148               		.loc 1 149 0
+ 149 004a DF91      		pop r29
+ 150 004c CF91      		pop r28
+ 151               	.LVL13:
+ 152 004e 0895      		ret
+ 153               		.cfi_endproc
+ 154               	.LFE15:
+ 156               	.global	rd_wr_csmreq_cs2_reset
+ 158               	rd_wr_csmreq_cs2_reset:
+ 159               	.LFB16:
+ 150:setup.c       **** 
+ 151:setup.c       **** // Turn RD, WR, CS/MREQ and CS2 to high so they are deselected (reset state)
+ 152:setup.c       **** void rd_wr_csmreq_cs2_reset(void) {
+ 160               		.loc 1 152 0
+ 161               		.cfi_startproc
+ 162               	/* prologue: function */
+ 163               	/* frame size = 0 */
+ 164               	/* stack size = 0 */
+ 165               	.L__stack_usage = 0
+ 153:setup.c       **** 	cs2Pin_high; // CS2 off
+ 166               		.loc 1 153 0
+ 167 0050 3A9A      		sbi 0x7,2
+ 154:setup.c       **** 	cs_mreqPin_high; // CS/MREQ off
+ 168               		.loc 1 154 0
+ 169 0052 949A      		sbi 0x12,4
+ 155:setup.c       **** 	rdPin_high; // RD off
+ 170               		.loc 1 155 0
+ 171 0054 959A      		sbi 0x12,5
+ 156:setup.c       **** 	wrPin_high; // WR off
+ 172               		.loc 1 156 0
+ 173 0056 969A      		sbi 0x12,6
+ 174 0058 0895      		ret
+ 175               		.cfi_endproc
+ 176               	.LFE16:
+ 178               	.global	gb_mode
+ 180               	gb_mode:
+ 181               	.LFB17:
+ 157:setup.c       **** }
+ 158:setup.c       **** 
+ 159:setup.c       **** 
+ 160:setup.c       **** 
+ 161:setup.c       **** // ****** Gameboy / Gameboy Colour functions ******
+ 162:setup.c       **** 
+ 163:setup.c       **** // Set Gameboy mode
+ 164:setup.c       **** void gb_mode(void) {
+ 182               		.loc 1 164 0
+ 183               		.cfi_startproc
+ 184               	/* prologue: function */
+ 185               	/* frame size = 0 */
+ 186               	/* stack size = 0 */
+ 187               	.L__stack_usage = 0
+ 165:setup.c       **** 	// Set inputs
+ 166:setup.c       **** 	PORT_DATA7_0 = 0;
+ 188               		.loc 1 166 0
+ 189 005a 15BA      		out 0x15,__zero_reg__
+ 167:setup.c       **** 	DDR_DATA7_0 = 0;
+ 190               		.loc 1 167 0
+ 191 005c 14BA      		out 0x14,__zero_reg__
+ 168:setup.c       **** 	
+ 169:setup.c       **** 	// Set outputs
+ 170:setup.c       **** 	PORT_ADDR7_0 = 0;
+ 192               		.loc 1 170 0
+ 193 005e 18BA      		out 0x18,__zero_reg__
+ 171:setup.c       **** 	PORT_ADDR15_8 = 0;
+ 194               		.loc 1 171 0
+ 195 0060 1BBA      		out 0x1b,__zero_reg__
+ 172:setup.c       **** 	DDR_ADDR7_0 = 0xFF;
+ 196               		.loc 1 172 0
+ 197 0062 8FEF      		ldi r24,lo8(-1)
+ 198 0064 87BB      		out 0x17,r24
+ 173:setup.c       **** 	DDR_ADDR15_8 = 0xFF;
+ 199               		.loc 1 173 0
+ 200 0066 8ABB      		out 0x1a,r24
+ 201 0068 0895      		ret
+ 202               		.cfi_endproc
+ 203               	.LFE17:
+ 205               	.global	set_16bit_address
+ 207               	set_16bit_address:
+ 208               	.LFB18:
+ 174:setup.c       **** }
+ 175:setup.c       **** 
+ 176:setup.c       **** // Set the 16 bit address on A15-0
+ 177:setup.c       **** void set_16bit_address(uint16_t address) {
+ 209               		.loc 1 177 0
+ 210               		.cfi_startproc
+ 211               	.LVL14:
+ 212               	/* prologue: function */
+ 213               	/* frame size = 0 */
+ 214               	/* stack size = 0 */
+ 215               	.L__stack_usage = 0
+ 178:setup.c       **** 	PORT_ADDR15_8 = (address >> 8);
+ 216               		.loc 1 178 0
+ 217 006a 9BBB      		out 0x1b,r25
+ 179:setup.c       **** 	PORT_ADDR7_0 = (address & 0xFF);
+ 218               		.loc 1 179 0
+ 219 006c 88BB      		out 0x18,r24
+ 220 006e 0895      		ret
+ 221               		.cfi_endproc
+ 222               	.LFE18:
+ 224               	.global	read_8bit_data
+ 226               	read_8bit_data:
+ 227               	.LFB19:
+ 180:setup.c       **** }
+ 181:setup.c       **** 
+ 182:setup.c       **** // Set the address and read a byte from the 8 bit data line
+ 183:setup.c       **** uint8_t read_8bit_data(uint16_t address) {
+ 228               		.loc 1 183 0
+ 229               		.cfi_startproc
+ 230               	.LVL15:
+ 231               	/* prologue: function */
+ 232               	/* frame size = 0 */
+ 233               	/* stack size = 0 */
+ 234               	.L__stack_usage = 0
+ 184:setup.c       **** 	set_16bit_address(address);
+ 235               		.loc 1 184 0
+ 236 0070 00D0      		rcall set_16bit_address
+ 237               	.LVL16:
+ 185:setup.c       **** 	
+ 186:setup.c       **** 	cs_mreqPin_low;
+ 238               		.loc 1 186 0
+ 239 0072 9498      		cbi 0x12,4
+ 187:setup.c       **** 	rdPin_low;
+ 240               		.loc 1 187 0
+ 241 0074 9598      		cbi 0x12,5
+ 188:setup.c       **** 	
+ 189:setup.c       **** 	asm volatile("nop"); // Delay a little (At 8MHz - minimum needed is 1 nops, 2 nops for GB camera)
+ 242               		.loc 1 189 0
+ 243               	/* #APP */
+ 244               	 ;  189 "setup.c" 1
+ 245 0076 0000      		nop
+ 246               	 ;  0 "" 2
+ 190:setup.c       **** 	asm volatile("nop");
+ 247               		.loc 1 190 0
+ 248               	 ;  190 "setup.c" 1
+ 249 0078 0000      		nop
+ 250               	 ;  0 "" 2
+ 191:setup.c       **** 	asm volatile("nop");
+ 251               		.loc 1 191 0
+ 252               	 ;  191 "setup.c" 1
+ 253 007a 0000      		nop
+ 254               	 ;  0 "" 2
+ 192:setup.c       **** 	asm volatile("nop");
+ 255               		.loc 1 192 0
+ 256               	 ;  192 "setup.c" 1
+ 257 007c 0000      		nop
+ 258               	 ;  0 "" 2
+ 193:setup.c       **** 	uint8_t data = PIN_DATA7_0; // Read data
+ 259               		.loc 1 193 0
+ 260               	/* #NOAPP */
+ 261 007e 83B3      		in r24,0x13
+ 262               	.LVL17:
+ 194:setup.c       **** 	
+ 195:setup.c       **** 	rdPin_high;
+ 263               		.loc 1 195 0
+ 264 0080 959A      		sbi 0x12,5
+ 196:setup.c       **** 	cs_mreqPin_high;
+ 265               		.loc 1 196 0
+ 266 0082 949A      		sbi 0x12,4
+ 197:setup.c       **** 	
+ 198:setup.c       **** 	return data;
+ 199:setup.c       **** }
+ 267               		.loc 1 199 0
+ 268 0084 0895      		ret
+ 269               		.cfi_endproc
+ 270               	.LFE19:
+ 272               	.global	write_8bit_data
+ 274               	write_8bit_data:
+ 275               	.LFB20:
+ 200:setup.c       **** 
+ 201:setup.c       **** // Set the address and write a byte to the 8 bit data line and pulse cs/mREQ if writing to RAM
+ 202:setup.c       **** void write_8bit_data(uint16_t address, uint8_t data, uint8_t type) {
+ 276               		.loc 1 202 0
+ 277               		.cfi_startproc
+ 278               	.LVL18:
+ 279 0086 CF93      		push r28
+ 280               	.LCFI6:
+ 281               		.cfi_def_cfa_offset 3
+ 282               		.cfi_offset 28, -2
+ 283 0088 DF93      		push r29
+ 284               	.LCFI7:
+ 285               		.cfi_def_cfa_offset 4
+ 286               		.cfi_offset 29, -3
+ 287               	/* prologue: function */
+ 288               	/* frame size = 0 */
+ 289               	/* stack size = 2 */
+ 290               	.L__stack_usage = 2
+ 291 008a D62F      		mov r29,r22
+ 292 008c C42F      		mov r28,r20
+ 203:setup.c       **** 	set_16bit_address(address);
+ 293               		.loc 1 203 0
+ 294 008e 00D0      		rcall set_16bit_address
+ 295               	.LVL19:
+ 204:setup.c       **** 	
+ 205:setup.c       **** 	DDR_DATA7_0 = 0xFF; // Set data pins as outputs
+ 296               		.loc 1 205 0
+ 297 0090 8FEF      		ldi r24,lo8(-1)
+ 298 0092 84BB      		out 0x14,r24
+ 206:setup.c       **** 	PORT_DATA7_0 = data; // Set data
+ 299               		.loc 1 206 0
+ 300 0094 D5BB      		out 0x15,r29
+ 207:setup.c       **** 	
+ 208:setup.c       **** 	// Pulse WR and mREQ if the type matches
+ 209:setup.c       **** 	wrPin_low;
+ 301               		.loc 1 209 0
+ 302 0096 9698      		cbi 0x12,6
+ 210:setup.c       **** 	if (type == MEMORY_WRITE) {
+ 303               		.loc 1 210 0
+ 304 0098 C130      		cpi r28,lo8(1)
+ 305 009a 01F4      		brne .L21
+ 211:setup.c       **** 		cs_mreqPin_low;
+ 306               		.loc 1 211 0
+ 307 009c 9498      		cbi 0x12,4
+ 308               	.L21:
+ 212:setup.c       **** 	}
+ 213:setup.c       **** 	
+ 214:setup.c       **** 	asm volatile("nop");
+ 309               		.loc 1 214 0
+ 310               	/* #APP */
+ 311               	 ;  214 "setup.c" 1
+ 312 009e 0000      		nop
+ 313               	 ;  0 "" 2
+ 215:setup.c       **** 	asm volatile("nop");
+ 314               		.loc 1 215 0
+ 315               	 ;  215 "setup.c" 1
+ 316 00a0 0000      		nop
+ 317               	 ;  0 "" 2
+ 216:setup.c       **** 	
+ 217:setup.c       **** 	if (type == MEMORY_WRITE) {
+ 318               		.loc 1 217 0
+ 319               	/* #NOAPP */
+ 320 00a2 C130      		cpi r28,lo8(1)
+ 321 00a4 01F4      		brne .L22
+ 218:setup.c       **** 		cs_mreqPin_high;
+ 322               		.loc 1 218 0
+ 323 00a6 949A      		sbi 0x12,4
+ 324               	.L22:
+ 219:setup.c       **** 	}
+ 220:setup.c       **** 	wrPin_high;
+ 325               		.loc 1 220 0
+ 326 00a8 969A      		sbi 0x12,6
+ 221:setup.c       **** 	
+ 222:setup.c       **** 	// Clear data outputs and set data pins as inputs
+ 223:setup.c       **** 	PORT_DATA7_0 = 0;
+ 327               		.loc 1 223 0
+ 328 00aa 15BA      		out 0x15,__zero_reg__
+ 224:setup.c       **** 	DDR_DATA7_0 = 0;
+ 329               		.loc 1 224 0
+ 330 00ac 14BA      		out 0x14,__zero_reg__
+ 331               	/* epilogue start */
+ 225:setup.c       **** }
+ 332               		.loc 1 225 0
+ 333 00ae DF91      		pop r29
+ 334               	.LVL20:
+ 335 00b0 CF91      		pop r28
+ 336               	.LVL21:
+ 337 00b2 0895      		ret
+ 338               		.cfi_endproc
+ 339               	.LFE20:
+ 341               	.global	gb_flash_read_byte
+ 343               	gb_flash_read_byte:
+ 344               	.LFB21:
+ 226:setup.c       **** 
+ 227:setup.c       **** 
+ 228:setup.c       **** 
+ 229:setup.c       **** // ---------- GB FLASH CARTS ----------
+ 230:setup.c       **** 
+ 231:setup.c       **** // Read a byte from the flash (No CS pin pulse)
+ 232:setup.c       **** uint8_t gb_flash_read_byte(uint16_t address) {
+ 345               		.loc 1 232 0
+ 346               		.cfi_startproc
+ 347               	.LVL22:
+ 348               	/* prologue: function */
+ 349               	/* frame size = 0 */
+ 350               	/* stack size = 0 */
+ 351               	.L__stack_usage = 0
+ 233:setup.c       **** 	PORT_DATA7_0 = 0;
+ 352               		.loc 1 233 0
+ 353 00b4 15BA      		out 0x15,__zero_reg__
+ 234:setup.c       **** 	DDR_DATA7_0 = 0;
+ 354               		.loc 1 234 0
+ 355 00b6 14BA      		out 0x14,__zero_reg__
+ 235:setup.c       **** 	
+ 236:setup.c       **** 	set_16bit_address(address);
+ 356               		.loc 1 236 0
+ 357 00b8 00D0      		rcall set_16bit_address
+ 358               	.LVL23:
+ 237:setup.c       **** 	
+ 238:setup.c       **** 	rdPin_low;
+ 359               		.loc 1 238 0
+ 360 00ba 9598      		cbi 0x12,5
+ 239:setup.c       **** 	asm volatile("nop"); // Delay a little
+ 361               		.loc 1 239 0
+ 362               	/* #APP */
+ 363               	 ;  239 "setup.c" 1
+ 364 00bc 0000      		nop
+ 365               	 ;  0 "" 2
+ 240:setup.c       **** 	asm volatile("nop");
+ 366               		.loc 1 240 0
+ 367               	 ;  240 "setup.c" 1
+ 368 00be 0000      		nop
+ 369               	 ;  0 "" 2
+ 241:setup.c       **** 	asm volatile("nop");
+ 370               		.loc 1 241 0
+ 371               	 ;  241 "setup.c" 1
+ 372 00c0 0000      		nop
+ 373               	 ;  0 "" 2
+ 242:setup.c       **** 	asm volatile("nop");
+ 374               		.loc 1 242 0
+ 375               	 ;  242 "setup.c" 1
+ 376 00c2 0000      		nop
+ 377               	 ;  0 "" 2
+ 243:setup.c       **** 	uint8_t data = PIN_DATA7_0; // Read data
+ 378               		.loc 1 243 0
+ 379               	/* #NOAPP */
+ 380 00c4 83B3      		in r24,0x13
+ 381               	.LVL24:
+ 244:setup.c       **** 	rdPin_high;
+ 382               		.loc 1 244 0
+ 383 00c6 959A      		sbi 0x12,5
+ 245:setup.c       **** 	
+ 246:setup.c       **** 	return data;
+ 247:setup.c       **** }
+ 384               		.loc 1 247 0
+ 385 00c8 0895      		ret
+ 386               		.cfi_endproc
+ 387               	.LFE21:
+ 389               	.global	gb_flash_write_bus_cycle
+ 391               	gb_flash_write_bus_cycle:
+ 392               	.LFB22:
+ 248:setup.c       **** 
+ 249:setup.c       **** // Set the address and data for the write byte cycle to the flash
+ 250:setup.c       **** void gb_flash_write_bus_cycle(uint16_t address, uint8_t data) {
+ 393               		.loc 1 250 0
+ 394               		.cfi_startproc
+ 395               	.LVL25:
+ 396 00ca CF93      		push r28
+ 397               	.LCFI8:
+ 398               		.cfi_def_cfa_offset 3
+ 399               		.cfi_offset 28, -2
+ 400               	/* prologue: function */
+ 401               	/* frame size = 0 */
+ 402               	/* stack size = 1 */
+ 403               	.L__stack_usage = 1
+ 404 00cc C62F      		mov r28,r22
+ 251:setup.c       **** 	DDR_DATA7_0 = 0xFF; // Set data pins as outputs
+ 405               		.loc 1 251 0
+ 406 00ce 2FEF      		ldi r18,lo8(-1)
+ 407 00d0 24BB      		out 0x14,r18
+ 252:setup.c       **** 	set_16bit_address(address);
+ 408               		.loc 1 252 0
+ 409 00d2 00D0      		rcall set_16bit_address
+ 410               	.LVL26:
+ 253:setup.c       **** 	PORT_DATA7_0 = data;
+ 411               		.loc 1 253 0
+ 412 00d4 C5BB      		out 0x15,r28
+ 254:setup.c       **** 	
+ 255:setup.c       **** 	if (flashWriteWePin == WE_AS_AUDIO_PIN) { // Audio pin
+ 413               		.loc 1 255 0
+ 414 00d6 8091 0000 		lds r24,flashWriteWePin
+ 415 00da 8134      		cpi r24,lo8(65)
+ 416 00dc 01F4      		brne .L25
+ 417               	.LVL27:
+ 418               	.LBB56:
+ 419               	.LBB57:
+ 256:setup.c       **** 		audioPin_low; // WE low
+ 420               		.loc 1 256 0
+ 421 00de 3998      		cbi 0x7,1
+ 257:setup.c       **** 		asm volatile("nop");
+ 422               		.loc 1 257 0
+ 423               	/* #APP */
+ 424               	 ;  257 "setup.c" 1
+ 425 00e0 0000      		nop
+ 426               	 ;  0 "" 2
+ 258:setup.c       **** 		asm volatile("nop");
+ 427               		.loc 1 258 0
+ 428               	 ;  258 "setup.c" 1
+ 429 00e2 0000      		nop
+ 430               	 ;  0 "" 2
+ 259:setup.c       **** 		asm volatile("nop");
+ 431               		.loc 1 259 0
+ 432               	 ;  259 "setup.c" 1
+ 433 00e4 0000      		nop
+ 434               	 ;  0 "" 2
+ 260:setup.c       **** 		asm volatile("nop");
+ 435               		.loc 1 260 0
+ 436               	 ;  260 "setup.c" 1
+ 437 00e6 0000      		nop
+ 438               	 ;  0 "" 2
+ 261:setup.c       **** 		asm volatile("nop");
+ 439               		.loc 1 261 0
+ 440               	 ;  261 "setup.c" 1
+ 441 00e8 0000      		nop
+ 442               	 ;  0 "" 2
+ 262:setup.c       **** 		asm volatile("nop");
+ 443               		.loc 1 262 0
+ 444               	 ;  262 "setup.c" 1
+ 445 00ea 0000      		nop
+ 446               	 ;  0 "" 2
+ 263:setup.c       **** 		audioPin_high; // WE high
+ 447               		.loc 1 263 0
+ 448               	/* #NOAPP */
+ 449 00ec 399A      		sbi 0x7,1
+ 450 00ee 00C0      		rjmp .L24
+ 451               	.LVL28:
+ 452               	.L25:
+ 453               	.LBE57:
+ 454               	.LBE56:
+ 264:setup.c       **** 	}
+ 265:setup.c       **** 	else { // WR pin
+ 266:setup.c       **** 		wrPin_low; // WE low
+ 455               		.loc 1 266 0
+ 456 00f0 9698      		cbi 0x12,6
+ 267:setup.c       **** 		asm volatile("nop");
+ 457               		.loc 1 267 0
+ 458               	/* #APP */
+ 459               	 ;  267 "setup.c" 1
+ 460 00f2 0000      		nop
+ 461               	 ;  0 "" 2
+ 268:setup.c       **** 		asm volatile("nop");
+ 462               		.loc 1 268 0
+ 463               	 ;  268 "setup.c" 1
+ 464 00f4 0000      		nop
+ 465               	 ;  0 "" 2
+ 269:setup.c       **** 		asm volatile("nop");
+ 466               		.loc 1 269 0
+ 467               	 ;  269 "setup.c" 1
+ 468 00f6 0000      		nop
+ 469               	 ;  0 "" 2
+ 270:setup.c       **** 		asm volatile("nop");
+ 470               		.loc 1 270 0
+ 471               	 ;  270 "setup.c" 1
+ 472 00f8 0000      		nop
+ 473               	 ;  0 "" 2
+ 271:setup.c       **** 		asm volatile("nop");
+ 474               		.loc 1 271 0
+ 475               	 ;  271 "setup.c" 1
+ 476 00fa 0000      		nop
+ 477               	 ;  0 "" 2
+ 272:setup.c       **** 		asm volatile("nop");
+ 478               		.loc 1 272 0
+ 479               	 ;  272 "setup.c" 1
+ 480 00fc 0000      		nop
+ 481               	 ;  0 "" 2
+ 273:setup.c       **** 		wrPin_high; // WE high
+ 482               		.loc 1 273 0
+ 483               	/* #NOAPP */
+ 484 00fe 969A      		sbi 0x12,6
+ 485               	.L24:
+ 486               	/* epilogue start */
+ 274:setup.c       **** 	}
+ 275:setup.c       **** }
+ 487               		.loc 1 275 0
+ 488 0100 CF91      		pop r28
+ 489               	.LVL29:
+ 490 0102 0895      		ret
+ 491               		.cfi_endproc
+ 492               	.LFE22:
+ 494               	.global	gb_flash_write_byte
+ 496               	gb_flash_write_byte:
+ 497               	.LFB23:
+ 276:setup.c       **** 
+ 277:setup.c       **** // Write a single byte to the Flash address. Takes 10-50us to program each byte.
+ 278:setup.c       **** void gb_flash_write_byte(uint16_t address, uint8_t data) {
+ 498               		.loc 1 278 0
+ 499               		.cfi_startproc
+ 500               	.LVL30:
+ 501 0104 1F93      		push r17
+ 502               	.LCFI9:
+ 503               		.cfi_def_cfa_offset 3
+ 504               		.cfi_offset 17, -2
+ 505 0106 CF93      		push r28
+ 506               	.LCFI10:
+ 507               		.cfi_def_cfa_offset 4
+ 508               		.cfi_offset 28, -3
+ 509 0108 DF93      		push r29
+ 510               	.LCFI11:
+ 511               		.cfi_def_cfa_offset 5
+ 512               		.cfi_offset 29, -4
+ 513               	/* prologue: function */
+ 514               	/* frame size = 0 */
+ 515               	/* stack size = 3 */
+ 516               	.L__stack_usage = 3
+ 517 010a EC01      		movw r28,r24
+ 518 010c 162F      		mov r17,r22
+ 279:setup.c       **** 	gb_flash_write_bus_cycle(flashWriteCycle[0][0], flashWriteCycle[0][1]);
+ 519               		.loc 1 279 0
+ 520 010e 6091 0000 		lds r22,flashWriteCycle+2
+ 521               	.LVL31:
+ 522 0112 8091 0000 		lds r24,flashWriteCycle
+ 523 0116 9091 0000 		lds r25,flashWriteCycle+1
+ 524               	.LVL32:
+ 525 011a 00D0      		rcall gb_flash_write_bus_cycle
+ 526               	.LVL33:
+ 280:setup.c       **** 	gb_flash_write_bus_cycle(flashWriteCycle[1][0], flashWriteCycle[1][1]);
+ 527               		.loc 1 280 0
+ 528 011c 6091 0000 		lds r22,flashWriteCycle+6
+ 529 0120 8091 0000 		lds r24,flashWriteCycle+4
+ 530 0124 9091 0000 		lds r25,flashWriteCycle+4+1
+ 531 0128 00D0      		rcall gb_flash_write_bus_cycle
+ 532               	.LVL34:
+ 281:setup.c       **** 	gb_flash_write_bus_cycle(flashWriteCycle[2][0], flashWriteCycle[2][1]);
+ 533               		.loc 1 281 0
+ 534 012a 6091 0000 		lds r22,flashWriteCycle+10
+ 535 012e 8091 0000 		lds r24,flashWriteCycle+8
+ 536 0132 9091 0000 		lds r25,flashWriteCycle+8+1
+ 537 0136 00D0      		rcall gb_flash_write_bus_cycle
+ 538               	.LVL35:
+ 282:setup.c       **** 	gb_flash_write_bus_cycle(address, data);
+ 539               		.loc 1 282 0
+ 540 0138 612F      		mov r22,r17
+ 541 013a CE01      		movw r24,r28
+ 542 013c 00D0      		rcall gb_flash_write_bus_cycle
+ 543               	.LVL36:
+ 544               	.LBB58:
+ 545               	.LBB59:
+ 546               		.file 2 "c:\\winavr-20100110\\avr\\include\\util\\delay.h"
+   1:c:\winavr-20100110\avr\include\util\delay.h **** /* Copyright (c) 2002, Marek Michalkiewicz
+   2:c:\winavr-20100110\avr\include\util\delay.h ****    Copyright (c) 2004,2005,2007 Joerg Wunsch
+   3:c:\winavr-20100110\avr\include\util\delay.h ****    Copyright (c) 2007  Florin-Viorel Petrov
+   4:c:\winavr-20100110\avr\include\util\delay.h ****    All rights reserved.
+   5:c:\winavr-20100110\avr\include\util\delay.h **** 
+   6:c:\winavr-20100110\avr\include\util\delay.h ****    Redistribution and use in source and binary forms, with or without
+   7:c:\winavr-20100110\avr\include\util\delay.h ****    modification, are permitted provided that the following conditions are met:
+   8:c:\winavr-20100110\avr\include\util\delay.h **** 
+   9:c:\winavr-20100110\avr\include\util\delay.h ****    * Redistributions of source code must retain the above copyright
+  10:c:\winavr-20100110\avr\include\util\delay.h ****      notice, this list of conditions and the following disclaimer.
+  11:c:\winavr-20100110\avr\include\util\delay.h **** 
+  12:c:\winavr-20100110\avr\include\util\delay.h ****    * Redistributions in binary form must reproduce the above copyright
+  13:c:\winavr-20100110\avr\include\util\delay.h ****      notice, this list of conditions and the following disclaimer in
+  14:c:\winavr-20100110\avr\include\util\delay.h ****      the documentation and/or other materials provided with the
+  15:c:\winavr-20100110\avr\include\util\delay.h ****      distribution.
+  16:c:\winavr-20100110\avr\include\util\delay.h **** 
+  17:c:\winavr-20100110\avr\include\util\delay.h ****    * Neither the name of the copyright holders nor the names of
+  18:c:\winavr-20100110\avr\include\util\delay.h ****      contributors may be used to endorse or promote products derived
+  19:c:\winavr-20100110\avr\include\util\delay.h ****      from this software without specific prior written permission.
+  20:c:\winavr-20100110\avr\include\util\delay.h **** 
+  21:c:\winavr-20100110\avr\include\util\delay.h ****   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+  22:c:\winavr-20100110\avr\include\util\delay.h ****   AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+  23:c:\winavr-20100110\avr\include\util\delay.h ****   IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+  24:c:\winavr-20100110\avr\include\util\delay.h ****   ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+  25:c:\winavr-20100110\avr\include\util\delay.h ****   LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+  26:c:\winavr-20100110\avr\include\util\delay.h ****   CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+  27:c:\winavr-20100110\avr\include\util\delay.h ****   SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+  28:c:\winavr-20100110\avr\include\util\delay.h ****   INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+  29:c:\winavr-20100110\avr\include\util\delay.h ****   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+  30:c:\winavr-20100110\avr\include\util\delay.h ****   ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+  31:c:\winavr-20100110\avr\include\util\delay.h ****   POSSIBILITY OF SUCH DAMAGE. */
+  32:c:\winavr-20100110\avr\include\util\delay.h **** 
+  33:c:\winavr-20100110\avr\include\util\delay.h **** /* $Id$ */
+  34:c:\winavr-20100110\avr\include\util\delay.h **** 
+  35:c:\winavr-20100110\avr\include\util\delay.h **** #ifndef _UTIL_DELAY_H_
+  36:c:\winavr-20100110\avr\include\util\delay.h **** #define _UTIL_DELAY_H_ 1
+  37:c:\winavr-20100110\avr\include\util\delay.h **** 
+  38:c:\winavr-20100110\avr\include\util\delay.h **** #ifndef __DOXYGEN__
+  39:c:\winavr-20100110\avr\include\util\delay.h **** #  ifndef __HAS_DELAY_CYCLES
+  40:c:\winavr-20100110\avr\include\util\delay.h **** #    define __HAS_DELAY_CYCLES 1
+  41:c:\winavr-20100110\avr\include\util\delay.h **** #  endif
+  42:c:\winavr-20100110\avr\include\util\delay.h **** #endif  /* __DOXYGEN__ */
+  43:c:\winavr-20100110\avr\include\util\delay.h **** 
+  44:c:\winavr-20100110\avr\include\util\delay.h **** #include <inttypes.h>
+  45:c:\winavr-20100110\avr\include\util\delay.h **** #include <util/delay_basic.h>
+  46:c:\winavr-20100110\avr\include\util\delay.h **** #include <math.h>
+  47:c:\winavr-20100110\avr\include\util\delay.h **** 
+  48:c:\winavr-20100110\avr\include\util\delay.h **** /** \file */
+  49:c:\winavr-20100110\avr\include\util\delay.h **** /** \defgroup util_delay <util/delay.h>: Convenience functions for busy-wait delay loops
+  50:c:\winavr-20100110\avr\include\util\delay.h ****     \code
+  51:c:\winavr-20100110\avr\include\util\delay.h ****     #define F_CPU 1000000UL  // 1 MHz
+  52:c:\winavr-20100110\avr\include\util\delay.h ****     //#define F_CPU 14.7456E6
+  53:c:\winavr-20100110\avr\include\util\delay.h ****     #include <util/delay.h>
+  54:c:\winavr-20100110\avr\include\util\delay.h ****     \endcode
+  55:c:\winavr-20100110\avr\include\util\delay.h **** 
+  56:c:\winavr-20100110\avr\include\util\delay.h ****     \note As an alternative method, it is possible to pass the
+  57:c:\winavr-20100110\avr\include\util\delay.h ****     F_CPU macro down to the compiler from the Makefile.
+  58:c:\winavr-20100110\avr\include\util\delay.h ****     Obviously, in that case, no \c \#define statement should be
+  59:c:\winavr-20100110\avr\include\util\delay.h ****     used.
+  60:c:\winavr-20100110\avr\include\util\delay.h **** 
+  61:c:\winavr-20100110\avr\include\util\delay.h ****     The functions in this header file are wrappers around the basic
+  62:c:\winavr-20100110\avr\include\util\delay.h ****     busy-wait functions from <util/delay_basic.h>.  They are meant as
+  63:c:\winavr-20100110\avr\include\util\delay.h ****     convenience functions where actual time values can be specified
+  64:c:\winavr-20100110\avr\include\util\delay.h ****     rather than a number of cycles to wait for.  The idea behind is
+  65:c:\winavr-20100110\avr\include\util\delay.h ****     that compile-time constant expressions will be eliminated by
+  66:c:\winavr-20100110\avr\include\util\delay.h ****     compiler optimization so floating-point expressions can be used
+  67:c:\winavr-20100110\avr\include\util\delay.h ****     to calculate the number of delay cycles needed based on the CPU
+  68:c:\winavr-20100110\avr\include\util\delay.h ****     frequency passed by the macro F_CPU.
+  69:c:\winavr-20100110\avr\include\util\delay.h **** 
+  70:c:\winavr-20100110\avr\include\util\delay.h ****     \note In order for these functions to work as intended, compiler
+  71:c:\winavr-20100110\avr\include\util\delay.h ****     optimizations <em>must</em> be enabled, and the delay time
+  72:c:\winavr-20100110\avr\include\util\delay.h ****     <em>must</em> be an expression that is a known constant at
+  73:c:\winavr-20100110\avr\include\util\delay.h ****     compile-time.  If these requirements are not met, the resulting
+  74:c:\winavr-20100110\avr\include\util\delay.h ****     delay will be much longer (and basically unpredictable), and
+  75:c:\winavr-20100110\avr\include\util\delay.h ****     applications that otherwise do not use floating-point calculations
+  76:c:\winavr-20100110\avr\include\util\delay.h ****     will experience severe code bloat by the floating-point library
+  77:c:\winavr-20100110\avr\include\util\delay.h ****     routines linked into the application.
+  78:c:\winavr-20100110\avr\include\util\delay.h **** 
+  79:c:\winavr-20100110\avr\include\util\delay.h ****     The functions available allow the specification of microsecond, and
+  80:c:\winavr-20100110\avr\include\util\delay.h ****     millisecond delays directly, using the application-supplied macro
+  81:c:\winavr-20100110\avr\include\util\delay.h ****     F_CPU as the CPU clock frequency (in Hertz).
+  82:c:\winavr-20100110\avr\include\util\delay.h **** 
+  83:c:\winavr-20100110\avr\include\util\delay.h **** */
+  84:c:\winavr-20100110\avr\include\util\delay.h **** 
+  85:c:\winavr-20100110\avr\include\util\delay.h **** #if !defined(__DOXYGEN__)
+  86:c:\winavr-20100110\avr\include\util\delay.h **** static __inline__ void _delay_us(double __us) __attribute__((__always_inline__));
+  87:c:\winavr-20100110\avr\include\util\delay.h **** static __inline__ void _delay_ms(double __ms) __attribute__((__always_inline__));
+  88:c:\winavr-20100110\avr\include\util\delay.h **** #endif
+  89:c:\winavr-20100110\avr\include\util\delay.h **** 
+  90:c:\winavr-20100110\avr\include\util\delay.h **** #ifndef F_CPU
+  91:c:\winavr-20100110\avr\include\util\delay.h **** /* prevent compiler error by supplying a default */
+  92:c:\winavr-20100110\avr\include\util\delay.h **** # warning "F_CPU not defined for <util/delay.h>"
+  93:c:\winavr-20100110\avr\include\util\delay.h **** /** \ingroup util_delay
+  94:c:\winavr-20100110\avr\include\util\delay.h ****     \def F_CPU
+  95:c:\winavr-20100110\avr\include\util\delay.h ****     \brief CPU frequency in Hz
+  96:c:\winavr-20100110\avr\include\util\delay.h **** 
+  97:c:\winavr-20100110\avr\include\util\delay.h ****     The macro F_CPU specifies the CPU frequency to be considered by
+  98:c:\winavr-20100110\avr\include\util\delay.h ****     the delay macros.  This macro is normally supplied by the
+  99:c:\winavr-20100110\avr\include\util\delay.h ****     environment (e.g. from within a project header, or the project's
+ 100:c:\winavr-20100110\avr\include\util\delay.h ****     Makefile).  The value 1 MHz here is only provided as a "vanilla"
+ 101:c:\winavr-20100110\avr\include\util\delay.h ****     fallback if no such user-provided definition could be found.
+ 102:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 103:c:\winavr-20100110\avr\include\util\delay.h ****     In terms of the delay functions, the CPU frequency can be given as
+ 104:c:\winavr-20100110\avr\include\util\delay.h ****     a floating-point constant (e.g. 3.6864E6 for 3.6864 MHz).
+ 105:c:\winavr-20100110\avr\include\util\delay.h ****     However, the macros in <util/setbaud.h> require it to be an
+ 106:c:\winavr-20100110\avr\include\util\delay.h ****     integer value.
+ 107:c:\winavr-20100110\avr\include\util\delay.h ****  */
+ 108:c:\winavr-20100110\avr\include\util\delay.h **** # define F_CPU 1000000UL
+ 109:c:\winavr-20100110\avr\include\util\delay.h **** #endif
+ 110:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 111:c:\winavr-20100110\avr\include\util\delay.h **** #ifndef __OPTIMIZE__
+ 112:c:\winavr-20100110\avr\include\util\delay.h **** # warning "Compiler optimizations disabled; functions from <util/delay.h> won't work as designed"
+ 113:c:\winavr-20100110\avr\include\util\delay.h **** #endif
+ 114:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 115:c:\winavr-20100110\avr\include\util\delay.h **** #if __HAS_DELAY_CYCLES && defined(__OPTIMIZE__) && \
+ 116:c:\winavr-20100110\avr\include\util\delay.h ****   !defined(__DELAY_BACKWARD_COMPATIBLE__) &&	   \
+ 117:c:\winavr-20100110\avr\include\util\delay.h ****   __STDC_HOSTED__
+ 118:c:\winavr-20100110\avr\include\util\delay.h **** #  include <math.h>
+ 119:c:\winavr-20100110\avr\include\util\delay.h **** #endif
+ 120:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 121:c:\winavr-20100110\avr\include\util\delay.h **** /**
+ 122:c:\winavr-20100110\avr\include\util\delay.h ****    \ingroup util_delay
+ 123:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 124:c:\winavr-20100110\avr\include\util\delay.h ****    Perform a delay of \c __ms milliseconds, using _delay_loop_2().
+ 125:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 126:c:\winavr-20100110\avr\include\util\delay.h ****    The macro F_CPU is supposed to be defined to a
+ 127:c:\winavr-20100110\avr\include\util\delay.h ****    constant defining the CPU clock frequency (in Hertz).
+ 128:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 129:c:\winavr-20100110\avr\include\util\delay.h ****    The maximal possible delay is 262.14 ms / F_CPU in MHz.
+ 130:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 131:c:\winavr-20100110\avr\include\util\delay.h ****    When the user request delay which exceed the maximum possible one,
+ 132:c:\winavr-20100110\avr\include\util\delay.h ****    _delay_ms() provides a decreased resolution functionality. In this
+ 133:c:\winavr-20100110\avr\include\util\delay.h ****    mode _delay_ms() will work with a resolution of 1/10 ms, providing
+ 134:c:\winavr-20100110\avr\include\util\delay.h ****    delays up to 6.5535 seconds (independent from CPU frequency).  The
+ 135:c:\winavr-20100110\avr\include\util\delay.h ****    user will not be informed about decreased resolution.
+ 136:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 137:c:\winavr-20100110\avr\include\util\delay.h ****    If the avr-gcc toolchain has __builtin_avr_delay_cycles()
+ 138:c:\winavr-20100110\avr\include\util\delay.h ****    support, maximal possible delay is 4294967.295 ms/ F_CPU in MHz. For
+ 139:c:\winavr-20100110\avr\include\util\delay.h ****    values greater than the maximal possible delay, overflows results in
+ 140:c:\winavr-20100110\avr\include\util\delay.h ****    no delay i.e., 0ms.
+ 141:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 142:c:\winavr-20100110\avr\include\util\delay.h ****    Conversion of \c __ms into clock cycles may not always result in
+ 143:c:\winavr-20100110\avr\include\util\delay.h ****    integer.  By default, the clock cycles rounded up to next
+ 144:c:\winavr-20100110\avr\include\util\delay.h ****    integer. This ensures that the user gets at least \c __ms
+ 145:c:\winavr-20100110\avr\include\util\delay.h ****    microseconds of delay.
+ 146:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 147:c:\winavr-20100110\avr\include\util\delay.h ****    Alternatively, by defining the macro \c __DELAY_ROUND_DOWN__, or
+ 148:c:\winavr-20100110\avr\include\util\delay.h ****    \c __DELAY_ROUND_CLOSEST__, before including this header file, the
+ 149:c:\winavr-20100110\avr\include\util\delay.h ****    algorithm can be made to round down, or round to closest integer,
+ 150:c:\winavr-20100110\avr\include\util\delay.h ****    respectively.
+ 151:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 152:c:\winavr-20100110\avr\include\util\delay.h ****    \note
+ 153:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 154:c:\winavr-20100110\avr\include\util\delay.h ****    The implementation of _delay_ms() based on
+ 155:c:\winavr-20100110\avr\include\util\delay.h ****    __builtin_avr_delay_cycles() is not backward compatible with older
+ 156:c:\winavr-20100110\avr\include\util\delay.h ****    implementations.  In order to get functionality backward compatible
+ 157:c:\winavr-20100110\avr\include\util\delay.h ****    with previous versions, the macro \c "__DELAY_BACKWARD_COMPATIBLE__"
+ 158:c:\winavr-20100110\avr\include\util\delay.h ****    must be defined before including this header file. Also, the
+ 159:c:\winavr-20100110\avr\include\util\delay.h ****    backward compatible algorithm will be chosen if the code is
+ 160:c:\winavr-20100110\avr\include\util\delay.h ****    compiled in a <em>freestanding environment</em> (GCC option
+ 161:c:\winavr-20100110\avr\include\util\delay.h ****    \c -ffreestanding), as the math functions required for rounding are
+ 162:c:\winavr-20100110\avr\include\util\delay.h ****    not available to the compiler then.
+ 163:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 164:c:\winavr-20100110\avr\include\util\delay.h ****  */
+ 165:c:\winavr-20100110\avr\include\util\delay.h **** void
+ 166:c:\winavr-20100110\avr\include\util\delay.h **** _delay_ms(double __ms)
+ 167:c:\winavr-20100110\avr\include\util\delay.h **** {
+ 168:c:\winavr-20100110\avr\include\util\delay.h **** 	double __tmp ;
+ 169:c:\winavr-20100110\avr\include\util\delay.h **** #if __HAS_DELAY_CYCLES && defined(__OPTIMIZE__) && \
+ 170:c:\winavr-20100110\avr\include\util\delay.h ****   !defined(__DELAY_BACKWARD_COMPATIBLE__) &&	   \
+ 171:c:\winavr-20100110\avr\include\util\delay.h ****   __STDC_HOSTED__
+ 172:c:\winavr-20100110\avr\include\util\delay.h **** 	uint32_t __ticks_dc;
+ 173:c:\winavr-20100110\avr\include\util\delay.h **** 	extern void __builtin_avr_delay_cycles(unsigned long);
+ 174:c:\winavr-20100110\avr\include\util\delay.h **** 	__tmp = ((F_CPU) / 1e3) * __ms;
+ 175:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 176:c:\winavr-20100110\avr\include\util\delay.h **** 	#if defined(__DELAY_ROUND_DOWN__)
+ 177:c:\winavr-20100110\avr\include\util\delay.h **** 		__ticks_dc = (uint32_t)fabs(__tmp);
+ 178:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 179:c:\winavr-20100110\avr\include\util\delay.h **** 	#elif defined(__DELAY_ROUND_CLOSEST__)
+ 180:c:\winavr-20100110\avr\include\util\delay.h **** 		__ticks_dc = (uint32_t)(fabs(__tmp)+0.5);
+ 181:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 182:c:\winavr-20100110\avr\include\util\delay.h **** 	#else
+ 183:c:\winavr-20100110\avr\include\util\delay.h **** 		//round up by default
+ 184:c:\winavr-20100110\avr\include\util\delay.h **** 		__ticks_dc = (uint32_t)(ceil(fabs(__tmp)));
+ 185:c:\winavr-20100110\avr\include\util\delay.h **** 	#endif
+ 186:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 187:c:\winavr-20100110\avr\include\util\delay.h **** 	__builtin_avr_delay_cycles(__ticks_dc);
+ 188:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 189:c:\winavr-20100110\avr\include\util\delay.h **** #else
+ 190:c:\winavr-20100110\avr\include\util\delay.h **** 	uint16_t __ticks;
+ 191:c:\winavr-20100110\avr\include\util\delay.h **** 	__tmp = ((F_CPU) / 4e3) * __ms;
+ 192:c:\winavr-20100110\avr\include\util\delay.h **** 	if (__tmp < 1.0)
+ 193:c:\winavr-20100110\avr\include\util\delay.h **** 		__ticks = 1;
+ 194:c:\winavr-20100110\avr\include\util\delay.h **** 	else if (__tmp > 65535)
+ 195:c:\winavr-20100110\avr\include\util\delay.h **** 	{
+ 196:c:\winavr-20100110\avr\include\util\delay.h **** 		//	__ticks = requested delay in 1/10 ms
+ 197:c:\winavr-20100110\avr\include\util\delay.h **** 		__ticks = (uint16_t) (__ms * 10.0);
+ 198:c:\winavr-20100110\avr\include\util\delay.h **** 		while(__ticks)
+ 199:c:\winavr-20100110\avr\include\util\delay.h **** 		{
+ 200:c:\winavr-20100110\avr\include\util\delay.h **** 			// wait 1/10 ms
+ 201:c:\winavr-20100110\avr\include\util\delay.h **** 			_delay_loop_2(((F_CPU) / 4e3) / 10);
+ 202:c:\winavr-20100110\avr\include\util\delay.h **** 			__ticks --;
+ 203:c:\winavr-20100110\avr\include\util\delay.h **** 		}
+ 204:c:\winavr-20100110\avr\include\util\delay.h **** 		return;
+ 205:c:\winavr-20100110\avr\include\util\delay.h **** 	}
+ 206:c:\winavr-20100110\avr\include\util\delay.h **** 	else
+ 207:c:\winavr-20100110\avr\include\util\delay.h **** 		__ticks = (uint16_t)__tmp;
+ 208:c:\winavr-20100110\avr\include\util\delay.h **** 	_delay_loop_2(__ticks);
+ 209:c:\winavr-20100110\avr\include\util\delay.h **** #endif
+ 210:c:\winavr-20100110\avr\include\util\delay.h **** }
+ 211:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 212:c:\winavr-20100110\avr\include\util\delay.h **** /**
+ 213:c:\winavr-20100110\avr\include\util\delay.h ****    \ingroup util_delay
+ 214:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 215:c:\winavr-20100110\avr\include\util\delay.h ****    Perform a delay of \c __us microseconds, using _delay_loop_1().
+ 216:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 217:c:\winavr-20100110\avr\include\util\delay.h ****    The macro F_CPU is supposed to be defined to a
+ 218:c:\winavr-20100110\avr\include\util\delay.h ****    constant defining the CPU clock frequency (in Hertz).
+ 219:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 220:c:\winavr-20100110\avr\include\util\delay.h ****    The maximal possible delay is 768 us / F_CPU in MHz.
+ 221:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 222:c:\winavr-20100110\avr\include\util\delay.h ****    If the user requests a delay greater than the maximal possible one,
+ 223:c:\winavr-20100110\avr\include\util\delay.h ****    _delay_us() will automatically call _delay_ms() instead.  The user
+ 224:c:\winavr-20100110\avr\include\util\delay.h ****    will not be informed about this case.
+ 225:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 226:c:\winavr-20100110\avr\include\util\delay.h ****    If the avr-gcc toolchain has __builtin_avr_delay_cycles()
+ 227:c:\winavr-20100110\avr\include\util\delay.h ****    support, maximal possible delay is 4294967.295 us/ F_CPU in MHz. For
+ 228:c:\winavr-20100110\avr\include\util\delay.h ****    values greater than the maximal possible delay, overflow results in
+ 229:c:\winavr-20100110\avr\include\util\delay.h ****    no delay i.e., 0us.
+ 230:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 231:c:\winavr-20100110\avr\include\util\delay.h ****    Conversion of \c __us into clock cycles may not always result in
+ 232:c:\winavr-20100110\avr\include\util\delay.h ****    integer.  By default, the clock cycles rounded up to next
+ 233:c:\winavr-20100110\avr\include\util\delay.h ****    integer. This ensures that the user gets at least \c __us
+ 234:c:\winavr-20100110\avr\include\util\delay.h ****    microseconds of delay.
+ 235:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 236:c:\winavr-20100110\avr\include\util\delay.h ****    Alternatively, by defining the macro \c __DELAY_ROUND_DOWN__, or
+ 237:c:\winavr-20100110\avr\include\util\delay.h ****    \c __DELAY_ROUND_CLOSEST__, before including this header file, the
+ 238:c:\winavr-20100110\avr\include\util\delay.h ****    algorithm can be made to round down, or round to closest integer,
+ 239:c:\winavr-20100110\avr\include\util\delay.h ****    respectively.
+ 240:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 241:c:\winavr-20100110\avr\include\util\delay.h ****    \note
+ 242:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 243:c:\winavr-20100110\avr\include\util\delay.h ****    The implementation of _delay_ms() based on
+ 244:c:\winavr-20100110\avr\include\util\delay.h ****    __builtin_avr_delay_cycles() is not backward compatible with older
+ 245:c:\winavr-20100110\avr\include\util\delay.h ****    implementations.  In order to get functionality backward compatible
+ 246:c:\winavr-20100110\avr\include\util\delay.h ****    with previous versions, the macro \c __DELAY_BACKWARD_COMPATIBLE__
+ 247:c:\winavr-20100110\avr\include\util\delay.h ****    must be defined before including this header file. Also, the
+ 248:c:\winavr-20100110\avr\include\util\delay.h ****    backward compatible algorithm will be chosen if the code is
+ 249:c:\winavr-20100110\avr\include\util\delay.h ****    compiled in a <em>freestanding environment</em> (GCC option
+ 250:c:\winavr-20100110\avr\include\util\delay.h ****    \c -ffreestanding), as the math functions required for rounding are
+ 251:c:\winavr-20100110\avr\include\util\delay.h ****    not available to the compiler then.
+ 252:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 253:c:\winavr-20100110\avr\include\util\delay.h ****  */
+ 254:c:\winavr-20100110\avr\include\util\delay.h **** void
+ 255:c:\winavr-20100110\avr\include\util\delay.h **** _delay_us(double __us)
+ 256:c:\winavr-20100110\avr\include\util\delay.h **** {
+ 257:c:\winavr-20100110\avr\include\util\delay.h **** 	double __tmp ;
+ 258:c:\winavr-20100110\avr\include\util\delay.h **** #if __HAS_DELAY_CYCLES && defined(__OPTIMIZE__) && \
+ 259:c:\winavr-20100110\avr\include\util\delay.h ****   !defined(__DELAY_BACKWARD_COMPATIBLE__) &&	   \
+ 260:c:\winavr-20100110\avr\include\util\delay.h ****   __STDC_HOSTED__
+ 261:c:\winavr-20100110\avr\include\util\delay.h **** 	uint32_t __ticks_dc;
+ 262:c:\winavr-20100110\avr\include\util\delay.h **** 	extern void __builtin_avr_delay_cycles(unsigned long);
+ 263:c:\winavr-20100110\avr\include\util\delay.h **** 	__tmp = ((F_CPU) / 1e6) * __us;
+ 264:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 265:c:\winavr-20100110\avr\include\util\delay.h **** 	#if defined(__DELAY_ROUND_DOWN__)
+ 266:c:\winavr-20100110\avr\include\util\delay.h **** 		__ticks_dc = (uint32_t)fabs(__tmp);
+ 267:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 268:c:\winavr-20100110\avr\include\util\delay.h **** 	#elif defined(__DELAY_ROUND_CLOSEST__)
+ 269:c:\winavr-20100110\avr\include\util\delay.h **** 		__ticks_dc = (uint32_t)(fabs(__tmp)+0.5);
+ 270:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 271:c:\winavr-20100110\avr\include\util\delay.h **** 	#else
+ 272:c:\winavr-20100110\avr\include\util\delay.h **** 		//round up by default
+ 273:c:\winavr-20100110\avr\include\util\delay.h **** 		__ticks_dc = (uint32_t)(ceil(fabs(__tmp)));
+ 274:c:\winavr-20100110\avr\include\util\delay.h **** 	#endif
+ 275:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 276:c:\winavr-20100110\avr\include\util\delay.h **** 	__builtin_avr_delay_cycles(__ticks_dc);
+ 547               		.loc 2 276 0
+ 548 013e 85E3      		ldi r24,lo8(53)
+ 549 0140 8A95      	1:	dec r24
+ 550 0142 01F4      		brne 1b
+ 551 0144 0000      		nop
+ 552               	.LVL37:
+ 553               	.LBE59:
+ 554               	.LBE58:
+ 283:setup.c       **** 	_delay_us(10); // Wait byte program time
+ 284:setup.c       **** 	
+ 285:setup.c       **** 	// Set data pins inputs
+ 286:setup.c       **** 	PORT_DATA7_0 = 0;
+ 555               		.loc 1 286 0
+ 556 0146 15BA      		out 0x15,__zero_reg__
+ 287:setup.c       **** 	DDR_DATA7_0 = 0;
+ 557               		.loc 1 287 0
+ 558 0148 14BA      		out 0x14,__zero_reg__
+ 288:setup.c       **** 	
+ 289:setup.c       **** 	// Verify data
+ 290:setup.c       **** 	uint8_t dataVerify = gb_flash_read_byte(address);
+ 559               		.loc 1 290 0
+ 560 014a CE01      		movw r24,r28
+ 561 014c 00D0      		rcall gb_flash_read_byte
+ 562               	.LVL38:
+ 563               	.L28:
+ 291:setup.c       **** 	while (data != dataVerify) {
+ 564               		.loc 1 291 0
+ 565 014e 8117      		cp r24,r17
+ 566 0150 01F0      		breq .L30
+ 292:setup.c       **** 		dataVerify = gb_flash_read_byte(address);
+ 567               		.loc 1 292 0
+ 568 0152 CE01      		movw r24,r28
+ 569               	.LVL39:
+ 570 0154 00D0      		rcall gb_flash_read_byte
+ 571               	.LVL40:
+ 572               	.LBB60:
+ 573               	.LBB61:
+ 574               		.loc 2 276 0
+ 575 0156 9AE1      		ldi r25,lo8(26)
+ 576 0158 9A95      	1:	dec r25
+ 577 015a 01F4      		brne 1b
+ 578 015c 00C0      		rjmp .
+ 579 015e 00C0      		rjmp .L28
+ 580               	.LVL41:
+ 581               	.L30:
+ 582               	/* epilogue start */
+ 583               	.LBE61:
+ 584               	.LBE60:
+ 293:setup.c       **** 		_delay_us(5);
+ 294:setup.c       **** 	}
+ 295:setup.c       **** }
+ 585               		.loc 1 295 0
+ 586 0160 DF91      		pop r29
+ 587 0162 CF91      		pop r28
+ 588               	.LVL42:
+ 589 0164 1F91      		pop r17
+ 590               	.LVL43:
+ 591 0166 0895      		ret
+ 592               		.cfi_endproc
+ 593               	.LFE23:
+ 595               	.global	gb_flash_write_byte_bank1_commands
+ 597               	gb_flash_write_byte_bank1_commands:
+ 598               	.LFB24:
+ 296:setup.c       **** 
+ 297:setup.c       **** // Write a single byte to the Flash address. Takes 10-50us to program each byte. 
+ 298:setup.c       **** // Switch to bank 1 to issue flash commands, then switch back to the bank we were at before
+ 299:setup.c       **** void gb_flash_write_byte_bank1_commands(uint16_t address, uint8_t data) {
+ 599               		.loc 1 299 0
+ 600               		.cfi_startproc
+ 601               	.LVL44:
+ 602 0168 FF92      		push r15
+ 603               	.LCFI12:
+ 604               		.cfi_def_cfa_offset 3
+ 605               		.cfi_offset 15, -2
+ 606 016a 0F93      		push r16
+ 607               	.LCFI13:
+ 608               		.cfi_def_cfa_offset 4
+ 609               		.cfi_offset 16, -3
+ 610 016c 1F93      		push r17
+ 611               	.LCFI14:
+ 612               		.cfi_def_cfa_offset 5
+ 613               		.cfi_offset 17, -4
+ 614 016e CF93      		push r28
+ 615               	.LCFI15:
+ 616               		.cfi_def_cfa_offset 6
+ 617               		.cfi_offset 28, -5
+ 618 0170 DF93      		push r29
+ 619               	.LCFI16:
+ 620               		.cfi_def_cfa_offset 7
+ 621               		.cfi_offset 29, -6
+ 622               	/* prologue: function */
+ 623               	/* frame size = 0 */
+ 624               	/* stack size = 5 */
+ 625               	.L__stack_usage = 5
+ 626 0172 EC01      		movw r28,r24
+ 627 0174 162F      		mov r17,r22
+ 300:setup.c       **** 	// Set bank 1
+ 301:setup.c       **** 	DDR_DATA7_0 = 0xFF;
+ 628               		.loc 1 301 0
+ 629 0176 FF24      		clr r15
+ 630 0178 FA94      		dec r15
+ 631 017a F4BA      		out 0x14,r15
+ 632               	.LVL45:
+ 633               	.LBB62:
+ 634               	.LBB63:
+ 178:setup.c       **** 	PORT_ADDR7_0 = (address & 0xFF);
+ 635               		.loc 1 178 0
+ 636 017c 01E2      		ldi r16,lo8(33)
+ 637 017e 0BBB      		out 0x1b,r16
+ 179:setup.c       **** }
+ 638               		.loc 1 179 0
+ 639 0180 18BA      		out 0x18,__zero_reg__
+ 640               	.LVL46:
+ 641               	.LBE63:
+ 642               	.LBE62:
+ 302:setup.c       **** 	set_16bit_address(0x2100);
+ 303:setup.c       **** 	PORT_DATA7_0 = 1;
+ 643               		.loc 1 303 0
+ 644 0182 81E0      		ldi r24,lo8(1)
+ 645               	.LVL47:
+ 646 0184 85BB      		out 0x15,r24
+ 304:setup.c       **** 	wrPin_low; // Pulse WR
+ 647               		.loc 1 304 0
+ 648 0186 9698      		cbi 0x12,6
+ 305:setup.c       **** 	asm volatile("nop");
+ 649               		.loc 1 305 0
+ 650               	/* #APP */
+ 651               	 ;  305 "setup.c" 1
+ 652 0188 0000      		nop
+ 653               	 ;  0 "" 2
+ 306:setup.c       **** 	asm volatile("nop");
+ 654               		.loc 1 306 0
+ 655               	 ;  306 "setup.c" 1
+ 656 018a 0000      		nop
+ 657               	 ;  0 "" 2
+ 307:setup.c       **** 	wrPin_high;
+ 658               		.loc 1 307 0
+ 659               	/* #NOAPP */
+ 660 018c 969A      		sbi 0x12,6
+ 308:setup.c       **** 	
+ 309:setup.c       **** 	gb_flash_write_bus_cycle(flashWriteCycle[0][0], flashWriteCycle[0][1]);
+ 661               		.loc 1 309 0
+ 662 018e 6091 0000 		lds r22,flashWriteCycle+2
+ 663               	.LVL48:
+ 664 0192 8091 0000 		lds r24,flashWriteCycle
+ 665 0196 9091 0000 		lds r25,flashWriteCycle+1
+ 666 019a 00D0      		rcall gb_flash_write_bus_cycle
+ 667               	.LVL49:
+ 310:setup.c       **** 	gb_flash_write_bus_cycle(flashWriteCycle[1][0], flashWriteCycle[1][1]);
+ 668               		.loc 1 310 0
+ 669 019c 6091 0000 		lds r22,flashWriteCycle+6
+ 670 01a0 8091 0000 		lds r24,flashWriteCycle+4
+ 671 01a4 9091 0000 		lds r25,flashWriteCycle+4+1
+ 672 01a8 00D0      		rcall gb_flash_write_bus_cycle
+ 673               	.LVL50:
+ 311:setup.c       **** 	gb_flash_write_bus_cycle(flashWriteCycle[2][0], flashWriteCycle[2][1]);
+ 674               		.loc 1 311 0
+ 675 01aa 6091 0000 		lds r22,flashWriteCycle+10
+ 676 01ae 8091 0000 		lds r24,flashWriteCycle+8
+ 677 01b2 9091 0000 		lds r25,flashWriteCycle+8+1
+ 678 01b6 00D0      		rcall gb_flash_write_bus_cycle
+ 679               	.LVL51:
+ 312:setup.c       **** 	
+ 313:setup.c       **** 	
+ 314:setup.c       **** 	// Set bank back
+ 315:setup.c       **** 	DDR_DATA7_0 = 0xFF;
+ 680               		.loc 1 315 0
+ 681 01b8 F4BA      		out 0x14,r15
+ 682               	.LVL52:
+ 683               	.LBB64:
+ 684               	.LBB65:
+ 178:setup.c       **** 	PORT_ADDR7_0 = (address & 0xFF);
+ 685               		.loc 1 178 0
+ 686 01ba 0BBB      		out 0x1b,r16
+ 179:setup.c       **** }
+ 687               		.loc 1 179 0
+ 688 01bc 18BA      		out 0x18,__zero_reg__
+ 689               	.LVL53:
+ 690               	.LBE65:
+ 691               	.LBE64:
+ 316:setup.c       **** 	set_16bit_address(0x2100);
+ 317:setup.c       **** 	PORT_DATA7_0 = lastBankAccessed;
+ 692               		.loc 1 317 0
+ 693 01be 8091 0000 		lds r24,lastBankAccessed
+ 694 01c2 85BB      		out 0x15,r24
+ 318:setup.c       **** 	wrPin_low; // Pulse WR
+ 695               		.loc 1 318 0
+ 696 01c4 9698      		cbi 0x12,6
+ 319:setup.c       **** 	asm volatile("nop");
+ 697               		.loc 1 319 0
+ 698               	/* #APP */
+ 699               	 ;  319 "setup.c" 1
+ 700 01c6 0000      		nop
+ 701               	 ;  0 "" 2
+ 320:setup.c       **** 	asm volatile("nop");
+ 702               		.loc 1 320 0
+ 703               	 ;  320 "setup.c" 1
+ 704 01c8 0000      		nop
+ 705               	 ;  0 "" 2
+ 321:setup.c       **** 	wrPin_high;
+ 706               		.loc 1 321 0
+ 707               	/* #NOAPP */
+ 708 01ca 969A      		sbi 0x12,6
+ 322:setup.c       **** 	
+ 323:setup.c       **** 	gb_flash_write_bus_cycle(address, data);
+ 709               		.loc 1 323 0
+ 710 01cc 612F      		mov r22,r17
+ 711 01ce CE01      		movw r24,r28
+ 712 01d0 00D0      		rcall gb_flash_write_bus_cycle
+ 713               	.LVL54:
+ 714               	.LBB66:
+ 715               	.LBB67:
+ 716               		.loc 2 276 0
+ 717 01d2 85E3      		ldi r24,lo8(53)
+ 718 01d4 8A95      	1:	dec r24
+ 719 01d6 01F4      		brne 1b
+ 720 01d8 0000      		nop
+ 721               	.LVL55:
+ 722               	.LBE67:
+ 723               	.LBE66:
+ 324:setup.c       **** 	_delay_us(10); // Wait byte program time
+ 325:setup.c       **** 	
+ 326:setup.c       **** 	// Set data pins inputs
+ 327:setup.c       **** 	PORT_DATA7_0 = 0;
+ 724               		.loc 1 327 0
+ 725 01da 15BA      		out 0x15,__zero_reg__
+ 328:setup.c       **** 	DDR_DATA7_0 = 0;
+ 726               		.loc 1 328 0
+ 727 01dc 14BA      		out 0x14,__zero_reg__
+ 329:setup.c       **** 	
+ 330:setup.c       **** 	// Verify data
+ 331:setup.c       **** 	uint8_t dataVerify = gb_flash_read_byte(address);
+ 728               		.loc 1 331 0
+ 729 01de CE01      		movw r24,r28
+ 730 01e0 00D0      		rcall gb_flash_read_byte
+ 731               	.LVL56:
+ 732               	.L32:
+ 332:setup.c       **** 	while (data != dataVerify) {
+ 733               		.loc 1 332 0
+ 734 01e2 8117      		cp r24,r17
+ 735 01e4 01F0      		breq .L34
+ 333:setup.c       **** 		dataVerify = gb_flash_read_byte(address);
+ 736               		.loc 1 333 0
+ 737 01e6 CE01      		movw r24,r28
+ 738               	.LVL57:
+ 739 01e8 00D0      		rcall gb_flash_read_byte
+ 740               	.LVL58:
+ 741               	.LBB68:
+ 742               	.LBB69:
+ 743               		.loc 2 276 0
+ 744 01ea 9AE1      		ldi r25,lo8(26)
+ 745 01ec 9A95      	1:	dec r25
+ 746 01ee 01F4      		brne 1b
+ 747 01f0 00C0      		rjmp .
+ 748 01f2 00C0      		rjmp .L32
+ 749               	.LVL59:
+ 750               	.L34:
+ 751               	/* epilogue start */
+ 752               	.LBE69:
+ 753               	.LBE68:
+ 334:setup.c       **** 		_delay_us(5);
+ 335:setup.c       **** 	}
+ 336:setup.c       **** }
+ 754               		.loc 1 336 0
+ 755 01f4 DF91      		pop r29
+ 756 01f6 CF91      		pop r28
+ 757               	.LVL60:
+ 758 01f8 1F91      		pop r17
+ 759               	.LVL61:
+ 760 01fa 0F91      		pop r16
+ 761 01fc FF90      		pop r15
+ 762 01fe 0895      		ret
+ 763               		.cfi_endproc
+ 764               	.LFE24:
+ 766               	.global	setup
+ 768               	setup:
+ 769               	.LFB25:
+ 337:setup.c       **** 
+ 338:setup.c       **** 
+ 339:setup.c       **** // Setup
+ 340:setup.c       **** void setup(void) {
+ 770               		.loc 1 340 0
+ 771               		.cfi_startproc
+ 772               	/* prologue: function */
+ 773               	/* frame size = 0 */
+ 774               	/* stack size = 0 */
+ 775               	.L__stack_usage = 0
+ 341:setup.c       **** 	// Turn off watchdog
+ 342:setup.c       **** 	MCUCSR &= ~(1<<WDRF);
+ 776               		.loc 1 342 0
+ 777 0200 84B7      		in r24,0x34
+ 778 0202 877F      		andi r24,lo8(-9)
+ 779 0204 84BF      		out 0x34,r24
+ 343:setup.c       **** 	WDTCR = (1<<WDCE) | (1<<WDE);
+ 780               		.loc 1 343 0
+ 781 0206 88E1      		ldi r24,lo8(24)
+ 782 0208 81BD      		out 0x21,r24
+ 344:setup.c       **** 	WDTCR = 0;
+ 783               		.loc 1 344 0
+ 784 020a 11BC      		out 0x21,__zero_reg__
+ 345:setup.c       **** 	
+ 346:setup.c       **** 	// Reset common lines
+ 347:setup.c       **** 	rd_wr_csmreq_cs2_reset();
+ 785               		.loc 1 347 0
+ 786 020c 00D0      		rcall rd_wr_csmreq_cs2_reset
+ 787               	.LVL62:
+ 348:setup.c       **** 	
+ 349:setup.c       **** 	// Set outputs
+ 350:setup.c       **** 	DDRD |= (1<<ACTIVITY_LED) | (1<<WR_PIN) | (1<<RD_PIN) | (1<<CS_MREQ_PIN);
+ 788               		.loc 1 350 0
+ 789 020e 81B3      		in r24,0x11
+ 790 0210 8867      		ori r24,lo8(120)
+ 791 0212 81BB      		out 0x11,r24
+ 351:setup.c       **** 	DDRE |= (1<<CS2_PIN);
+ 792               		.loc 1 351 0
+ 793 0214 329A      		sbi 0x6,2
+ 352:setup.c       **** 	
+ 353:setup.c       **** 	// Pull ups
+ 354:setup.c       **** 	PORTE |= (1<<PE0);
+ 794               		.loc 1 354 0
+ 795 0216 389A      		sbi 0x7,0
+ 355:setup.c       **** 	PORTD |= (1<<PD7) | (1<<PD2);
+ 796               		.loc 1 355 0
+ 797 0218 82B3      		in r24,0x12
+ 798 021a 8468      		ori r24,lo8(-124)
+ 799 021c 82BB      		out 0x12,r24
+ 356:setup.c       **** 	
+ 357:setup.c       **** 	// Set all pins as inputs
+ 358:setup.c       **** 	PORT_DATA7_0 = 0;
+ 800               		.loc 1 358 0
+ 801 021e 15BA      		out 0x15,__zero_reg__
+ 359:setup.c       **** 	DDR_DATA7_0 = 0;
+ 802               		.loc 1 359 0
+ 803 0220 14BA      		out 0x14,__zero_reg__
+ 360:setup.c       **** 	PORT_ADDR7_0 = 0;
+ 804               		.loc 1 360 0
+ 805 0222 18BA      		out 0x18,__zero_reg__
+ 361:setup.c       **** 	DDR_ADDR7_0 = 0;
+ 806               		.loc 1 361 0
+ 807 0224 17BA      		out 0x17,__zero_reg__
+ 362:setup.c       **** 	PORT_ADDR15_8 = 0;
+ 808               		.loc 1 362 0
+ 809 0226 1BBA      		out 0x1b,__zero_reg__
+ 363:setup.c       **** 	DDR_ADDR15_8 = 0;
+ 810               		.loc 1 363 0
+ 811 0228 1ABA      		out 0x1a,__zero_reg__
+ 364:setup.c       **** 	
+ 365:setup.c       **** 	// Set Reset low for 50ms to reset the cart (also for CPLD carts to initialise properly)
+ 366:setup.c       **** 	cs2Pin_low;
+ 812               		.loc 1 366 0
+ 813 022a 3A98      		cbi 0x7,2
+ 814               	.LVL63:
+ 815               	.LBB70:
+ 816               	.LBB71:
+ 187:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 817               		.loc 2 187 0
+ 818 022c 2FEF      		ldi r18,lo8(159999)
+ 819 022e 80E7      		ldi r24,hi8(159999)
+ 820 0230 92E0      		ldi r25,hlo8(159999)
+ 821 0232 2150      	1:	subi r18,1
+ 822 0234 8040      		sbci r24,0
+ 823 0236 9040      		sbci r25,0
+ 824 0238 01F4      		brne 1b
+ 825 023a 00C0      		rjmp .
+ 826 023c 0000      		nop
+ 827               	.LVL64:
+ 828               	.LBE71:
+ 829               	.LBE70:
+ 367:setup.c       **** 	_delay_ms(50);
+ 368:setup.c       **** 	cs2Pin_high;
+ 830               		.loc 1 368 0
+ 831 023e 3A9A      		sbi 0x7,2
+ 369:setup.c       **** 	
+ 370:setup.c       **** 	// Light LED
+ 371:setup.c       **** 	PORTD |= (1<<ACTIVITY_LED);
+ 832               		.loc 1 371 0
+ 833 0240 939A      		sbi 0x12,3
+ 834               	.LVL65:
+ 835               	.LBB72:
+ 836               	.LBB73:
+ 187:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 837               		.loc 2 187 0
+ 838 0242 2FEF      		ldi r18,lo8(1599999)
+ 839 0244 89E6      		ldi r24,hi8(1599999)
+ 840 0246 98E1      		ldi r25,hlo8(1599999)
+ 841 0248 2150      	1:	subi r18,1
+ 842 024a 8040      		sbci r24,0
+ 843 024c 9040      		sbci r25,0
+ 844 024e 01F4      		brne 1b
+ 845 0250 00C0      		rjmp .
+ 846 0252 0000      		nop
+ 847               	.LVL66:
+ 848               	.LBE73:
+ 849               	.LBE72:
+ 372:setup.c       **** 	_delay_ms(500);
+ 373:setup.c       **** 	PORTD &= ~(1<<ACTIVITY_LED);
+ 850               		.loc 1 373 0
+ 851 0254 9398      		cbi 0x12,3
+ 374:setup.c       **** 	
+ 375:setup.c       **** 	// Setup USART
+ 376:setup.c       **** 	UBRRL = 0; // 1Mbps Baud rate
+ 852               		.loc 1 376 0
+ 853 0256 19B8      		out 0x9,__zero_reg__
+ 377:setup.c       **** 	sbi(UCSRB, TXEN); // Transmitter enable
+ 854               		.loc 1 377 0
+ 855 0258 539A      		sbi 0xa,3
+ 378:setup.c       **** 	sbi(UCSRB, RXEN); // Receiver enable
+ 856               		.loc 1 378 0
+ 857 025a 549A      		sbi 0xa,4
+ 379:setup.c       **** 	
+ 380:setup.c       **** 	// Turn on interrupts
+ 381:setup.c       **** 	sei();
+ 858               		.loc 1 381 0
+ 859               	/* #APP */
+ 860               	 ;  381 "setup.c" 1
+ 861 025c 7894      		sei
+ 862               	 ;  0 "" 2
+ 863               	/* #NOAPP */
+ 864 025e 0895      		ret
+ 865               		.cfi_endproc
+ 866               	.LFE25:
+ 868               		.section	.text.startup,"ax",@progbits
+ 869               	.global	main
+ 871               	main:
+ 872               	.LFB26:
+ 873               		.file 3 "main.c"
+   1:main.c        **** /*
+   2:main.c        ****  GBxCart RW Mini
+   3:main.c        ****  PCB version: 1.0
+   4:main.c        ****  Firmware version: R12
+   5:main.c        ****  Author: Alex from insideGadgets (www.insidegadgets.com)
+   6:main.c        ****  Created: 7/11/2016
+   7:main.c        ****  Last Modified: 4/12/2018
+   8:main.c        ****  
+   9:main.c        ****  GBxCart RW Mini allows you to dump your Gameboy/Gameboy Colour games ROM, save the RAM, write to t
+  10:main.c        ****  write to certain Gameboy flash carts. GBA carts are not supported, please check out the non-Mini v
+  11:main.c        ****  
+  12:main.c        ****  The ATmega8515 talks to the cartridge and interfaces with the CH340G serial to USB converter with 
+  13:main.c        ****  
+  14:main.c        ****  
+  15:main.c        ****  Set fuse bits: External 16MHz crystal, divide clock by 8 is off, boot loader is on (512 bytes), BO
+  16:main.c        ****  avrdude -p atmega8515 -c usbasp -U lfuse:w:0xaf:m -U hfuse:w:0xda:m
+  17:main.c        ****  
+  18:main.c        ****  Program the TinySafeBoot boot loader (modified ASM code, watchdog reset will act as a hardware res
+  19:main.c        ****  avrdude -p atmega8515 -c usbasp -U flash:w:GBxCart_RW_v1.1_Rx\tsb\tsb_m8515_d0d1_resetwdt.hex
+  20:main.c        ****  
+  21:main.c        ****  Program GBxCart Mini RW through TinySafeBoot
+  22:main.c        ****  tsb com16:57600 fw main.hex
+  23:main.c        ****  
+  24:main.c        ****  Set TinySafeBoot delay time to 25 (T 25), gives ~0.5s in bootloader
+  25:main.c        ****  tsb com16:9600 T 25
+  26:main.c        ****  
+  27:main.c        ****  
+  28:main.c        ****  Programming shortcuts (if added in Programmers Notepad):
+  29:main.c        ****  Alt + W - Program fuse
+  30:main.c        ****  Alt + B - Burn bootloader
+  31:main.c        ****  
+  32:main.c        ****  Plug in USB then
+  33:main.c        ****  Alt + T - Program
+  34:main.c        ****  Alt + N - Program delay settings
+  35:main.c        ****  
+  36:main.c        ****  
+  37:main.c        ****  */
+  38:main.c        **** 
+  39:main.c        **** // ATmega8515L Pin Map
+  40:main.c        **** //
+  41:main.c        **** // VCC (5)			GND (6)			XTAL (7 ,8)		Activity LED PD3 (9)				Switch sense PD2 (8)
+  42:main.c        **** // SCK PB7 (3)		MOSI PB5 (1)	MISO PB6 (2)	RST (4)		RXD PD0 (5)			TXD PD1 (7)
+  43:main.c        **** // 
+  44:main.c        **** // Gameboy / Gameboy Colour
+  45:main.c        **** // A0-A7 PB0-7 (40-44, 1-3) 		A8-A15 PA0-7 (37-30)			D0-D7 PC0-7 (18-25)		Audio PE1 (27)
+  46:main.c        **** // 
+  47:main.c        **** // Gameboy Advance
+  48:main.c        **** // AD0-AD7 PB0-7 (40-44, 1-3) 	AD8-AD15 PA0-7 (37-30)		A16-23 / D0-D7 PC0-7 (19-26)
+  49:main.c        **** // *WR PD6 (13)						*RD PD5 (14)					*MREQ/CS PD4 (15)			CS2/RST PE2 (16)
+  50:main.c        **** 
+  51:main.c        **** #define F_CPU 16000000 // 16 MHz
+  52:main.c        **** #define PCB_VERSION 100 // Mini v1.0
+  53:main.c        **** #define FIRMWARE_VERSION 12
+  54:main.c        **** 
+  55:main.c        **** #include <avr/io.h>
+  56:main.c        **** #include <avr/wdt.h>
+  57:main.c        **** #include <avr/eeprom.h>
+  58:main.c        **** #include <avr/interrupt.h>
+  59:main.c        **** #include <avr/sleep.h>
+  60:main.c        **** #include <util/delay.h>
+  61:main.c        **** #include <stdlib.h>
+  62:main.c        **** #include <string.h>
+  63:main.c        **** #include "setup.c" // See defines, variables, constants, functions here
+  64:main.c        **** 
+  65:main.c        **** 
+  66:main.c        **** int main(void) {
+ 874               		.loc 3 66 0
+ 875               		.cfi_startproc
+ 876               	/* prologue: function */
+ 877               	/* frame size = 0 */
+ 878               	/* stack size = 0 */
+ 879               	.L__stack_usage = 0
+  67:main.c        **** 	setup();
+ 880               		.loc 3 67 0
+ 881 0000 00D0      		rcall setup
+ 882               	.LVL67:
+  68:main.c        **** 	
+  69:main.c        **** 	uint32_t address = 0;
+  70:main.c        **** 	uint8_t resetCommonLines = 1;
+ 883               		.loc 3 70 0
+ 884 0002 7724      		clr r7
+ 885 0004 7394      		inc r7
+  69:main.c        **** 	uint8_t resetCommonLines = 1;
+ 886               		.loc 3 69 0
+ 887 0006 C12C      		mov r12,__zero_reg__
+ 888 0008 D12C      		mov r13,__zero_reg__
+ 889 000a 7601      		movw r14,r12
+ 890               	.LBB74:
+  71:main.c        **** 	
+  72:main.c        **** 	while(1) {
+  73:main.c        **** 		if (resetCommonLines == 1) {
+  74:main.c        **** 			rd_wr_csmreq_cs2_reset();
+  75:main.c        **** 		}
+  76:main.c        **** 		receivedChar = USART_Receive(); // Wait for 1 byte of data
+  77:main.c        **** 		
+  78:main.c        **** 		
+  79:main.c        **** 		// Return the cart mode in use
+  80:main.c        **** 		if (receivedChar == CART_MODE) {
+  81:main.c        **** 			USART_Transmit(cartMode);
+  82:main.c        **** 		}
+  83:main.c        **** 		
+  84:main.c        **** 		// Change to GB mode or GBA mode if requested
+  85:main.c        **** 		else if (receivedChar == GB_CART_MODE) {
+  86:main.c        **** 			gb_mode();
+  87:main.c        **** 		}
+  88:main.c        **** 		
+  89:main.c        **** 		// Set address
+  90:main.c        **** 		else if (receivedChar == SET_START_ADDRESS) {
+  91:main.c        **** 			usart_read_chars(); // Read start address
+  92:main.c        **** 			address = strtol(receivedBuffer, NULL, 16); // Convert address string in hex to dec
+  93:main.c        **** 		}
+  94:main.c        **** 		
+  95:main.c        **** 		
+  96:main.c        **** 		// ****** Gameboy / Gameboy Colour ******
+  97:main.c        **** 		
+  98:main.c        **** 		// Read 64 bytes of ROM/RAM from address (and increment) until anything but 1 is received
+  99:main.c        **** 		else if (receivedChar == READ_ROM_RAM) {
+ 100:main.c        **** 			gb_mode();
+ 101:main.c        **** 			receivedChar = '1';
+ 102:main.c        **** 			while (receivedChar == '1') {
+ 103:main.c        **** 				PORTD |= (1<<ACTIVITY_LED);
+ 104:main.c        **** 				for (uint8_t x = 0; x < 64; x++) {
+ 105:main.c        **** 					USART_Transmit(read_8bit_data(address));
+ 106:main.c        **** 					address++;
+ 107:main.c        **** 				}
+ 108:main.c        **** 				
+ 109:main.c        **** 				PORTD &= ~(1<<ACTIVITY_LED);
+ 110:main.c        **** 				receivedChar = USART_Receive();
+ 111:main.c        **** 			}
+ 112:main.c        **** 		}
+ 113:main.c        **** 		
+ 114:main.c        **** 		// Write 64 bytes to RAM on address (and increment)
+ 115:main.c        **** 		else if (receivedChar == WRITE_RAM) {
+ 116:main.c        **** 			gb_mode();
+ 117:main.c        **** 			
+ 118:main.c        **** 			// Read 64 bytes first as CH340G sends them all at once
+ 119:main.c        **** 			usart_read_bytes(64);
+ 120:main.c        **** 			
+ 121:main.c        **** 			PORTD |= (1<<ACTIVITY_LED);
+ 122:main.c        **** 			for (uint8_t x = 0; x < 64; x++) {
+ 123:main.c        **** 				write_8bit_data(address, receivedBuffer[x], MEMORY_WRITE);
+ 124:main.c        **** 				address++;
+ 125:main.c        **** 			}
+ 126:main.c        **** 			
+ 127:main.c        **** 			PORTD &= ~(1<<ACTIVITY_LED);
+ 128:main.c        **** 			USART_Transmit(SEND_ACK); // Send back acknowledgement
+ 129:main.c        **** 		}
+ 130:main.c        **** 		
+ 131:main.c        **** 		// Set bank address and write a byte
+ 132:main.c        **** 		else if (receivedChar == SET_BANK) {
+ 133:main.c        **** 			gb_mode();
+ 134:main.c        **** 			
+ 135:main.c        **** 			usart_read_chars(); // Read start address
+ 136:main.c        **** 			uint16_t bankaddress = strtol(receivedBuffer, NULL, 16); // Convert address string in hex to dec
+ 137:main.c        **** 			
+ 138:main.c        **** 			receivedChar = USART_Receive(); // Wait for bank number
+ 139:main.c        **** 			if (receivedChar == 'B') {
+ 140:main.c        **** 				usart_read_chars(); // Read data
+ 141:main.c        **** 				uint8_t data = atoi(receivedBuffer); // Convert data string to dec
+ 142:main.c        **** 				lastBankAccessed = data; // Store the last bank accessed (used for flash carts that need it)
+ 143:main.c        **** 				
+ 144:main.c        **** 				write_8bit_data(bankaddress, data, BANK_WRITE);
+ 145:main.c        **** 			}
+ 146:main.c        **** 		}
+ 147:main.c        **** 		
+ 148:main.c        **** 		
+ 149:main.c        **** 		// ---------- GB FLASH CARTS ----------
+ 150:main.c        **** 		// Select which pin need to pulse as WE (Audio or WR)
+ 151:main.c        **** 		else if (receivedChar == GB_FLASH_WE_PIN) {
+ 152:main.c        **** 			flashWriteWePin = USART_Receive();
+ 153:main.c        **** 			
+ 154:main.c        **** 			if (flashWriteWePin == WE_AS_AUDIO_PIN) {
+ 155:main.c        **** 				DDRE |= (1<<AUDIO_PIN);
+ 156:main.c        **** 				audioPin_high;
+ 157:main.c        **** 			}
+ 158:main.c        **** 		}
+ 159:main.c        **** 		
+ 160:main.c        **** 		// Some flash carts may require changing the bank back to 1 in order to accept flash chip command
+ 161:main.c        **** 		else if (receivedChar == GB_FLASH_BANK_1_COMMAND_WRITES) {
+ 162:main.c        **** 			flashBank1CommandWrites = 1;
+ 163:main.c        **** 		}
+ 164:main.c        **** 		
+ 165:main.c        **** 		// Load the program method to use
+ 166:main.c        **** 		else if (receivedChar == GB_FLASH_PROGRAM_METHOD) {
+ 167:main.c        **** 			for (uint8_t x = 0; x < 3; x++) {
+ 168:main.c        **** 				usart_read_chars(); // Address
+ 169:main.c        **** 				flashWriteCycle[x][0] = strtol(receivedBuffer, NULL, 16);
+ 170:main.c        **** 				USART_Transmit(SEND_ACK);
+ 171:main.c        **** 				
+ 172:main.c        **** 				usart_read_chars(); // Data
+ 173:main.c        **** 				flashWriteCycle[x][1] = strtol(receivedBuffer, NULL, 16);
+ 174:main.c        **** 				USART_Transmit(SEND_ACK);
+ 175:main.c        **** 			}
+ 176:main.c        **** 		}
+ 177:main.c        **** 		
+ 178:main.c        **** 		// Write address and one byte to Flash, pulse a pin
+ 179:main.c        **** 		else if (receivedChar == GB_FLASH_WRITE_BYTE) {
+ 180:main.c        **** 			usart_read_chars(); // Read address
+ 181:main.c        **** 			uint16_t flashAddress = strtol(receivedBuffer, NULL, 16);
+ 182:main.c        **** 			
+ 183:main.c        **** 			usart_read_chars(); // Read data byte
+ 184:main.c        **** 			uint8_t flashByte = strtol(receivedBuffer, NULL, 16);
+ 185:main.c        **** 			
+ 186:main.c        **** 			PORTD |= (1<<ACTIVITY_LED);
+ 187:main.c        **** 			gb_flash_write_bus_cycle(flashAddress, flashByte);
+ 188:main.c        **** 			PORTD &= ~(1<<ACTIVITY_LED);
+ 189:main.c        **** 			
+ 190:main.c        **** 			USART_Transmit(SEND_ACK); // Send back acknowledgement
+ 191:main.c        **** 		}
+ 192:main.c        **** 		
+ 193:main.c        **** 		// Write 64 bytes to Flash address one byte write at a time (and increment), pulse a pin
+ 194:main.c        **** 		else if (receivedChar == GB_FLASH_WRITE_64BYTE) {
+ 195:main.c        **** 			usart_read_bytes(64);
+ 196:main.c        **** 			
+ 197:main.c        **** 			PORTD |= (1<<ACTIVITY_LED);
+ 198:main.c        **** 			for (uint8_t x = 0; x < 64; x++) {
+ 199:main.c        **** 				if (flashBank1CommandWrites == 0) {
+ 200:main.c        **** 					gb_flash_write_byte(address, receivedBuffer[x]);
+ 201:main.c        **** 				}
+ 202:main.c        **** 				else { // Some flash carts need to change to bank 1 to issue flash commands
+ 203:main.c        **** 					gb_flash_write_byte_bank1_commands(address, receivedBuffer[x]);
+ 204:main.c        **** 				}
+ 205:main.c        **** 				address++;
+ 206:main.c        **** 			}
+ 207:main.c        **** 			USART_Transmit(SEND_ACK); // Send back acknowledgement
+ 208:main.c        **** 			
+ 209:main.c        **** 			PORTD &= ~(1<<ACTIVITY_LED);
+ 210:main.c        **** 		}
+ 211:main.c        **** 		
+ 212:main.c        **** 		// Buffered programming, write 32 bytes to Flash address
+ 213:main.c        **** 		else if (receivedChar == GB_FLASH_WRITE_BUFFERED_32BYTE) {
+ 214:main.c        **** 			usart_read_bytes(32);
+ 215:main.c        **** 			PORTD |= (1<<ACTIVITY_LED);
+ 216:main.c        **** 			
+ 217:main.c        **** 			// Setup buffered write
+ 218:main.c        **** 			gb_flash_write_bus_cycle(0xAAA, 0xAA);
+ 219:main.c        **** 			gb_flash_write_bus_cycle(0x555, 0x55);
+ 220:main.c        **** 			gb_flash_write_bus_cycle(address, 0x25);
+ 221:main.c        **** 			gb_flash_write_bus_cycle(address, 0x1F); // Length
+ 222:main.c        **** 			_delay_us(1);
+ 223:main.c        **** 			
+ 224:main.c        **** 			// Write data
+ 225:main.c        **** 			for (uint8_t x = 0; x < 32; x++) {
+ 226:main.c        **** 				gb_flash_write_bus_cycle(address, receivedBuffer[x]);
+ 227:main.c        **** 				address++;
+ 228:main.c        **** 			}
+ 229:main.c        **** 			
+ 230:main.c        **** 			// Write buffer to flash
+ 231:main.c        **** 			gb_flash_write_bus_cycle(address-32, 0x29);
+ 232:main.c        **** 			_delay_us(200);
+ 233:main.c        **** 			
+ 234:main.c        **** 			// Verify last byte written
+ 235:main.c        **** 			uint8_t dataVerify = gb_flash_read_byte(address-1);
+ 236:main.c        **** 			uint8_t verifyCount = 0;
+ 237:main.c        **** 			while (dataVerify != receivedBuffer[31]) {
+ 238:main.c        **** 				dataVerify = gb_flash_read_byte(address-1);
+ 239:main.c        **** 				_delay_us(5);
+ 240:main.c        **** 				verifyCount++;
+ 241:main.c        **** 				if (verifyCount >= 200) {
+ 242:main.c        **** 					/*gb_flash_write_bus_cycle(0xAAA, 0xAA);
+ 243:main.c        **** 					gb_flash_write_bus_cycle(address, 0x55);
+ 244:main.c        **** 					gb_flash_write_bus_cycle(0x555, 0xF0);
+ 245:main.c        **** 					
+ 246:main.c        **** 					cs2Pin_low;
+ 247:main.c        **** 					_delay_ms(200);
+ 248:main.c        **** 					cs2Pin_high;
+ 249:main.c        **** 					_delay_ms(200);
+ 250:main.c        **** 					
+ 251:main.c        **** 					gb_flash_write_bus_cycle(0x555, 0xF0);*/
+ 252:main.c        **** 					
+ 253:main.c        **** 					_delay_ms(500);
+ 254:main.c        **** 					break;
+ 255:main.c        **** 				}
+ 256:main.c        **** 			}
+ 257:main.c        **** 			
+ 258:main.c        **** 			USART_Transmit(SEND_ACK); // Send back acknowledgement
+ 259:main.c        **** 			PORTD &= ~(1<<ACTIVITY_LED);
+ 260:main.c        **** 		}
+ 261:main.c        **** 		
+ 262:main.c        **** 		// Buffered programming, write 256 bytes to Flash address
+ 263:main.c        **** 		else if (receivedChar == GB_FLASH_WRITE_256BYTE) {
+ 264:main.c        **** 			usart_read_bytes(256);
+ 265:main.c        **** 			PORTD |= (1<<ACTIVITY_LED);
+ 266:main.c        **** 			
+ 267:main.c        **** 			// Setup buffered write
+ 268:main.c        **** 			gb_flash_write_bus_cycle(0xAAA, 0xA9);
+ 269:main.c        **** 			gb_flash_write_bus_cycle(0x555, 0x56);
+ 270:main.c        **** 			gb_flash_write_bus_cycle(address, 0x26);
+ 271:main.c        **** 			gb_flash_write_bus_cycle(address, 0xFF); // Length
+ 272:main.c        **** 			_delay_us(50);
+ 273:main.c        **** 			
+ 274:main.c        **** 			// Write data
+ 275:main.c        **** 			for (int x = 0; x < 256; x++) {
+ 276:main.c        **** 				gb_flash_write_bus_cycle(address, receivedBuffer[x]);
+ 277:main.c        **** 				address++;
+ 278:main.c        **** 			}
+ 279:main.c        **** 			
+ 280:main.c        **** 			// Write buffer to flash
+ 281:main.c        **** 			gb_flash_write_bus_cycle(address-256, 0x2A);
+ 282:main.c        **** 			
+ 283:main.c        **** 			// Verify last byte written
+ 284:main.c        **** 			uint8_t dataVerify = gb_flash_read_byte(address-1);
+ 285:main.c        **** 			while (dataVerify != receivedBuffer[255]) {
+ 286:main.c        **** 				dataVerify = gb_flash_read_byte(address-1);
+ 287:main.c        **** 				_delay_us(5);
+ 288:main.c        **** 			}
+ 289:main.c        **** 			
+ 290:main.c        **** 			USART_Transmit(SEND_ACK); // Send back acknowledgement
+ 291:main.c        **** 			PORTD &= ~(1<<ACTIVITY_LED);
+ 292:main.c        **** 		}
+ 293:main.c        **** 		
+ 294:main.c        **** 		
+ 295:main.c        **** 		// ---------- General commands ----------
+ 296:main.c        **** 		// Set any pin as input/output
+ 297:main.c        **** 		// Reads the DDR/PORT (e.g. DDRB/PORTB is 'B') and the hex value that represents pins to set to a
+ 298:main.c        **** 		else if (receivedChar == SET_INPUT || receivedChar == SET_OUTPUT) {
+ 299:main.c        **** 			char portChar = USART_Receive();
+ 300:main.c        **** 			usart_read_chars();
+ 301:main.c        **** 			uint8_t setValue = strtol(receivedBuffer, NULL, 16);
+ 302:main.c        **** 			
+ 303:main.c        **** 			PORTD |= (1<<ACTIVITY_LED);
+ 304:main.c        **** 			if (receivedChar == SET_INPUT) {
+ 305:main.c        **** 				if (portChar == 'A') {
+ 306:main.c        **** 					DDRA &= ~(setValue);
+ 307:main.c        **** 				}
+ 308:main.c        **** 				else if (portChar == 'B') {
+ 309:main.c        **** 					DDRB &= ~(setValue);
+ 310:main.c        **** 				}
+ 311:main.c        **** 				else if (portChar == 'C') {
+ 312:main.c        **** 					DDRC &= ~(setValue);
+ 313:main.c        **** 				}
+ 314:main.c        **** 				else if (portChar == 'D') {
+ 315:main.c        **** 					DDRD &= ~(setValue);
+ 316:main.c        **** 				}
+ 317:main.c        **** 				else if (portChar == 'E') {
+ 318:main.c        **** 					DDRE &= ~(setValue);
+ 319:main.c        **** 				}
+ 320:main.c        **** 			}
+ 321:main.c        **** 			else if (receivedChar == SET_OUTPUT) {
+ 322:main.c        **** 				if (portChar == 'A') {
+ 323:main.c        **** 					DDRA |= (setValue);
+ 324:main.c        **** 				}
+ 325:main.c        **** 				else if (portChar == 'B') {
+ 326:main.c        **** 					DDRB |= (setValue);
+ 327:main.c        **** 				}
+ 328:main.c        **** 				else if (portChar == 'C') {
+ 329:main.c        **** 					DDRC |= (setValue);
+ 330:main.c        **** 				}
+ 331:main.c        **** 				else if (portChar == 'D') {
+ 332:main.c        **** 					DDRD |= (setValue);
+ 333:main.c        **** 				}
+ 334:main.c        **** 				else if (portChar == 'E') {
+ 335:main.c        **** 					DDRE |= (setValue);
+ 336:main.c        **** 				}
+ 337:main.c        **** 			}
+ 338:main.c        **** 			PORTD &= ~(1<<ACTIVITY_LED);
+ 339:main.c        **** 		}
+ 340:main.c        **** 		
+ 341:main.c        **** 		// Set pin output as low
+ 342:main.c        **** 		else if (receivedChar == SET_OUTPUT_LOW) {
+ 343:main.c        **** 			char portChar = USART_Receive();			
+ 344:main.c        **** 			usart_read_chars();
+ 345:main.c        **** 			uint8_t setValue = strtol(receivedBuffer, NULL, 16);
+ 346:main.c        **** 			
+ 347:main.c        **** 			PORTD |= (1<<ACTIVITY_LED);
+ 348:main.c        **** 			if (portChar == 'A') {
+ 349:main.c        **** 				PORTA &= ~(setValue);
+ 350:main.c        **** 			}
+ 351:main.c        **** 			else if (portChar == 'B') {
+ 352:main.c        **** 				PORTB &= ~(setValue);
+ 353:main.c        **** 			}
+ 354:main.c        **** 			else if (portChar == 'C') {
+ 355:main.c        **** 				PORTC &= ~(setValue);
+ 356:main.c        **** 			}
+ 357:main.c        **** 			else if (portChar == 'D') {
+ 358:main.c        **** 				PORTD &= ~(setValue);
+ 359:main.c        **** 			}
+ 360:main.c        **** 			else if (portChar == 'E') {
+ 361:main.c        **** 				PORTE &= ~(setValue);
+ 362:main.c        **** 			}
+ 363:main.c        **** 			PORTD &= ~(1<<ACTIVITY_LED);
+ 364:main.c        **** 		}
+ 365:main.c        **** 		
+ 366:main.c        **** 		// Set pin output as high
+ 367:main.c        **** 		else if (receivedChar == SET_OUTPUT_HIGH) {
+ 368:main.c        **** 			char portChar = USART_Receive();			
+ 369:main.c        **** 			usart_read_chars();
+ 370:main.c        **** 			uint8_t setValue = strtol(receivedBuffer, NULL, 16);
+ 371:main.c        **** 			
+ 372:main.c        **** 			PORTD |= (1<<ACTIVITY_LED);
+ 373:main.c        **** 			if (portChar == 'A') {
+ 374:main.c        **** 				PORTA |= (setValue);
+ 375:main.c        **** 			}
+ 376:main.c        **** 			else if (portChar == 'B') {
+ 377:main.c        **** 				PORTB |= (setValue);
+ 378:main.c        **** 			}
+ 379:main.c        **** 			else if (portChar == 'C') {
+ 380:main.c        **** 				PORTC |= (setValue);
+ 381:main.c        **** 			}
+ 382:main.c        **** 			else if (portChar == 'D') {
+ 383:main.c        **** 				PORTD |= (setValue);
+ 384:main.c        **** 			}
+ 385:main.c        **** 			else if (portChar == 'E') {
+ 386:main.c        **** 				PORTE |= (setValue);
+ 387:main.c        **** 			}
+ 388:main.c        **** 			PORTD &= ~(1<<ACTIVITY_LED);
+ 389:main.c        **** 		}
+ 390:main.c        **** 		
+ 391:main.c        **** 		// Read all pins of a PORT and return the value
+ 392:main.c        **** 		else if (receivedChar == READ_INPUT) {
+ 393:main.c        **** 			char portChar = USART_Receive();			
+ 394:main.c        **** 			
+ 395:main.c        **** 			PORTD |= (1<<ACTIVITY_LED);
+ 396:main.c        **** 			if (portChar == 'A') {
+ 397:main.c        **** 				USART_Transmit(PINA);
+ 398:main.c        **** 			}
+ 399:main.c        **** 			else if (portChar == 'B') {
+ 400:main.c        **** 				USART_Transmit(PINB);
+ 401:main.c        **** 			}
+ 402:main.c        **** 			else if (portChar == 'C') {
+ 403:main.c        **** 				USART_Transmit(PINC);
+ 404:main.c        **** 			}
+ 405:main.c        **** 			else if (portChar == 'D') {
+ 406:main.c        **** 				USART_Transmit(PIND);
+ 407:main.c        **** 			}
+ 408:main.c        **** 			else if (portChar == 'E') {
+ 409:main.c        **** 				USART_Transmit(PINE);
+ 410:main.c        **** 			}
+ 411:main.c        **** 			PORTD &= ~(1<<ACTIVITY_LED);
+ 412:main.c        **** 		}
+ 413:main.c        **** 		
+ 414:main.c        **** 		// Set the reset common lines variable on or off, useful if you are controlling all the pins dire
+ 415:main.c        **** 		else if (receivedChar == RESET_COMMON_LINES) {
+ 416:main.c        **** 			char commonChar = USART_Receive();
+ 417:main.c        **** 			if (commonChar == '1') {
+ 418:main.c        **** 				resetCommonLines = 1;
+ 419:main.c        **** 			}
+ 420:main.c        **** 			else if (commonChar == '0') {
+ 421:main.c        **** 				resetCommonLines = 0;
+ 422:main.c        **** 			}
+ 423:main.c        **** 		}
+ 424:main.c        **** 		
+ 425:main.c        **** 		// Send back the PCB version number
+ 426:main.c        **** 		else if (receivedChar == READ_PCB_VERSION) {
+ 427:main.c        **** 			USART_Transmit(PCB_VERSION);
+ 428:main.c        **** 		}
+ 429:main.c        **** 		
+ 430:main.c        **** 		// Send back the firmware version number
+ 431:main.c        **** 		else if (receivedChar == READ_FIRMWARE_VERSION) {
+ 432:main.c        **** 			USART_Transmit(FIRMWARE_VERSION);
+ 433:main.c        **** 		}
+ 434:main.c        **** 		
+ 435:main.c        **** 		// Reset the AVR if it matches the number
+ 436:main.c        **** 		else if (receivedChar == RESET_AVR) {
+ 437:main.c        **** 			usart_read_chars();
+ 438:main.c        **** 			uint32_t resetValue = strtol(receivedBuffer, NULL, 16);
+ 439:main.c        **** 			if (resetValue == RESET_VALUE) {
+ 440:main.c        **** 				// Clear watchdog flag
+ 441:main.c        **** 				MCUCSR &= ~(1<<WDRF);
+ 442:main.c        **** 				
+ 443:main.c        **** 				// Start timed sequence
+ 444:main.c        **** 				WDTCR = (1<<WDCE) | (1<<WDE);
+ 891               		.loc 3 444 0
+ 892 000c 98E1      		ldi r25,lo8(24)
+ 893 000e 392E      		mov r3,r25
+ 445:main.c        **** 				
+ 446:main.c        **** 				// Reset in 250 ms
+ 447:main.c        **** 				WDTCR = (1<<WDP2) | (1<<WDE);
+ 894               		.loc 3 447 0
+ 895 0010 2CE0      		ldi r18,lo8(12)
+ 896 0012 222E      		mov r2,r18
+ 897               	.LBB75:
+ 898               	.LBB76:
+ 899               		.file 4 "c:\\winavr-20100110\\avr\\include\\util\\delay_basic.h"
+   1:c:\winavr-20100110\avr\include\util\delay_basic.h **** /* Copyright (c) 2002, Marek Michalkiewicz
+   2:c:\winavr-20100110\avr\include\util\delay_basic.h ****    Copyright (c) 2007 Joerg Wunsch
+   3:c:\winavr-20100110\avr\include\util\delay_basic.h ****    All rights reserved.
+   4:c:\winavr-20100110\avr\include\util\delay_basic.h **** 
+   5:c:\winavr-20100110\avr\include\util\delay_basic.h ****    Redistribution and use in source and binary forms, with or without
+   6:c:\winavr-20100110\avr\include\util\delay_basic.h ****    modification, are permitted provided that the following conditions are met:
+   7:c:\winavr-20100110\avr\include\util\delay_basic.h **** 
+   8:c:\winavr-20100110\avr\include\util\delay_basic.h ****    * Redistributions of source code must retain the above copyright
+   9:c:\winavr-20100110\avr\include\util\delay_basic.h ****      notice, this list of conditions and the following disclaimer.
+  10:c:\winavr-20100110\avr\include\util\delay_basic.h **** 
+  11:c:\winavr-20100110\avr\include\util\delay_basic.h ****    * Redistributions in binary form must reproduce the above copyright
+  12:c:\winavr-20100110\avr\include\util\delay_basic.h ****      notice, this list of conditions and the following disclaimer in
+  13:c:\winavr-20100110\avr\include\util\delay_basic.h ****      the documentation and/or other materials provided with the
+  14:c:\winavr-20100110\avr\include\util\delay_basic.h ****      distribution.
+  15:c:\winavr-20100110\avr\include\util\delay_basic.h **** 
+  16:c:\winavr-20100110\avr\include\util\delay_basic.h ****    * Neither the name of the copyright holders nor the names of
+  17:c:\winavr-20100110\avr\include\util\delay_basic.h ****      contributors may be used to endorse or promote products derived
+  18:c:\winavr-20100110\avr\include\util\delay_basic.h ****      from this software without specific prior written permission.
+  19:c:\winavr-20100110\avr\include\util\delay_basic.h **** 
+  20:c:\winavr-20100110\avr\include\util\delay_basic.h ****   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+  21:c:\winavr-20100110\avr\include\util\delay_basic.h ****   AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+  22:c:\winavr-20100110\avr\include\util\delay_basic.h ****   IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+  23:c:\winavr-20100110\avr\include\util\delay_basic.h ****   ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+  24:c:\winavr-20100110\avr\include\util\delay_basic.h ****   LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+  25:c:\winavr-20100110\avr\include\util\delay_basic.h ****   CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+  26:c:\winavr-20100110\avr\include\util\delay_basic.h ****   SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+  27:c:\winavr-20100110\avr\include\util\delay_basic.h ****   INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+  28:c:\winavr-20100110\avr\include\util\delay_basic.h ****   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+  29:c:\winavr-20100110\avr\include\util\delay_basic.h ****   ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+  30:c:\winavr-20100110\avr\include\util\delay_basic.h ****   POSSIBILITY OF SUCH DAMAGE. */
+  31:c:\winavr-20100110\avr\include\util\delay_basic.h **** 
+  32:c:\winavr-20100110\avr\include\util\delay_basic.h **** /* $Id$ */
+  33:c:\winavr-20100110\avr\include\util\delay_basic.h **** 
+  34:c:\winavr-20100110\avr\include\util\delay_basic.h **** #ifndef _UTIL_DELAY_BASIC_H_
+  35:c:\winavr-20100110\avr\include\util\delay_basic.h **** #define _UTIL_DELAY_BASIC_H_ 1
+  36:c:\winavr-20100110\avr\include\util\delay_basic.h **** 
+  37:c:\winavr-20100110\avr\include\util\delay_basic.h **** #include <inttypes.h>
+  38:c:\winavr-20100110\avr\include\util\delay_basic.h **** 
+  39:c:\winavr-20100110\avr\include\util\delay_basic.h **** #if !defined(__DOXYGEN__)
+  40:c:\winavr-20100110\avr\include\util\delay_basic.h **** static __inline__ void _delay_loop_1(uint8_t __count) __attribute__((__always_inline__));
+  41:c:\winavr-20100110\avr\include\util\delay_basic.h **** static __inline__ void _delay_loop_2(uint16_t __count) __attribute__((__always_inline__));
+  42:c:\winavr-20100110\avr\include\util\delay_basic.h **** #endif
+  43:c:\winavr-20100110\avr\include\util\delay_basic.h **** 
+  44:c:\winavr-20100110\avr\include\util\delay_basic.h **** /** \file */
+  45:c:\winavr-20100110\avr\include\util\delay_basic.h **** /** \defgroup util_delay_basic <util/delay_basic.h>: Basic busy-wait delay loops
+  46:c:\winavr-20100110\avr\include\util\delay_basic.h ****     \code
+  47:c:\winavr-20100110\avr\include\util\delay_basic.h ****     #include <util/delay_basic.h>
+  48:c:\winavr-20100110\avr\include\util\delay_basic.h ****     \endcode
+  49:c:\winavr-20100110\avr\include\util\delay_basic.h **** 
+  50:c:\winavr-20100110\avr\include\util\delay_basic.h ****     The functions in this header file implement simple delay loops
+  51:c:\winavr-20100110\avr\include\util\delay_basic.h ****     that perform a busy-waiting.  They are typically used to
+  52:c:\winavr-20100110\avr\include\util\delay_basic.h ****     facilitate short delays in the program execution.  They are
+  53:c:\winavr-20100110\avr\include\util\delay_basic.h ****     implemented as count-down loops with a well-known CPU cycle
+  54:c:\winavr-20100110\avr\include\util\delay_basic.h ****     count per loop iteration.  As such, no other processing can
+  55:c:\winavr-20100110\avr\include\util\delay_basic.h ****     occur simultaneously.  It should be kept in mind that the
+  56:c:\winavr-20100110\avr\include\util\delay_basic.h ****     functions described here do not disable interrupts.
+  57:c:\winavr-20100110\avr\include\util\delay_basic.h **** 
+  58:c:\winavr-20100110\avr\include\util\delay_basic.h ****     In general, for long delays, the use of hardware timers is
+  59:c:\winavr-20100110\avr\include\util\delay_basic.h ****     much preferrable, as they free the CPU, and allow for
+  60:c:\winavr-20100110\avr\include\util\delay_basic.h ****     concurrent processing of other events while the timer is
+  61:c:\winavr-20100110\avr\include\util\delay_basic.h ****     running.  However, in particular for very short delays, the
+  62:c:\winavr-20100110\avr\include\util\delay_basic.h ****     overhead of setting up a hardware timer is too much compared
+  63:c:\winavr-20100110\avr\include\util\delay_basic.h ****     to the overall delay time.
+  64:c:\winavr-20100110\avr\include\util\delay_basic.h **** 
+  65:c:\winavr-20100110\avr\include\util\delay_basic.h ****     Two inline functions are provided for the actual delay algorithms.
+  66:c:\winavr-20100110\avr\include\util\delay_basic.h **** 
+  67:c:\winavr-20100110\avr\include\util\delay_basic.h **** */
+  68:c:\winavr-20100110\avr\include\util\delay_basic.h **** 
+  69:c:\winavr-20100110\avr\include\util\delay_basic.h **** /** \ingroup util_delay_basic
+  70:c:\winavr-20100110\avr\include\util\delay_basic.h **** 
+  71:c:\winavr-20100110\avr\include\util\delay_basic.h ****     Delay loop using an 8-bit counter \c __count, so up to 256
+  72:c:\winavr-20100110\avr\include\util\delay_basic.h ****     iterations are possible.  (The value 256 would have to be passed
+  73:c:\winavr-20100110\avr\include\util\delay_basic.h ****     as 0.)  The loop executes three CPU cycles per iteration, not
+  74:c:\winavr-20100110\avr\include\util\delay_basic.h ****     including the overhead the compiler needs to setup the counter
+  75:c:\winavr-20100110\avr\include\util\delay_basic.h ****     register.
+  76:c:\winavr-20100110\avr\include\util\delay_basic.h **** 
+  77:c:\winavr-20100110\avr\include\util\delay_basic.h ****     Thus, at a CPU speed of 1 MHz, delays of up to 768 microseconds
+  78:c:\winavr-20100110\avr\include\util\delay_basic.h ****     can be achieved.
+  79:c:\winavr-20100110\avr\include\util\delay_basic.h **** */
+  80:c:\winavr-20100110\avr\include\util\delay_basic.h **** void
+  81:c:\winavr-20100110\avr\include\util\delay_basic.h **** _delay_loop_1(uint8_t __count)
+  82:c:\winavr-20100110\avr\include\util\delay_basic.h **** {
+  83:c:\winavr-20100110\avr\include\util\delay_basic.h **** 	__asm__ volatile (
+  84:c:\winavr-20100110\avr\include\util\delay_basic.h **** 		"1: dec %0" "\n\t"
+  85:c:\winavr-20100110\avr\include\util\delay_basic.h **** 		"brne 1b"
+  86:c:\winavr-20100110\avr\include\util\delay_basic.h **** 		: "=r" (__count)
+  87:c:\winavr-20100110\avr\include\util\delay_basic.h **** 		: "0" (__count)
+  88:c:\winavr-20100110\avr\include\util\delay_basic.h **** 	);
+  89:c:\winavr-20100110\avr\include\util\delay_basic.h **** }
+  90:c:\winavr-20100110\avr\include\util\delay_basic.h **** 
+  91:c:\winavr-20100110\avr\include\util\delay_basic.h **** /** \ingroup util_delay_basic
+  92:c:\winavr-20100110\avr\include\util\delay_basic.h **** 
+  93:c:\winavr-20100110\avr\include\util\delay_basic.h ****     Delay loop using a 16-bit counter \c __count, so up to 65536
+  94:c:\winavr-20100110\avr\include\util\delay_basic.h ****     iterations are possible.  (The value 65536 would have to be
+  95:c:\winavr-20100110\avr\include\util\delay_basic.h ****     passed as 0.)  The loop executes four CPU cycles per iteration,
+  96:c:\winavr-20100110\avr\include\util\delay_basic.h ****     not including the overhead the compiler requires to setup the
+  97:c:\winavr-20100110\avr\include\util\delay_basic.h ****     counter register pair.
+  98:c:\winavr-20100110\avr\include\util\delay_basic.h **** 
+  99:c:\winavr-20100110\avr\include\util\delay_basic.h ****     Thus, at a CPU speed of 1 MHz, delays of up to about 262.1
+ 100:c:\winavr-20100110\avr\include\util\delay_basic.h ****     milliseconds can be achieved.
+ 101:c:\winavr-20100110\avr\include\util\delay_basic.h ****  */
+ 102:c:\winavr-20100110\avr\include\util\delay_basic.h **** void
+ 103:c:\winavr-20100110\avr\include\util\delay_basic.h **** _delay_loop_2(uint16_t __count)
+ 104:c:\winavr-20100110\avr\include\util\delay_basic.h **** {
+ 105:c:\winavr-20100110\avr\include\util\delay_basic.h **** 	__asm__ volatile (
+ 900               		.loc 4 105 0
+ 901 0014 4424      		clr r4
+ 902 0016 4A94      		dec r4
+ 903 0018 542C      		mov r5,r4
+ 904               	.LBE76:
+ 905               	.LBE75:
+ 906               	.LBE74:
+ 907               	.LBB79:
+ 418:main.c        **** 			}
+ 908               		.loc 3 418 0
+ 909 001a 6624      		clr r6
+ 910 001c 6394      		inc r6
+ 911               	.LVL68:
+ 912               	.L37:
+ 913               	.LBE79:
+  73:main.c        **** 			rd_wr_csmreq_cs2_reset();
+ 914               		.loc 3 73 0
+ 915 001e 21E0      		ldi r18,lo8(1)
+ 916 0020 7212      		cpse r7,r18
+ 917 0022 00C0      		rjmp .L38
+ 918               	.LVL69:
+ 919               	.L112:
+  74:main.c        **** 		}
+ 920               		.loc 3 74 0
+ 921 0024 00D0      		rcall rd_wr_csmreq_cs2_reset
+ 922               	.LVL70:
+ 923               	.L38:
+  76:main.c        **** 		
+ 924               		.loc 3 76 0
+ 925 0026 00D0      		rcall USART_Receive
+ 926               	.LVL71:
+ 927 0028 8093 0000 		sts receivedChar,r24
+  80:main.c        **** 			USART_Transmit(cartMode);
+ 928               		.loc 3 80 0
+ 929 002c 8334      		cpi r24,lo8(67)
+ 930 002e 01F4      		brne .L39
+  81:main.c        **** 		}
+ 931               		.loc 3 81 0
+ 932 0030 8091 0000 		lds r24,cartMode
+ 933 0034 00C0      		rjmp .L113
+ 934               	.L39:
+  85:main.c        **** 			gb_mode();
+ 935               		.loc 3 85 0
+ 936 0036 8734      		cpi r24,lo8(71)
+ 937 0038 01F4      		brne .L41
+  86:main.c        **** 		}
+ 938               		.loc 3 86 0
+ 939 003a 00D0      		rcall gb_mode
+ 940               	.LVL72:
+ 941 003c 00C0      		rjmp .L37
+ 942               	.L41:
+  90:main.c        **** 			usart_read_chars(); // Read start address
+ 943               		.loc 3 90 0
+ 944 003e 8134      		cpi r24,lo8(65)
+ 945 0040 01F4      		brne .L42
+  91:main.c        **** 			address = strtol(receivedBuffer, NULL, 16); // Convert address string in hex to dec
+ 946               		.loc 3 91 0
+ 947 0042 00D0      		rcall usart_read_chars
+ 948               	.LVL73:
+  92:main.c        **** 		}
+ 949               		.loc 3 92 0
+ 950 0044 40E1      		ldi r20,lo8(16)
+ 951 0046 50E0      		ldi r21,0
+ 952 0048 60E0      		ldi r22,0
+ 953 004a 70E0      		ldi r23,0
+ 954 004c 80E0      		ldi r24,lo8(receivedBuffer)
+ 955 004e 90E0      		ldi r25,hi8(receivedBuffer)
+ 956 0050 00D0      		rcall strtol
+ 957               	.LVL74:
+ 958 0052 6B01      		movw r12,r22
+ 959 0054 7C01      		movw r14,r24
+ 960               	.LVL75:
+ 961 0056 00C0      		rjmp .L37
+ 962               	.L42:
+  99:main.c        **** 			gb_mode();
+ 963               		.loc 3 99 0
+ 964 0058 8235      		cpi r24,lo8(82)
+ 965 005a 01F4      		brne .L43
+ 100:main.c        **** 			receivedChar = '1';
+ 966               		.loc 3 100 0
+ 967 005c 00D0      		rcall gb_mode
+ 968               	.LVL76:
+ 101:main.c        **** 			while (receivedChar == '1') {
+ 969               		.loc 3 101 0
+ 970 005e 81E3      		ldi r24,lo8(49)
+ 971               	.LVL77:
+ 972               	.L115:
+ 110:main.c        **** 			}
+ 973               		.loc 3 110 0
+ 974 0060 8093 0000 		sts receivedChar,r24
+ 975               	.LVL78:
+ 102:main.c        **** 				PORTD |= (1<<ACTIVITY_LED);
+ 976               		.loc 3 102 0
+ 977 0064 8091 0000 		lds r24,receivedChar
+ 978 0068 8133      		cpi r24,lo8(49)
+ 979 006a 01F4      		brne .L37
+ 103:main.c        **** 				for (uint8_t x = 0; x < 64; x++) {
+ 980               		.loc 3 103 0
+ 981 006c 939A      		sbi 0x12,3
+ 982               	.LVL79:
+ 983 006e C0E0      		ldi r28,0
+ 984 0070 D0E0      		ldi r29,0
+ 985               	.LVL80:
+ 986               	.L45:
+ 987               	.LBB80:
+ 105:main.c        **** 					address++;
+ 988               		.loc 3 105 0 discriminator 3
+ 989 0072 CE01      		movw r24,r28
+ 990 0074 8C0D      		add r24,r12
+ 991 0076 9D1D      		adc r25,r13
+ 992 0078 00D0      		rcall read_8bit_data
+ 993               	.LVL81:
+ 994 007a 00D0      		rcall USART_Transmit
+ 995               	.LVL82:
+ 996 007c 2196      		adiw r28,1
+ 997               	.LVL83:
+ 104:main.c        **** 					USART_Transmit(read_8bit_data(address));
+ 998               		.loc 3 104 0 discriminator 3
+ 999 007e C034      		cpi r28,64
+ 1000 0080 D105      		cpc r29,__zero_reg__
+ 1001 0082 01F4      		brne .L45
+ 1002 0084 80E4      		ldi r24,64
+ 1003 0086 C80E      		add r12,r24
+ 1004 0088 D11C      		adc r13,__zero_reg__
+ 1005 008a E11C      		adc r14,__zero_reg__
+ 1006 008c F11C      		adc r15,__zero_reg__
+ 1007               	.LBE80:
+ 109:main.c        **** 				receivedChar = USART_Receive();
+ 1008               		.loc 3 109 0
+ 1009 008e 9398      		cbi 0x12,3
+ 110:main.c        **** 			}
+ 1010               		.loc 3 110 0
+ 1011 0090 00D0      		rcall USART_Receive
+ 1012               	.LVL84:
+ 1013 0092 00C0      		rjmp .L115
+ 1014               	.LVL85:
+ 1015               	.L43:
+ 115:main.c        **** 			gb_mode();
+ 1016               		.loc 3 115 0
+ 1017 0094 8735      		cpi r24,lo8(87)
+ 1018 0096 01F4      		brne .L47
+ 116:main.c        **** 			
+ 1019               		.loc 3 116 0
+ 1020 0098 00D0      		rcall gb_mode
+ 1021               	.LVL86:
+ 119:main.c        **** 			
+ 1022               		.loc 3 119 0
+ 1023 009a 80E4      		ldi r24,lo8(64)
+ 1024 009c 90E0      		ldi r25,0
+ 1025 009e 00D0      		rcall usart_read_bytes
+ 1026               	.LVL87:
+ 121:main.c        **** 			for (uint8_t x = 0; x < 64; x++) {
+ 1027               		.loc 3 121 0
+ 1028 00a0 939A      		sbi 0x12,3
+ 1029               	.LVL88:
+ 1030 00a2 C0E0      		ldi r28,lo8(receivedBuffer)
+ 1031 00a4 D0E0      		ldi r29,hi8(receivedBuffer)
+ 1032 00a6 00E0      		ldi r16,0
+ 1033 00a8 10E0      		ldi r17,0
+ 1034               	.LVL89:
+ 1035               	.L48:
+ 1036               	.LBB81:
+ 123:main.c        **** 				address++;
+ 1037               		.loc 3 123 0 discriminator 3
+ 1038 00aa 6991      		ld r22,Y+
+ 1039 00ac C801      		movw r24,r16
+ 1040 00ae 8C0D      		add r24,r12
+ 1041 00b0 9D1D      		adc r25,r13
+ 1042 00b2 41E0      		ldi r20,lo8(1)
+ 1043 00b4 00D0      		rcall write_8bit_data
+ 1044               	.LVL90:
+ 1045 00b6 0F5F      		subi r16,-1
+ 1046 00b8 1F4F      		sbci r17,-1
+ 1047               	.LVL91:
+ 122:main.c        **** 				write_8bit_data(address, receivedBuffer[x], MEMORY_WRITE);
+ 1048               		.loc 3 122 0 discriminator 3
+ 1049 00ba 0034      		cpi r16,64
+ 1050 00bc 1105      		cpc r17,__zero_reg__
+ 1051 00be 01F4      		brne .L48
+ 1052 00c0 90E4      		ldi r25,64
+ 1053 00c2 C90E      		add r12,r25
+ 1054 00c4 D11C      		adc r13,__zero_reg__
+ 1055 00c6 E11C      		adc r14,__zero_reg__
+ 1056 00c8 F11C      		adc r15,__zero_reg__
+ 1057 00ca 00C0      		rjmp .L127
+ 1058               	.LVL92:
+ 1059               	.L47:
+ 1060               	.LBE81:
+ 132:main.c        **** 			gb_mode();
+ 1061               		.loc 3 132 0
+ 1062 00cc 8234      		cpi r24,lo8(66)
+ 1063 00ce 01F4      		brne .L49
+ 1064               	.LBB82:
+ 133:main.c        **** 			
+ 1065               		.loc 3 133 0
+ 1066 00d0 00D0      		rcall gb_mode
+ 1067               	.LVL93:
+ 135:main.c        **** 			uint16_t bankaddress = strtol(receivedBuffer, NULL, 16); // Convert address string in hex to dec
+ 1068               		.loc 3 135 0
+ 1069 00d2 00D0      		rcall usart_read_chars
+ 1070               	.LVL94:
+ 136:main.c        **** 			
+ 1071               		.loc 3 136 0
+ 1072 00d4 40E1      		ldi r20,lo8(16)
+ 1073 00d6 50E0      		ldi r21,0
+ 1074 00d8 60E0      		ldi r22,0
+ 1075 00da 70E0      		ldi r23,0
+ 1076 00dc 80E0      		ldi r24,lo8(receivedBuffer)
+ 1077 00de 90E0      		ldi r25,hi8(receivedBuffer)
+ 1078 00e0 00D0      		rcall strtol
+ 1079               	.LVL95:
+ 1080 00e2 4B01      		movw r8,r22
+ 1081 00e4 5C01      		movw r10,r24
+ 1082               	.LVL96:
+ 138:main.c        **** 			if (receivedChar == 'B') {
+ 1083               		.loc 3 138 0
+ 1084 00e6 00D0      		rcall USART_Receive
+ 1085               	.LVL97:
+ 1086 00e8 8093 0000 		sts receivedChar,r24
+ 139:main.c        **** 				usart_read_chars(); // Read data
+ 1087               		.loc 3 139 0
+ 1088 00ec 8234      		cpi r24,lo8(66)
+ 1089 00ee 01F0      		breq .+2
+ 1090 00f0 00C0      		rjmp .L37
+ 1091               	.LBB83:
+ 140:main.c        **** 				uint8_t data = atoi(receivedBuffer); // Convert data string to dec
+ 1092               		.loc 3 140 0
+ 1093 00f2 00D0      		rcall usart_read_chars
+ 1094               	.LVL98:
+ 141:main.c        **** 				lastBankAccessed = data; // Store the last bank accessed (used for flash carts that need it)
+ 1095               		.loc 3 141 0
+ 1096 00f4 80E0      		ldi r24,lo8(receivedBuffer)
+ 1097 00f6 90E0      		ldi r25,hi8(receivedBuffer)
+ 1098 00f8 00D0      		rcall atoi
+ 1099               	.LVL99:
+ 142:main.c        **** 				
+ 1100               		.loc 3 142 0
+ 1101 00fa 8093 0000 		sts lastBankAccessed,r24
+ 144:main.c        **** 			}
+ 1102               		.loc 3 144 0
+ 1103 00fe 40E0      		ldi r20,0
+ 1104 0100 682F      		mov r22,r24
+ 1105 0102 C401      		movw r24,r8
+ 1106               	.LVL100:
+ 1107 0104 00D0      		rcall write_8bit_data
+ 1108               	.LVL101:
+ 1109 0106 00C0      		rjmp .L37
+ 1110               	.LVL102:
+ 1111               	.L49:
+ 1112               	.LBE83:
+ 1113               	.LBE82:
+ 151:main.c        **** 			flashWriteWePin = USART_Receive();
+ 1114               		.loc 3 151 0
+ 1115 0108 8035      		cpi r24,lo8(80)
+ 1116 010a 01F4      		brne .L50
+ 152:main.c        **** 			
+ 1117               		.loc 3 152 0
+ 1118 010c 00D0      		rcall USART_Receive
+ 1119               	.LVL103:
+ 1120 010e 8093 0000 		sts flashWriteWePin,r24
+ 154:main.c        **** 				DDRE |= (1<<AUDIO_PIN);
+ 1121               		.loc 3 154 0
+ 1122 0112 8134      		cpi r24,lo8(65)
+ 1123 0114 01F0      		breq .+2
+ 1124 0116 00C0      		rjmp .L37
+ 155:main.c        **** 				audioPin_high;
+ 1125               		.loc 3 155 0
+ 1126 0118 319A      		sbi 0x6,1
+ 156:main.c        **** 			}
+ 1127               		.loc 3 156 0
+ 1128 011a 399A      		sbi 0x7,1
+ 1129 011c 00C0      		rjmp .L37
+ 1130               	.L50:
+ 161:main.c        **** 			flashBank1CommandWrites = 1;
+ 1131               		.loc 3 161 0
+ 1132 011e 8E34      		cpi r24,lo8(78)
+ 1133 0120 01F4      		brne .L51
+ 162:main.c        **** 		}
+ 1134               		.loc 3 162 0
+ 1135 0122 6092 0000 		sts flashBank1CommandWrites,r6
+ 1136 0126 00C0      		rjmp .L37
+ 1137               	.L51:
+ 166:main.c        **** 			for (uint8_t x = 0; x < 3; x++) {
+ 1138               		.loc 3 166 0
+ 1139 0128 8534      		cpi r24,lo8(69)
+ 1140 012a 01F4      		brne .L52
+ 1141 012c C0E0      		ldi r28,lo8(flashWriteCycle)
+ 1142 012e D0E0      		ldi r29,hi8(flashWriteCycle)
+ 1143               	.L53:
+ 1144               	.LBB84:
+ 168:main.c        **** 				flashWriteCycle[x][0] = strtol(receivedBuffer, NULL, 16);
+ 1145               		.loc 3 168 0 discriminator 3
+ 1146 0130 00D0      		rcall usart_read_chars
+ 1147               	.LVL104:
+ 169:main.c        **** 				USART_Transmit(SEND_ACK);
+ 1148               		.loc 3 169 0 discriminator 3
+ 1149 0132 40E1      		ldi r20,lo8(16)
+ 1150 0134 50E0      		ldi r21,0
+ 1151 0136 60E0      		ldi r22,0
+ 1152 0138 70E0      		ldi r23,0
+ 1153 013a 80E0      		ldi r24,lo8(receivedBuffer)
+ 1154 013c 90E0      		ldi r25,hi8(receivedBuffer)
+ 1155 013e 00D0      		rcall strtol
+ 1156               	.LVL105:
+ 1157 0140 7983      		std Y+1,r23
+ 1158 0142 6883      		st Y,r22
+ 170:main.c        **** 				
+ 1159               		.loc 3 170 0 discriminator 3
+ 1160 0144 81E3      		ldi r24,lo8(49)
+ 1161 0146 00D0      		rcall USART_Transmit
+ 1162               	.LVL106:
+ 172:main.c        **** 				flashWriteCycle[x][1] = strtol(receivedBuffer, NULL, 16);
+ 1163               		.loc 3 172 0 discriminator 3
+ 1164 0148 00D0      		rcall usart_read_chars
+ 1165               	.LVL107:
+ 173:main.c        **** 				USART_Transmit(SEND_ACK);
+ 1166               		.loc 3 173 0 discriminator 3
+ 1167 014a 40E1      		ldi r20,lo8(16)
+ 1168 014c 50E0      		ldi r21,0
+ 1169 014e 60E0      		ldi r22,0
+ 1170 0150 70E0      		ldi r23,0
+ 1171 0152 80E0      		ldi r24,lo8(receivedBuffer)
+ 1172 0154 90E0      		ldi r25,hi8(receivedBuffer)
+ 1173 0156 00D0      		rcall strtol
+ 1174               	.LVL108:
+ 1175 0158 7B83      		std Y+3,r23
+ 1176 015a 6A83      		std Y+2,r22
+ 174:main.c        **** 			}
+ 1177               		.loc 3 174 0 discriminator 3
+ 1178 015c 81E3      		ldi r24,lo8(49)
+ 1179 015e 00D0      		rcall USART_Transmit
+ 1180               	.LVL109:
+ 1181 0160 2496      		adiw r28,4
+ 167:main.c        **** 				usart_read_chars(); // Address
+ 1182               		.loc 3 167 0 discriminator 3
+ 1183 0162 E0E0      		ldi r30,lo8(flashWriteCycle+12)
+ 1184 0164 F0E0      		ldi r31,hi8(flashWriteCycle+12)
+ 1185 0166 EC17      		cp r30,r28
+ 1186 0168 FD07      		cpc r31,r29
+ 1187 016a 01F4      		brne .L53
+ 1188 016c 00C0      		rjmp .L37
+ 1189               	.L52:
+ 1190               	.LBE84:
+ 179:main.c        **** 			usart_read_chars(); // Read address
+ 1191               		.loc 3 179 0
+ 1192 016e 8634      		cpi r24,lo8(70)
+ 1193 0170 01F4      		brne .L54
+ 1194               	.LBB85:
+ 180:main.c        **** 			uint16_t flashAddress = strtol(receivedBuffer, NULL, 16);
+ 1195               		.loc 3 180 0
+ 1196 0172 00D0      		rcall usart_read_chars
+ 1197               	.LVL110:
+ 181:main.c        **** 			
+ 1198               		.loc 3 181 0
+ 1199 0174 40E1      		ldi r20,lo8(16)
+ 1200 0176 50E0      		ldi r21,0
+ 1201 0178 60E0      		ldi r22,0
+ 1202 017a 70E0      		ldi r23,0
+ 1203 017c 80E0      		ldi r24,lo8(receivedBuffer)
+ 1204 017e 90E0      		ldi r25,hi8(receivedBuffer)
+ 1205 0180 00D0      		rcall strtol
+ 1206               	.LVL111:
+ 1207 0182 4B01      		movw r8,r22
+ 1208 0184 5C01      		movw r10,r24
+ 1209               	.LVL112:
+ 183:main.c        **** 			uint8_t flashByte = strtol(receivedBuffer, NULL, 16);
+ 1210               		.loc 3 183 0
+ 1211 0186 00D0      		rcall usart_read_chars
+ 1212               	.LVL113:
+ 184:main.c        **** 			
+ 1213               		.loc 3 184 0
+ 1214 0188 40E1      		ldi r20,lo8(16)
+ 1215 018a 50E0      		ldi r21,0
+ 1216 018c 60E0      		ldi r22,0
+ 1217 018e 70E0      		ldi r23,0
+ 1218 0190 80E0      		ldi r24,lo8(receivedBuffer)
+ 1219 0192 90E0      		ldi r25,hi8(receivedBuffer)
+ 1220 0194 00D0      		rcall strtol
+ 1221               	.LVL114:
+ 186:main.c        **** 			gb_flash_write_bus_cycle(flashAddress, flashByte);
+ 1222               		.loc 3 186 0
+ 1223 0196 939A      		sbi 0x12,3
+ 187:main.c        **** 			PORTD &= ~(1<<ACTIVITY_LED);
+ 1224               		.loc 3 187 0
+ 1225 0198 C401      		movw r24,r8
+ 1226 019a 00D0      		rcall gb_flash_write_bus_cycle
+ 1227               	.LVL115:
+ 1228               	.L127:
+ 188:main.c        **** 			
+ 1229               		.loc 3 188 0
+ 1230 019c 9398      		cbi 0x12,3
+ 190:main.c        **** 		}
+ 1231               		.loc 3 190 0
+ 1232 019e 81E3      		ldi r24,lo8(49)
+ 1233 01a0 00C0      		rjmp .L113
+ 1234               	.LVL116:
+ 1235               	.L54:
+ 1236               	.LBE85:
+ 194:main.c        **** 			usart_read_bytes(64);
+ 1237               		.loc 3 194 0
+ 1238 01a2 8435      		cpi r24,lo8(84)
+ 1239 01a4 01F4      		brne .L55
+ 195:main.c        **** 			
+ 1240               		.loc 3 195 0
+ 1241 01a6 80E4      		ldi r24,lo8(64)
+ 1242 01a8 90E0      		ldi r25,0
+ 1243 01aa 00D0      		rcall usart_read_bytes
+ 1244               	.LVL117:
+ 197:main.c        **** 			for (uint8_t x = 0; x < 64; x++) {
+ 1245               		.loc 3 197 0
+ 1246 01ac 939A      		sbi 0x12,3
+ 1247               	.LVL118:
+ 1248 01ae 00E0      		ldi r16,lo8(receivedBuffer)
+ 1249 01b0 10E0      		ldi r17,hi8(receivedBuffer)
+ 1250 01b2 80E4      		ldi r24,lo8(64)
+ 1251 01b4 B82E      		mov r11,r24
+ 1252 01b6 E601      		movw r28,r12
+ 1253 01b8 C050      		subi r28,lo8(receivedBuffer)
+ 1254 01ba D040      		sbci r29,hi8(receivedBuffer)
+ 1255               	.LVL119:
+ 1256               	.L58:
+ 1257               	.LBB86:
+ 199:main.c        **** 					gb_flash_write_byte(address, receivedBuffer[x]);
+ 1258               		.loc 3 199 0
+ 1259 01bc 8091 0000 		lds r24,flashBank1CommandWrites
+ 200:main.c        **** 				}
+ 1260               		.loc 3 200 0
+ 1261 01c0 F801      		movw r30,r16
+ 1262 01c2 6081      		ld r22,Z
+ 199:main.c        **** 					gb_flash_write_byte(address, receivedBuffer[x]);
+ 1263               		.loc 3 199 0
+ 1264 01c4 8111      		cpse r24,__zero_reg__
+ 1265 01c6 00C0      		rjmp .L56
+ 200:main.c        **** 				}
+ 1266               		.loc 3 200 0
+ 1267 01c8 CE01      		movw r24,r28
+ 1268 01ca 800F      		add r24,r16
+ 1269 01cc 911F      		adc r25,r17
+ 1270 01ce 00D0      		rcall gb_flash_write_byte
+ 1271               	.LVL120:
+ 1272 01d0 00C0      		rjmp .L57
+ 1273               	.L56:
+ 203:main.c        **** 				}
+ 1274               		.loc 3 203 0
+ 1275 01d2 CE01      		movw r24,r28
+ 1276 01d4 800F      		add r24,r16
+ 1277 01d6 911F      		adc r25,r17
+ 1278 01d8 00D0      		rcall gb_flash_write_byte_bank1_commands
+ 1279               	.LVL121:
+ 1280               	.L57:
+ 1281 01da BA94      		dec r11
+ 1282 01dc 0F5F      		subi r16,-1
+ 1283 01de 1F4F      		sbci r17,-1
+ 1284               	.LVL122:
+ 198:main.c        **** 				if (flashBank1CommandWrites == 0) {
+ 1285               		.loc 3 198 0 discriminator 2
+ 1286 01e0 B110      		cpse r11,__zero_reg__
+ 1287 01e2 00C0      		rjmp .L58
+ 1288 01e4 F0E4      		ldi r31,64
+ 1289 01e6 CF0E      		add r12,r31
+ 1290 01e8 D11C      		adc r13,__zero_reg__
+ 1291 01ea E11C      		adc r14,__zero_reg__
+ 1292 01ec F11C      		adc r15,__zero_reg__
+ 1293 01ee 00C0      		rjmp .L116
+ 1294               	.LVL123:
+ 1295               	.L55:
+ 1296               	.LBE86:
+ 213:main.c        **** 			usart_read_bytes(32);
+ 1297               		.loc 3 213 0
+ 1298 01f0 8935      		cpi r24,lo8(89)
+ 1299 01f2 01F0      		breq .+2
+ 1300 01f4 00C0      		rjmp .L59
+ 1301               	.LBB87:
+ 214:main.c        **** 			PORTD |= (1<<ACTIVITY_LED);
+ 1302               		.loc 3 214 0
+ 1303 01f6 80E2      		ldi r24,lo8(32)
+ 1304 01f8 90E0      		ldi r25,0
+ 1305 01fa 00D0      		rcall usart_read_bytes
+ 1306               	.LVL124:
+ 215:main.c        **** 			
+ 1307               		.loc 3 215 0
+ 1308 01fc 939A      		sbi 0x12,3
+ 218:main.c        **** 			gb_flash_write_bus_cycle(0x555, 0x55);
+ 1309               		.loc 3 218 0
+ 1310 01fe 6AEA      		ldi r22,lo8(-86)
+ 1311 0200 8AEA      		ldi r24,lo8(-86)
+ 1312 0202 9AE0      		ldi r25,lo8(10)
+ 1313 0204 00D0      		rcall gb_flash_write_bus_cycle
+ 1314               	.LVL125:
+ 219:main.c        **** 			gb_flash_write_bus_cycle(address, 0x25);
+ 1315               		.loc 3 219 0
+ 1316 0206 65E5      		ldi r22,lo8(85)
+ 1317 0208 85E5      		ldi r24,lo8(85)
+ 1318 020a 95E0      		ldi r25,lo8(5)
+ 1319 020c 00D0      		rcall gb_flash_write_bus_cycle
+ 1320               	.LVL126:
+ 220:main.c        **** 			gb_flash_write_bus_cycle(address, 0x1F); // Length
+ 1321               		.loc 3 220 0
+ 1322 020e 5601      		movw r10,r12
+ 1323 0210 65E2      		ldi r22,lo8(37)
+ 1324 0212 C601      		movw r24,r12
+ 1325 0214 00D0      		rcall gb_flash_write_bus_cycle
+ 1326               	.LVL127:
+ 221:main.c        **** 			_delay_us(1);
+ 1327               		.loc 3 221 0
+ 1328 0216 6FE1      		ldi r22,lo8(31)
+ 1329 0218 C601      		movw r24,r12
+ 1330 021a 00D0      		rcall gb_flash_write_bus_cycle
+ 1331               	.LVL128:
+ 1332               	.LBB88:
+ 1333               	.LBB89:
+ 1334               		.loc 2 276 0
+ 1335 021c 25E0      		ldi r18,lo8(5)
+ 1336 021e 2A95      	1:	dec r18
+ 1337 0220 01F4      		brne 1b
+ 1338 0222 0000      		nop
+ 1339               	.LVL129:
+ 1340 0224 00E0      		ldi r16,lo8(receivedBuffer)
+ 1341 0226 10E0      		ldi r17,hi8(receivedBuffer)
+ 1342 0228 C0E0      		ldi r28,0
+ 1343 022a D0E0      		ldi r29,0
+ 1344               	.LVL130:
+ 1345               	.L60:
+ 1346               	.LBE89:
+ 1347               	.LBE88:
+ 1348               	.LBB90:
+ 226:main.c        **** 				address++;
+ 1349               		.loc 3 226 0 discriminator 3
+ 1350 022c F801      		movw r30,r16
+ 1351 022e 6191      		ld r22,Z+
+ 1352 0230 8F01      		movw r16,r30
+ 1353 0232 CE01      		movw r24,r28
+ 1354 0234 8A0D      		add r24,r10
+ 1355 0236 9B1D      		adc r25,r11
+ 1356 0238 00D0      		rcall gb_flash_write_bus_cycle
+ 1357               	.LVL131:
+ 1358 023a 2196      		adiw r28,1
+ 1359               	.LVL132:
+ 225:main.c        **** 				gb_flash_write_bus_cycle(address, receivedBuffer[x]);
+ 1360               		.loc 3 225 0 discriminator 3
+ 1361 023c C032      		cpi r28,32
+ 1362 023e D105      		cpc r29,__zero_reg__
+ 1363 0240 01F4      		brne .L60
+ 1364 0242 F0E2      		ldi r31,32
+ 1365 0244 CF0E      		add r12,r31
+ 1366 0246 D11C      		adc r13,__zero_reg__
+ 1367 0248 E11C      		adc r14,__zero_reg__
+ 1368 024a F11C      		adc r15,__zero_reg__
+ 1369               	.LBE90:
+ 231:main.c        **** 			_delay_us(200);
+ 1370               		.loc 3 231 0
+ 1371 024c C601      		movw r24,r12
+ 1372 024e 8097      		sbiw r24,32
+ 1373 0250 69E2      		ldi r22,lo8(41)
+ 1374 0252 00D0      		rcall gb_flash_write_bus_cycle
+ 1375               	.LVL133:
+ 1376               	.LBB91:
+ 1377               	.LBB92:
+ 1378               		.loc 2 276 0
+ 1379 0254 8FE1      		ldi r24,lo8(799)
+ 1380 0256 93E0      		ldi r25,hi8(799)
+ 1381 0258 0197      	1:	sbiw r24,1
+ 1382 025a 01F4      		brne 1b
+ 1383 025c 00C0      		rjmp .
+ 1384 025e 0000      		nop
+ 1385               	.LVL134:
+ 1386               	.LBE92:
+ 1387               	.LBE91:
+ 235:main.c        **** 			uint8_t verifyCount = 0;
+ 1388               		.loc 3 235 0
+ 1389 0260 E601      		movw r28,r12
+ 1390               	.LVL135:
+ 1391 0262 2197      		sbiw r28,1
+ 1392 0264 CE01      		movw r24,r28
+ 1393 0266 00D0      		rcall gb_flash_read_byte
+ 1394               	.LVL136:
+ 237:main.c        **** 				dataVerify = gb_flash_read_byte(address-1);
+ 1395               		.loc 3 237 0
+ 1396 0268 18EC      		ldi r17,lo8(-56)
+ 1397               	.LVL137:
+ 1398               	.L61:
+ 1399 026a 9091 0000 		lds r25,receivedBuffer+31
+ 1400 026e 8917      		cp r24,r25
+ 1401 0270 01F4      		brne .+2
+ 1402 0272 00C0      		rjmp .L116
+ 238:main.c        **** 				_delay_us(5);
+ 1403               		.loc 3 238 0
+ 1404 0274 CE01      		movw r24,r28
+ 1405               	.LVL138:
+ 1406 0276 00D0      		rcall gb_flash_read_byte
+ 1407               	.LVL139:
+ 1408               	.LBB93:
+ 1409               	.LBB94:
+ 1410               		.loc 2 276 0
+ 1411 0278 9AE1      		ldi r25,lo8(26)
+ 1412 027a 9A95      	1:	dec r25
+ 1413 027c 01F4      		brne 1b
+ 1414 027e 00C0      		rjmp .
+ 1415               	.LVL140:
+ 1416 0280 1150      		subi r17,lo8(-(-1))
+ 1417               	.LVL141:
+ 1418               	.LBE94:
+ 1419               	.LBE93:
+ 241:main.c        **** 					/*gb_flash_write_bus_cycle(0xAAA, 0xAA);
+ 1420               		.loc 3 241 0
+ 1421 0282 01F4      		brne .L61
+ 1422               	.LVL142:
+ 1423               	.LBB95:
+ 1424               	.LBB96:
+ 187:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 1425               		.loc 2 187 0
+ 1426 0284 EFEF      		ldi r30,lo8(1599999)
+ 1427 0286 F9E6      		ldi r31,hi8(1599999)
+ 1428 0288 28E1      		ldi r18,hlo8(1599999)
+ 1429 028a E150      	1:	subi r30,1
+ 1430 028c F040      		sbci r31,0
+ 1431 028e 2040      		sbci r18,0
+ 1432 0290 01F4      		brne 1b
+ 1433 0292 00C0      		rjmp .
+ 1434 0294 0000      		nop
+ 1435 0296 00C0      		rjmp .L116
+ 1436               	.LVL143:
+ 1437               	.L59:
+ 1438               	.LBE96:
+ 1439               	.LBE95:
+ 1440               	.LBE87:
+ 263:main.c        **** 			usart_read_bytes(256);
+ 1441               		.loc 3 263 0
+ 1442 0298 8835      		cpi r24,lo8(88)
+ 1443 029a 01F0      		breq .+2
+ 1444 029c 00C0      		rjmp .L64
+ 1445               	.LBB97:
+ 264:main.c        **** 			PORTD |= (1<<ACTIVITY_LED);
+ 1446               		.loc 3 264 0
+ 1447 029e 80E0      		ldi r24,0
+ 1448 02a0 91E0      		ldi r25,lo8(1)
+ 1449 02a2 00D0      		rcall usart_read_bytes
+ 1450               	.LVL144:
+ 265:main.c        **** 			
+ 1451               		.loc 3 265 0
+ 1452 02a4 939A      		sbi 0x12,3
+ 268:main.c        **** 			gb_flash_write_bus_cycle(0x555, 0x56);
+ 1453               		.loc 3 268 0
+ 1454 02a6 69EA      		ldi r22,lo8(-87)
+ 1455 02a8 8AEA      		ldi r24,lo8(-86)
+ 1456 02aa 9AE0      		ldi r25,lo8(10)
+ 1457 02ac 00D0      		rcall gb_flash_write_bus_cycle
+ 1458               	.LVL145:
+ 269:main.c        **** 			gb_flash_write_bus_cycle(address, 0x26);
+ 1459               		.loc 3 269 0
+ 1460 02ae 66E5      		ldi r22,lo8(86)
+ 1461 02b0 85E5      		ldi r24,lo8(85)
+ 1462 02b2 95E0      		ldi r25,lo8(5)
+ 1463 02b4 00D0      		rcall gb_flash_write_bus_cycle
+ 1464               	.LVL146:
+ 270:main.c        **** 			gb_flash_write_bus_cycle(address, 0xFF); // Length
+ 1465               		.loc 3 270 0
+ 1466 02b6 5601      		movw r10,r12
+ 1467 02b8 66E2      		ldi r22,lo8(38)
+ 1468 02ba C601      		movw r24,r12
+ 1469 02bc 00D0      		rcall gb_flash_write_bus_cycle
+ 1470               	.LVL147:
+ 271:main.c        **** 			_delay_us(50);
+ 1471               		.loc 3 271 0
+ 1472 02be 6FEF      		ldi r22,lo8(-1)
+ 1473 02c0 C601      		movw r24,r12
+ 1474 02c2 00D0      		rcall gb_flash_write_bus_cycle
+ 1475               	.LVL148:
+ 1476               	.LBB98:
+ 1477               	.LBB99:
+ 1478               		.loc 2 276 0
+ 1479 02c4 87EC      		ldi r24,lo8(199)
+ 1480 02c6 90E0      		ldi r25,hi8(199)
+ 1481 02c8 0197      	1:	sbiw r24,1
+ 1482 02ca 01F4      		brne 1b
+ 1483 02cc 00C0      		rjmp .
+ 1484 02ce 0000      		nop
+ 1485               	.LVL149:
+ 1486 02d0 00E0      		ldi r16,lo8(receivedBuffer)
+ 1487 02d2 10E0      		ldi r17,hi8(receivedBuffer)
+ 1488               	.LBE99:
+ 1489               	.LBE98:
+ 1490               	.LBB100:
+ 275:main.c        **** 				gb_flash_write_bus_cycle(address, receivedBuffer[x]);
+ 1491               		.loc 3 275 0
+ 1492 02d4 C0E0      		ldi r28,0
+ 1493 02d6 D0E0      		ldi r29,0
+ 1494               	.LVL150:
+ 1495               	.L65:
+ 276:main.c        **** 				address++;
+ 1496               		.loc 3 276 0 discriminator 3
+ 1497 02d8 F801      		movw r30,r16
+ 1498 02da 6191      		ld r22,Z+
+ 1499 02dc 8F01      		movw r16,r30
+ 1500 02de CE01      		movw r24,r28
+ 1501 02e0 8A0D      		add r24,r10
+ 1502 02e2 9B1D      		adc r25,r11
+ 1503 02e4 00D0      		rcall gb_flash_write_bus_cycle
+ 1504               	.LVL151:
+ 275:main.c        **** 				gb_flash_write_bus_cycle(address, receivedBuffer[x]);
+ 1505               		.loc 3 275 0 discriminator 3
+ 1506 02e6 2196      		adiw r28,1
+ 1507               	.LVL152:
+ 1508 02e8 C115      		cp r28,__zero_reg__
+ 1509 02ea F1E0      		ldi r31,1
+ 1510 02ec DF07      		cpc r29,r31
+ 1511 02ee 01F4      		brne .L65
+ 1512 02f0 2FEF      		ldi r18,-1
+ 1513 02f2 D21A      		sub r13,r18
+ 1514 02f4 E20A      		sbc r14,r18
+ 1515 02f6 F20A      		sbc r15,r18
+ 1516               	.LBE100:
+ 281:main.c        **** 			
+ 1517               		.loc 3 281 0
+ 1518 02f8 C601      		movw r24,r12
+ 1519 02fa 9A95      		dec r25
+ 1520 02fc 6AE2      		ldi r22,lo8(42)
+ 1521 02fe 00D0      		rcall gb_flash_write_bus_cycle
+ 1522               	.LVL153:
+ 284:main.c        **** 			while (dataVerify != receivedBuffer[255]) {
+ 1523               		.loc 3 284 0
+ 1524 0300 E601      		movw r28,r12
+ 1525               	.LVL154:
+ 1526 0302 2197      		sbiw r28,1
+ 1527 0304 CE01      		movw r24,r28
+ 1528 0306 00D0      		rcall gb_flash_read_byte
+ 1529               	.LVL155:
+ 1530               	.L66:
+ 285:main.c        **** 				dataVerify = gb_flash_read_byte(address-1);
+ 1531               		.loc 3 285 0
+ 1532 0308 9091 0000 		lds r25,receivedBuffer+255
+ 1533 030c 8917      		cp r24,r25
+ 1534 030e 01F0      		breq .L116
+ 286:main.c        **** 				_delay_us(5);
+ 1535               		.loc 3 286 0
+ 1536 0310 CE01      		movw r24,r28
+ 1537               	.LVL156:
+ 1538 0312 00D0      		rcall gb_flash_read_byte
+ 1539               	.LVL157:
+ 1540               	.LBB101:
+ 1541               	.LBB102:
+ 1542               		.loc 2 276 0
+ 1543 0314 9AE1      		ldi r25,lo8(26)
+ 1544 0316 9A95      	1:	dec r25
+ 1545 0318 01F4      		brne 1b
+ 1546 031a 00C0      		rjmp .
+ 1547 031c 00C0      		rjmp .L66
+ 1548               	.LVL158:
+ 1549               	.L116:
+ 1550               	.LBE102:
+ 1551               	.LBE101:
+ 290:main.c        **** 			PORTD &= ~(1<<ACTIVITY_LED);
+ 1552               		.loc 3 290 0
+ 1553 031e 81E3      		ldi r24,lo8(49)
+ 1554 0320 00C0      		rjmp .L114
+ 1555               	.LVL159:
+ 1556               	.L64:
+ 1557               	.LBE97:
+ 298:main.c        **** 			char portChar = USART_Receive();
+ 1558               		.loc 3 298 0
+ 1559 0322 8934      		cpi r24,lo8(73)
+ 1560 0324 01F0      		breq .L68
+ 298:main.c        **** 			char portChar = USART_Receive();
+ 1561               		.loc 3 298 0 is_stmt 0 discriminator 1
+ 1562 0326 8F34      		cpi r24,lo8(79)
+ 1563 0328 01F0      		breq .+2
+ 1564 032a 00C0      		rjmp .L69
+ 1565               	.L68:
+ 1566               	.LBB103:
+ 299:main.c        **** 			usart_read_chars();
+ 1567               		.loc 3 299 0 is_stmt 1
+ 1568 032c 00D0      		rcall USART_Receive
+ 1569               	.LVL160:
+ 1570 032e C82F      		mov r28,r24
+ 1571               	.LVL161:
+ 300:main.c        **** 			uint8_t setValue = strtol(receivedBuffer, NULL, 16);
+ 1572               		.loc 3 300 0
+ 1573 0330 00D0      		rcall usart_read_chars
+ 1574               	.LVL162:
+ 301:main.c        **** 			
+ 1575               		.loc 3 301 0
+ 1576 0332 40E1      		ldi r20,lo8(16)
+ 1577 0334 50E0      		ldi r21,0
+ 1578 0336 60E0      		ldi r22,0
+ 1579 0338 70E0      		ldi r23,0
+ 1580 033a 80E0      		ldi r24,lo8(receivedBuffer)
+ 1581 033c 90E0      		ldi r25,hi8(receivedBuffer)
+ 1582 033e 00D0      		rcall strtol
+ 1583               	.LVL163:
+ 303:main.c        **** 			if (receivedChar == SET_INPUT) {
+ 1584               		.loc 3 303 0
+ 1585 0340 939A      		sbi 0x12,3
+ 304:main.c        **** 				if (portChar == 'A') {
+ 1586               		.loc 3 304 0
+ 1587 0342 8091 0000 		lds r24,receivedChar
+ 1588 0346 8934      		cpi r24,lo8(73)
+ 1589 0348 01F4      		brne .L70
+ 305:main.c        **** 					DDRA &= ~(setValue);
+ 1590               		.loc 3 305 0
+ 1591 034a C134      		cpi r28,lo8(65)
+ 1592 034c 01F4      		brne .L71
+ 306:main.c        **** 				}
+ 1593               		.loc 3 306 0
+ 1594 034e 8AB3      		in r24,0x1a
+ 1595 0350 6095      		com r22
+ 1596               	.LVL164:
+ 1597 0352 6823      		and r22,r24
+ 1598               	.LVL165:
+ 1599 0354 00C0      		rjmp .L118
+ 1600               	.LVL166:
+ 1601               	.L71:
+ 308:main.c        **** 					DDRB &= ~(setValue);
+ 1602               		.loc 3 308 0
+ 1603 0356 C234      		cpi r28,lo8(66)
+ 1604 0358 01F4      		brne .L73
+ 309:main.c        **** 				}
+ 1605               		.loc 3 309 0
+ 1606 035a 87B3      		in r24,0x17
+ 1607 035c 6095      		com r22
+ 1608               	.LVL167:
+ 1609 035e 6823      		and r22,r24
+ 1610               	.LVL168:
+ 1611 0360 00C0      		rjmp .L119
+ 1612               	.LVL169:
+ 1613               	.L73:
+ 311:main.c        **** 					DDRC &= ~(setValue);
+ 1614               		.loc 3 311 0
+ 1615 0362 C334      		cpi r28,lo8(67)
+ 1616 0364 01F4      		brne .L74
+ 312:main.c        **** 				}
+ 1617               		.loc 3 312 0
+ 1618 0366 84B3      		in r24,0x14
+ 1619 0368 6095      		com r22
+ 1620               	.LVL170:
+ 1621 036a 6823      		and r22,r24
+ 1622               	.LVL171:
+ 1623 036c 00C0      		rjmp .L124
+ 1624               	.LVL172:
+ 1625               	.L74:
+ 314:main.c        **** 					DDRD &= ~(setValue);
+ 1626               		.loc 3 314 0
+ 1627 036e C434      		cpi r28,lo8(68)
+ 1628 0370 01F4      		brne .L75
+ 315:main.c        **** 				}
+ 1629               		.loc 3 315 0
+ 1630 0372 81B3      		in r24,0x11
+ 1631 0374 6095      		com r22
+ 1632               	.LVL173:
+ 1633 0376 6823      		and r22,r24
+ 1634               	.LVL174:
+ 1635 0378 00C0      		rjmp .L125
+ 1636               	.LVL175:
+ 1637               	.L75:
+ 317:main.c        **** 					DDRE &= ~(setValue);
+ 1638               		.loc 3 317 0
+ 1639 037a C534      		cpi r28,lo8(69)
+ 1640 037c 01F0      		breq .+2
+ 1641 037e 00C0      		rjmp .L94
+ 318:main.c        **** 				}
+ 1642               		.loc 3 318 0
+ 1643 0380 86B1      		in r24,0x6
+ 1644 0382 6095      		com r22
+ 1645               	.LVL176:
+ 1646 0384 6823      		and r22,r24
+ 1647               	.LVL177:
+ 1648 0386 00C0      		rjmp .L126
+ 1649               	.LVL178:
+ 1650               	.L70:
+ 321:main.c        **** 				if (portChar == 'A') {
+ 1651               		.loc 3 321 0
+ 1652 0388 8F34      		cpi r24,lo8(79)
+ 1653 038a 01F0      		breq .+2
+ 1654 038c 00C0      		rjmp .L94
+ 322:main.c        **** 					DDRA |= (setValue);
+ 1655               		.loc 3 322 0
+ 1656 038e C134      		cpi r28,lo8(65)
+ 1657 0390 01F4      		brne .L76
+ 323:main.c        **** 				}
+ 1658               		.loc 3 323 0
+ 1659 0392 8AB3      		in r24,0x1a
+ 1660 0394 682B      		or r22,r24
+ 1661               	.LVL179:
+ 1662               	.L118:
+ 1663 0396 6ABB      		out 0x1a,r22
+ 1664 0398 00C0      		rjmp .L94
+ 1665               	.LVL180:
+ 1666               	.L76:
+ 325:main.c        **** 					DDRB |= (setValue);
+ 1667               		.loc 3 325 0
+ 1668 039a C234      		cpi r28,lo8(66)
+ 1669 039c 01F4      		brne .L77
+ 326:main.c        **** 				}
+ 1670               		.loc 3 326 0
+ 1671 039e 87B3      		in r24,0x17
+ 1672 03a0 682B      		or r22,r24
+ 1673               	.LVL181:
+ 1674               	.L119:
+ 1675 03a2 67BB      		out 0x17,r22
+ 1676 03a4 00C0      		rjmp .L94
+ 1677               	.LVL182:
+ 1678               	.L77:
+ 328:main.c        **** 					DDRC |= (setValue);
+ 1679               		.loc 3 328 0
+ 1680 03a6 C334      		cpi r28,lo8(67)
+ 1681 03a8 01F4      		brne .L78
+ 329:main.c        **** 				}
+ 1682               		.loc 3 329 0
+ 1683 03aa 84B3      		in r24,0x14
+ 1684 03ac 682B      		or r22,r24
+ 1685               	.LVL183:
+ 1686               	.L124:
+ 1687 03ae 64BB      		out 0x14,r22
+ 1688 03b0 00C0      		rjmp .L94
+ 1689               	.LVL184:
+ 1690               	.L78:
+ 331:main.c        **** 					DDRD |= (setValue);
+ 1691               		.loc 3 331 0
+ 1692 03b2 C434      		cpi r28,lo8(68)
+ 1693 03b4 01F4      		brne .L79
+ 332:main.c        **** 				}
+ 1694               		.loc 3 332 0
+ 1695 03b6 81B3      		in r24,0x11
+ 1696 03b8 682B      		or r22,r24
+ 1697               	.LVL185:
+ 1698               	.L125:
+ 1699 03ba 61BB      		out 0x11,r22
+ 1700 03bc 00C0      		rjmp .L94
+ 1701               	.LVL186:
+ 1702               	.L79:
+ 334:main.c        **** 					DDRE |= (setValue);
+ 1703               		.loc 3 334 0
+ 1704 03be C534      		cpi r28,lo8(69)
+ 1705 03c0 01F0      		breq .+2
+ 1706 03c2 00C0      		rjmp .L94
+ 335:main.c        **** 				}
+ 1707               		.loc 3 335 0
+ 1708 03c4 86B1      		in r24,0x6
+ 1709 03c6 682B      		or r22,r24
+ 1710               	.LVL187:
+ 1711               	.L126:
+ 1712 03c8 66B9      		out 0x6,r22
+ 1713 03ca 00C0      		rjmp .L94
+ 1714               	.LVL188:
+ 1715               	.L69:
+ 1716               	.LBE103:
+ 342:main.c        **** 			char portChar = USART_Receive();			
+ 1717               		.loc 3 342 0
+ 1718 03cc 8C34      		cpi r24,lo8(76)
+ 1719 03ce 01F4      		brne .L80
+ 1720               	.LBB104:
+ 343:main.c        **** 			usart_read_chars();
+ 1721               		.loc 3 343 0
+ 1722 03d0 00D0      		rcall USART_Receive
+ 1723               	.LVL189:
+ 1724 03d2 C82F      		mov r28,r24
+ 1725               	.LVL190:
+ 344:main.c        **** 			uint8_t setValue = strtol(receivedBuffer, NULL, 16);
+ 1726               		.loc 3 344 0
+ 1727 03d4 00D0      		rcall usart_read_chars
+ 1728               	.LVL191:
+ 345:main.c        **** 			
+ 1729               		.loc 3 345 0
+ 1730 03d6 40E1      		ldi r20,lo8(16)
+ 1731 03d8 50E0      		ldi r21,0
+ 1732 03da 60E0      		ldi r22,0
+ 1733 03dc 70E0      		ldi r23,0
+ 1734 03de 80E0      		ldi r24,lo8(receivedBuffer)
+ 1735 03e0 90E0      		ldi r25,hi8(receivedBuffer)
+ 1736 03e2 00D0      		rcall strtol
+ 1737               	.LVL192:
+ 347:main.c        **** 			if (portChar == 'A') {
+ 1738               		.loc 3 347 0
+ 1739 03e4 939A      		sbi 0x12,3
+ 348:main.c        **** 				PORTA &= ~(setValue);
+ 1740               		.loc 3 348 0
+ 1741 03e6 C134      		cpi r28,lo8(65)
+ 1742 03e8 01F4      		brne .L81
+ 349:main.c        **** 			}
+ 1743               		.loc 3 349 0
+ 1744 03ea 8BB3      		in r24,0x1b
+ 1745 03ec 6095      		com r22
+ 1746               	.LVL193:
+ 1747 03ee 6823      		and r22,r24
+ 1748               	.LVL194:
+ 1749 03f0 00C0      		rjmp .L123
+ 1750               	.LVL195:
+ 1751               	.L81:
+ 351:main.c        **** 				PORTB &= ~(setValue);
+ 1752               		.loc 3 351 0
+ 1753 03f2 C234      		cpi r28,lo8(66)
+ 1754 03f4 01F4      		brne .L83
+ 352:main.c        **** 			}
+ 1755               		.loc 3 352 0
+ 1756 03f6 88B3      		in r24,0x18
+ 1757 03f8 6095      		com r22
+ 1758               	.LVL196:
+ 1759 03fa 6823      		and r22,r24
+ 1760               	.LVL197:
+ 1761 03fc 00C0      		rjmp .L122
+ 1762               	.LVL198:
+ 1763               	.L83:
+ 354:main.c        **** 				PORTC &= ~(setValue);
+ 1764               		.loc 3 354 0
+ 1765 03fe C334      		cpi r28,lo8(67)
+ 1766 0400 01F4      		brne .L84
+ 355:main.c        **** 			}
+ 1767               		.loc 3 355 0
+ 1768 0402 85B3      		in r24,0x15
+ 1769 0404 6095      		com r22
+ 1770               	.LVL199:
+ 1771 0406 6823      		and r22,r24
+ 1772               	.LVL200:
+ 1773 0408 00C0      		rjmp .L121
+ 1774               	.LVL201:
+ 1775               	.L84:
+ 357:main.c        **** 				PORTD &= ~(setValue);
+ 1776               		.loc 3 357 0
+ 1777 040a C434      		cpi r28,lo8(68)
+ 1778 040c 01F4      		brne .L85
+ 358:main.c        **** 			}
+ 1779               		.loc 3 358 0
+ 1780 040e 82B3      		in r24,0x12
+ 1781 0410 6095      		com r22
+ 1782               	.LVL202:
+ 1783 0412 6823      		and r22,r24
+ 1784               	.LVL203:
+ 1785 0414 00C0      		rjmp .L120
+ 1786               	.LVL204:
+ 1787               	.L85:
+ 360:main.c        **** 				PORTE &= ~(setValue);
+ 1788               		.loc 3 360 0
+ 1789 0416 C534      		cpi r28,lo8(69)
+ 1790 0418 01F0      		breq .+2
+ 1791 041a 00C0      		rjmp .L94
+ 361:main.c        **** 			}
+ 1792               		.loc 3 361 0
+ 1793 041c 87B1      		in r24,0x7
+ 1794 041e 6095      		com r22
+ 1795               	.LVL205:
+ 1796 0420 6823      		and r22,r24
+ 1797               	.LVL206:
+ 1798 0422 00C0      		rjmp .L117
+ 1799               	.LVL207:
+ 1800               	.L80:
+ 1801               	.LBE104:
+ 367:main.c        **** 			char portChar = USART_Receive();			
+ 1802               		.loc 3 367 0
+ 1803 0424 8834      		cpi r24,lo8(72)
+ 1804 0426 01F4      		brne .L86
+ 1805               	.LBB105:
+ 368:main.c        **** 			usart_read_chars();
+ 1806               		.loc 3 368 0
+ 1807 0428 00D0      		rcall USART_Receive
+ 1808               	.LVL208:
+ 1809 042a C82F      		mov r28,r24
+ 1810               	.LVL209:
+ 369:main.c        **** 			uint8_t setValue = strtol(receivedBuffer, NULL, 16);
+ 1811               		.loc 3 369 0
+ 1812 042c 00D0      		rcall usart_read_chars
+ 1813               	.LVL210:
+ 370:main.c        **** 			
+ 1814               		.loc 3 370 0
+ 1815 042e 40E1      		ldi r20,lo8(16)
+ 1816 0430 50E0      		ldi r21,0
+ 1817 0432 60E0      		ldi r22,0
+ 1818 0434 70E0      		ldi r23,0
+ 1819 0436 80E0      		ldi r24,lo8(receivedBuffer)
+ 1820 0438 90E0      		ldi r25,hi8(receivedBuffer)
+ 1821 043a 00D0      		rcall strtol
+ 1822               	.LVL211:
+ 372:main.c        **** 			if (portChar == 'A') {
+ 1823               		.loc 3 372 0
+ 1824 043c 939A      		sbi 0x12,3
+ 373:main.c        **** 				PORTA |= (setValue);
+ 1825               		.loc 3 373 0
+ 1826 043e C134      		cpi r28,lo8(65)
+ 1827 0440 01F4      		brne .L87
+ 374:main.c        **** 			}
+ 1828               		.loc 3 374 0
+ 1829 0442 8BB3      		in r24,0x1b
+ 1830 0444 682B      		or r22,r24
+ 1831               	.LVL212:
+ 1832               	.L123:
+ 1833 0446 6BBB      		out 0x1b,r22
+ 1834 0448 00C0      		rjmp .L94
+ 1835               	.LVL213:
+ 1836               	.L87:
+ 376:main.c        **** 				PORTB |= (setValue);
+ 1837               		.loc 3 376 0
+ 1838 044a C234      		cpi r28,lo8(66)
+ 1839 044c 01F4      		brne .L89
+ 377:main.c        **** 			}
+ 1840               		.loc 3 377 0
+ 1841 044e 88B3      		in r24,0x18
+ 1842 0450 682B      		or r22,r24
+ 1843               	.LVL214:
+ 1844               	.L122:
+ 1845 0452 68BB      		out 0x18,r22
+ 1846 0454 00C0      		rjmp .L94
+ 1847               	.LVL215:
+ 1848               	.L89:
+ 379:main.c        **** 				PORTC |= (setValue);
+ 1849               		.loc 3 379 0
+ 1850 0456 C334      		cpi r28,lo8(67)
+ 1851 0458 01F4      		brne .L90
+ 380:main.c        **** 			}
+ 1852               		.loc 3 380 0
+ 1853 045a 85B3      		in r24,0x15
+ 1854 045c 682B      		or r22,r24
+ 1855               	.LVL216:
+ 1856               	.L121:
+ 1857 045e 65BB      		out 0x15,r22
+ 1858 0460 00C0      		rjmp .L94
+ 1859               	.LVL217:
+ 1860               	.L90:
+ 382:main.c        **** 				PORTD |= (setValue);
+ 1861               		.loc 3 382 0
+ 1862 0462 C434      		cpi r28,lo8(68)
+ 1863 0464 01F4      		brne .L91
+ 383:main.c        **** 			}
+ 1864               		.loc 3 383 0
+ 1865 0466 82B3      		in r24,0x12
+ 1866 0468 682B      		or r22,r24
+ 1867               	.LVL218:
+ 1868               	.L120:
+ 1869 046a 62BB      		out 0x12,r22
+ 1870 046c 00C0      		rjmp .L94
+ 1871               	.LVL219:
+ 1872               	.L91:
+ 385:main.c        **** 				PORTE |= (setValue);
+ 1873               		.loc 3 385 0
+ 1874 046e C534      		cpi r28,lo8(69)
+ 1875 0470 01F4      		brne .L94
+ 386:main.c        **** 			}
+ 1876               		.loc 3 386 0
+ 1877 0472 87B1      		in r24,0x7
+ 1878 0474 682B      		or r22,r24
+ 1879               	.LVL220:
+ 1880               	.L117:
+ 1881 0476 67B9      		out 0x7,r22
+ 1882 0478 00C0      		rjmp .L94
+ 1883               	.L86:
+ 1884               	.LBE105:
+ 392:main.c        **** 			char portChar = USART_Receive();			
+ 1885               		.loc 3 392 0
+ 1886 047a 8434      		cpi r24,lo8(68)
+ 1887 047c 01F4      		brne .L92
+ 1888               	.LBB106:
+ 393:main.c        **** 			
+ 1889               		.loc 3 393 0
+ 1890 047e 00D0      		rcall USART_Receive
+ 1891               	.LVL221:
+ 395:main.c        **** 			if (portChar == 'A') {
+ 1892               		.loc 3 395 0
+ 1893 0480 939A      		sbi 0x12,3
+ 396:main.c        **** 				USART_Transmit(PINA);
+ 1894               		.loc 3 396 0
+ 1895 0482 8134      		cpi r24,lo8(65)
+ 1896 0484 01F4      		brne .L93
+ 397:main.c        **** 			}
+ 1897               		.loc 3 397 0
+ 1898 0486 89B3      		in r24,0x19
+ 1899               	.LVL222:
+ 1900 0488 00C0      		rjmp .L114
+ 1901               	.LVL223:
+ 1902               	.L93:
+ 399:main.c        **** 				USART_Transmit(PINB);
+ 1903               		.loc 3 399 0
+ 1904 048a 8234      		cpi r24,lo8(66)
+ 1905 048c 01F4      		brne .L95
+ 400:main.c        **** 			}
+ 1906               		.loc 3 400 0
+ 1907 048e 86B3      		in r24,0x16
+ 1908               	.LVL224:
+ 1909 0490 00C0      		rjmp .L114
+ 1910               	.LVL225:
+ 1911               	.L95:
+ 402:main.c        **** 				USART_Transmit(PINC);
+ 1912               		.loc 3 402 0
+ 1913 0492 8334      		cpi r24,lo8(67)
+ 1914 0494 01F4      		brne .L96
+ 403:main.c        **** 			}
+ 1915               		.loc 3 403 0
+ 1916 0496 83B3      		in r24,0x13
+ 1917               	.LVL226:
+ 1918 0498 00C0      		rjmp .L114
+ 1919               	.LVL227:
+ 1920               	.L96:
+ 405:main.c        **** 				USART_Transmit(PIND);
+ 1921               		.loc 3 405 0
+ 1922 049a 8434      		cpi r24,lo8(68)
+ 1923 049c 01F4      		brne .L97
+ 406:main.c        **** 			}
+ 1924               		.loc 3 406 0
+ 1925 049e 80B3      		in r24,0x10
+ 1926               	.LVL228:
+ 1927 04a0 00C0      		rjmp .L114
+ 1928               	.LVL229:
+ 1929               	.L97:
+ 408:main.c        **** 				USART_Transmit(PINE);
+ 1930               		.loc 3 408 0
+ 1931 04a2 8534      		cpi r24,lo8(69)
+ 1932 04a4 01F4      		brne .L94
+ 409:main.c        **** 			}
+ 1933               		.loc 3 409 0
+ 1934 04a6 85B1      		in r24,0x5
+ 1935               	.LVL230:
+ 1936               	.L114:
+ 1937 04a8 00D0      		rcall USART_Transmit
+ 1938               	.LVL231:
+ 1939               	.L94:
+ 411:main.c        **** 		}
+ 1940               		.loc 3 411 0
+ 1941 04aa 9398      		cbi 0x12,3
+ 1942               	.LBE106:
+ 1943 04ac 00C0      		rjmp .L37
+ 1944               	.LVL232:
+ 1945               	.L92:
+ 415:main.c        **** 			char commonChar = USART_Receive();
+ 1946               		.loc 3 415 0
+ 1947 04ae 8D34      		cpi r24,lo8(77)
+ 1948 04b0 01F4      		brne .L98
+ 1949               	.LBB107:
+ 416:main.c        **** 			if (commonChar == '1') {
+ 1950               		.loc 3 416 0
+ 1951 04b2 00D0      		rcall USART_Receive
+ 1952               	.LVL233:
+ 417:main.c        **** 				resetCommonLines = 1;
+ 1953               		.loc 3 417 0
+ 1954 04b4 8133      		cpi r24,lo8(49)
+ 1955 04b6 01F4      		brne .L128
+ 418:main.c        **** 			}
+ 1956               		.loc 3 418 0
+ 1957 04b8 7724      		clr r7
+ 1958 04ba 7394      		inc r7
+ 1959 04bc 00C0      		rjmp .L112
+ 1960               	.L128:
+ 420:main.c        **** 				resetCommonLines = 0;
+ 1961               		.loc 3 420 0
+ 1962 04be 8033      		cpi r24,lo8(48)
+ 1963 04c0 01F0      		breq .+2
+ 1964 04c2 00C0      		rjmp .L37
+ 421:main.c        **** 			}
+ 1965               		.loc 3 421 0
+ 1966 04c4 712C      		mov r7,__zero_reg__
+ 1967 04c6 00C0      		rjmp .L38
+ 1968               	.LVL234:
+ 1969               	.L98:
+ 1970               	.LBE107:
+ 426:main.c        **** 			USART_Transmit(PCB_VERSION);
+ 1971               		.loc 3 426 0
+ 1972 04c8 8836      		cpi r24,lo8(104)
+ 1973 04ca 01F4      		brne .L99
+ 427:main.c        **** 		}
+ 1974               		.loc 3 427 0
+ 1975 04cc 84E6      		ldi r24,lo8(100)
+ 1976 04ce 00C0      		rjmp .L113
+ 1977               	.L99:
+ 431:main.c        **** 			USART_Transmit(FIRMWARE_VERSION);
+ 1978               		.loc 3 431 0
+ 1979 04d0 8635      		cpi r24,lo8(86)
+ 1980 04d2 01F4      		brne .L100
+ 432:main.c        **** 		}
+ 1981               		.loc 3 432 0
+ 1982 04d4 8CE0      		ldi r24,lo8(12)
+ 1983               	.LVL235:
+ 1984               	.L113:
+ 1985 04d6 00D0      		rcall USART_Transmit
+ 1986               	.LVL236:
+ 1987 04d8 00C0      		rjmp .L37
+ 1988               	.LVL237:
+ 1989               	.L100:
+ 436:main.c        **** 			usart_read_chars();
+ 1990               		.loc 3 436 0
+ 1991 04da 8A32      		cpi r24,lo8(42)
+ 1992 04dc 01F0      		breq .+2
+ 1993 04de 00C0      		rjmp .L37
+ 1994               	.LBB108:
+ 437:main.c        **** 			uint32_t resetValue = strtol(receivedBuffer, NULL, 16);
+ 1995               		.loc 3 437 0
+ 1996 04e0 00D0      		rcall usart_read_chars
+ 1997               	.LVL238:
+ 438:main.c        **** 			if (resetValue == RESET_VALUE) {
+ 1998               		.loc 3 438 0
+ 1999 04e2 40E1      		ldi r20,lo8(16)
+ 2000 04e4 50E0      		ldi r21,0
+ 2001 04e6 60E0      		ldi r22,0
+ 2002 04e8 70E0      		ldi r23,0
+ 2003 04ea 80E0      		ldi r24,lo8(receivedBuffer)
+ 2004 04ec 90E0      		ldi r25,hi8(receivedBuffer)
+ 2005 04ee 00D0      		rcall strtol
+ 2006               	.LVL239:
+ 439:main.c        **** 				// Clear watchdog flag
+ 2007               		.loc 3 439 0
+ 2008 04f0 613E      		cpi r22,-31
+ 2009 04f2 754E      		sbci r23,-27
+ 2010 04f4 8740      		sbci r24,7
+ 2011 04f6 9105      		cpc r25,__zero_reg__
+ 2012 04f8 01F0      		breq .+2
+ 2013 04fa 00C0      		rjmp .L37
+ 441:main.c        **** 				
+ 2014               		.loc 3 441 0
+ 2015 04fc 84B7      		in r24,0x34
+ 2016 04fe 877F      		andi r24,lo8(-9)
+ 2017 0500 84BF      		out 0x34,r24
+ 444:main.c        **** 				
+ 2018               		.loc 3 444 0
+ 2019 0502 31BC      		out 0x21,r3
+ 2020               		.loc 3 447 0
+ 2021 0504 21BC      		out 0x21,r2
+ 2022               	.LVL240:
+ 2023               	.LBB78:
+ 2024               	.LBB77:
+ 2025               		.loc 4 105 0
+ 2026 0506 C201      		movw r24,r4
+ 2027               	/* #APP */
+ 2028               	 ;  105 "c:\winavr-20100110\avr\include\util\delay_basic.h" 1
+ 2029 0508 0197      		1: sbiw r24,1
+ 2030 050a 01F4      		brne 1b
+ 2031               	 ;  0 "" 2
+ 2032               	.LVL241:
+ 2033               	/* #NOAPP */
+ 2034 050c 00C0      		rjmp .L37
+ 2035               	.LBE77:
+ 2036               	.LBE78:
+ 2037               	.LBE108:
+ 2038               		.cfi_endproc
+ 2039               	.LFE26:
+ 2041               	.global	cartMode
+ 2042               		.data
+ 2045               	cartMode:
+ 2046 0000 01        		.byte	1
+ 2047               	.global	lastBankAccessed
+ 2048               		.section .bss
+ 2051               	lastBankAccessed:
+ 2052 0000 00        		.zero	1
+ 2053               	.global	flashBank1CommandWrites
+ 2056               	flashBank1CommandWrites:
+ 2057 0001 00        		.zero	1
+ 2058               		.comm	flashWriteCycle,12,1
+ 2059               		.comm	flashWriteWePin,1,1
+ 2060               		.comm	receivedChar,1,1
+ 2061               		.comm	receivedBuffer,256,1
+ 2062               		.text
+ 2063               	.Letext0:
+ 2064               		.file 5 "c:\\winavr-20100110\\avr\\include\\stdint.h"
+ 2065               		.file 6 "c:\\winavr-20100110\\avr\\include\\stdlib.h"
+DEFINED SYMBOLS
+                            *ABS*:00000000 main.c
+C:\Users\Alex\AppData\Local\Temp\ccZwWAVL.s:2      *ABS*:0000003e __SP_H__
+C:\Users\Alex\AppData\Local\Temp\ccZwWAVL.s:3      *ABS*:0000003d __SP_L__
+C:\Users\Alex\AppData\Local\Temp\ccZwWAVL.s:4      *ABS*:0000003f __SREG__
+C:\Users\Alex\AppData\Local\Temp\ccZwWAVL.s:5      *ABS*:00000000 __tmp_reg__
+C:\Users\Alex\AppData\Local\Temp\ccZwWAVL.s:6      *ABS*:00000001 __zero_reg__
+C:\Users\Alex\AppData\Local\Temp\ccZwWAVL.s:12     .text:00000000 USART_Receive
+C:\Users\Alex\AppData\Local\Temp\ccZwWAVL.s:34     .text:00000008 USART_Transmit
+C:\Users\Alex\AppData\Local\Temp\ccZwWAVL.s:55     .text:00000010 usart_read_bytes
+                            *COM*:00000100 receivedBuffer
+C:\Users\Alex\AppData\Local\Temp\ccZwWAVL.s:118    .text:0000003a usart_read_chars
+C:\Users\Alex\AppData\Local\Temp\ccZwWAVL.s:158    .text:00000050 rd_wr_csmreq_cs2_reset
+C:\Users\Alex\AppData\Local\Temp\ccZwWAVL.s:180    .text:0000005a gb_mode
+C:\Users\Alex\AppData\Local\Temp\ccZwWAVL.s:207    .text:0000006a set_16bit_address
+C:\Users\Alex\AppData\Local\Temp\ccZwWAVL.s:226    .text:00000070 read_8bit_data
+C:\Users\Alex\AppData\Local\Temp\ccZwWAVL.s:274    .text:00000086 write_8bit_data
+C:\Users\Alex\AppData\Local\Temp\ccZwWAVL.s:343    .text:000000b4 gb_flash_read_byte
+C:\Users\Alex\AppData\Local\Temp\ccZwWAVL.s:391    .text:000000ca gb_flash_write_bus_cycle
+                            *COM*:00000001 flashWriteWePin
+C:\Users\Alex\AppData\Local\Temp\ccZwWAVL.s:496    .text:00000104 gb_flash_write_byte
+                            *COM*:0000000c flashWriteCycle
+C:\Users\Alex\AppData\Local\Temp\ccZwWAVL.s:597    .text:00000168 gb_flash_write_byte_bank1_commands
+C:\Users\Alex\AppData\Local\Temp\ccZwWAVL.s:2051   .bss:00000000 lastBankAccessed
+C:\Users\Alex\AppData\Local\Temp\ccZwWAVL.s:768    .text:00000200 setup
+C:\Users\Alex\AppData\Local\Temp\ccZwWAVL.s:871    .text.startup:00000000 main
+                            *COM*:00000001 receivedChar
+C:\Users\Alex\AppData\Local\Temp\ccZwWAVL.s:2045   .data:00000000 cartMode
+C:\Users\Alex\AppData\Local\Temp\ccZwWAVL.s:2056   .bss:00000001 flashBank1CommandWrites
+
+UNDEFINED SYMBOLS
+strtol
+atoi
+__do_copy_data
+__do_clear_bss
