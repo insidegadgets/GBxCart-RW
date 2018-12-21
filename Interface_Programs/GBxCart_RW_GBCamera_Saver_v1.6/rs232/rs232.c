@@ -40,7 +40,7 @@
 #include <IOKit/serial/ioss.h>
 #endif
 
-#define RS232_PORTNR  41
+#define RS232_PORTNR  42
 
 
 int Cport[RS232_PORTNR],
@@ -57,7 +57,7 @@ char *comports[RS232_PORTNR]={"/dev/ttyS0","/dev/ttyS1","/dev/ttyS2","/dev/ttyS3
                        "/dev/rfcomm0","/dev/rfcomm1","/dev/ircomm0","/dev/ircomm1",
                        "/dev/cuau0","/dev/cuau1","/dev/cuau2","/dev/cuau3",
                        "/dev/cuaU0","/dev/cuaU1","/dev/cuaU2","/dev/cuaU3",
-                       "/dev/tty.wchusbserial1430","/dev/tty.wchusbserial630","/dev/tty.wchusbserial1410"};
+                       "/dev/tty.wchusbserial1430","/dev/tty.wchusbserial630","/dev/tty.wchusbserial1410","/dev/tty.wchusbserial1420"};
 
 int RS232_OpenComport(int comport_number, int baudrate, const char *mode)
 {
