@@ -10,7 +10,7 @@ GBxCart RW allows you to dump your Gameboy / Gameboy Colour / Gameboy Advance ga
 
 */
 
-//#define WINDOWS_7_BUILD
+#define WINDOWS_7_BUILD
 
 using System;
 using System.Collections.Generic;
@@ -176,6 +176,14 @@ namespace GBxCart_RW
                                 notifyIcon1.BalloonTipTitle = "GBxCart RW";
                                 notifyIcon1.ShowBalloonTip(4000);
                             }
+                            //Functions.MessageBoxHelper.PrepToCenterMessageBoxOnForm(this);
+                            //TopMost = true;
+                            //System.Windows.Forms.MessageBox.Show("Progress has stalled. Please unplug GBxCart RW, re-seat your game cartridge and try again.");
+
+                            TopMostMessageBox.Show("Progress has stalled. Please unplug GBxCart RW, re-seat your game cartridge and try again. This program will close when you press Ok.", "GBxCart RW Stalled", MessageBoxButtons.OK);
+                            //MessageBox.Show("Progress has stalled. Please unplug GBxCart RW, re-seat your game cartridge and try again.", "GBxCart RW Stalled", MessageBoxButtons.OK, MessageBoxIcon.None,
+                            // MessageBoxDefaultButton.Button1, (MessageBoxOptions)0x40000);  // MB_TOPMOST
+                            Application.Exit();
                         }
                     }
                     progressPreviousCounter++;
@@ -426,7 +434,7 @@ namespace GBxCart_RW
                     Int32 textLength = 0;
                     IntPtr headerPointer;
                     string headerText = "";
-
+                    
                     if (cartMode == GB_CART) {
                         headerPointer = Program.read_gb_header(ref textLength);
                         headerText = Marshal.PtrToStringAnsi(headerPointer, textLength);
@@ -437,12 +445,12 @@ namespace GBxCart_RW
                         headerText = Marshal.PtrToStringAnsi(headerPointer, textLength);
                         headerTokens = headerText.Split('\n');
                     }
+                    commandReceived = 0;
+
                     headerTextBox.Invoke((MethodInvoker)(() => {
                         //headerTextBox.Text = headerText;
                         headerTextBox.Text = headerTokens[0] + "\n" + headerTokens[1] + "\n" + headerTokens[2] + "\n" + headerTokens[3] + "\n" + headerTokens[4];
                     }));
-
-                    commandReceived = 0;
                 }
 
                 cancelOperation = 0;
@@ -626,6 +634,18 @@ namespace GBxCart_RW
 
         // Save ram button 
         private void saverambutton_Click(object sender, EventArgs e) {
+            if (comConnected == true && commandReceived == 0) {
+                progress = 0;
+                backgroundWorker1.ReportProgress(0);
+
+                commandReceived = READHEADER;
+                statuslabel.Text = "";
+
+                while (commandReceived == READHEADER) {
+                    System.Threading.Thread.Sleep(200);
+                }
+                headerRead = true;
+            }
             if (comConnected == true && headerRead == true && commandReceived == 0) {
                 progress = 0;
                 backgroundWorker1.ReportProgress(0);
@@ -639,6 +659,7 @@ namespace GBxCart_RW
                     saveAsNewFile = false;
                     if (Program.check_if_file_exists() == 1) {
                         SaveOptions SaveOptionsForm = new SaveOptions();
+                        SaveOptionsForm.saveNameExisting.Text = headerTokens[0];
                         SaveOptionsForm.ShowDialog();
 
                         if (commandReceived == SAVERAM) {
@@ -700,10 +721,12 @@ namespace GBxCart_RW
         // Write ROM button
         private void writerombutton_Click(object sender, EventArgs e) {
             if (comConnected == true && writeRomSelected == true && commandReceived == 0) {
-                
-                // Do another check for 3.3V Flash carts
+
+                int gbxcartPcbVersion = Program.request_value(READ_PCB_VERSION);
+               
+                // Do another check for 3.3V Flash carts if with GBxCart RW (not Mini)
                 int writingROM = 1;
-                if (writeRomCartType == 4 || writeRomCartType == 5 || writeRomCartType == 10 || writeRomCartType == 11 || writeRomCartType == 12 || writeRomCartType == 13) {
+                if ((writeRomCartType == 4 || writeRomCartType == 5 || writeRomCartType == 10 || writeRomCartType == 11 || writeRomCartType == 12 || writeRomCartType == 13) && gbxcartPcbVersion != Form1.MINI_PCB_1_0) {
                     int cartVoltage = Program.read_cartridge_mode();
                     if (cartVoltage == 1) {
                         Functions.MessageBoxHelper.PrepToCenterMessageBoxOnForm(this);
@@ -789,12 +812,17 @@ namespace GBxCart_RW
                 }
                 else {
                     openFileDialog1.InitialDirectory = this.directoryNameToolStripMenuItem.Text;
+                    openFileDialog1.FileName = "*.gb";
+
                     DialogResult result = openFileDialog1.ShowDialog();
                     if (result == DialogResult.OK) {
 
                         FileInfo fileSelected = new FileInfo(openFileDialog1.FileName);
                         writeRomSize = (UInt32) fileSelected.Length;
 
+                        // Store the last rom directory opened
+                        this.directoryNameToolStripMenuItem.Text = Path.GetDirectoryName(openFileDialog1.FileName);
+                        
                         if (fileSelected.Length <= writeRomCartSize) {
                             writeRomFileName = openFileDialog1.FileName;
                             headerTokens[3] = "ROM File: " + writeRomFileName;
@@ -949,6 +977,42 @@ namespace GBxCart_RW
 
         private void gbaMode_CheckedChanged(object sender, EventArgs e) {
             cartMode = GBA_CART;
+        }
+    }
+
+    // Code from: https://www.codeproject.com/Articles/18612/TopMost-MessageBox
+    static public class TopMostMessageBox {
+        static public DialogResult Show(string message) {
+            return Show(message, string.Empty, MessageBoxButtons.OK);
+        }
+
+        static public DialogResult Show(string message, string title) {
+            return Show(message, title, MessageBoxButtons.OK);
+        }
+
+        static public DialogResult Show(string message, string title,
+            MessageBoxButtons buttons) {
+            // Create a host form that is a TopMost window which will be the 
+            // parent of the MessageBox.
+            Form topmostForm = new Form();
+            // We do not want anyone to see this window so position it off the 
+            // visible screen and make it as small as possible
+            topmostForm.Size = new System.Drawing.Size(1, 1);
+            topmostForm.StartPosition = FormStartPosition.Manual;
+            System.Drawing.Rectangle rect = SystemInformation.VirtualScreen;
+            topmostForm.Location = new System.Drawing.Point(rect.Bottom + 10,
+                rect.Right + 10);
+            topmostForm.Show();
+            // Make this form the active form and make it TopMost
+            topmostForm.Focus();
+            topmostForm.BringToFront();
+            topmostForm.TopMost = true;
+            // Finally show the MessageBox with the form just created as its owner
+            DialogResult result = MessageBox.Show(topmostForm, message, title,
+                buttons);
+            topmostForm.Dispose(); // clean it up all the way
+
+            return result;
         }
     }
 

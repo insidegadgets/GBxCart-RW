@@ -112,6 +112,9 @@ namespace GBxCart_RW {
                             canWrite = 1;
                             Program.set_mode(Form1.VOLTAGE_3_3V);
                         }
+                        else if (gbxcartPcbVersion == Form1.MINI_PCB_1_0) {
+                            canWrite = 1;
+                        }
 
                         if (canWrite == 1) {
                             Form1.writeRomCartType = 4;
@@ -135,6 +138,9 @@ namespace GBxCart_RW {
                         else if (gbxcartPcbVersion == Form1.PCB_1_3) {
                             canWrite = 1;
                             Program.set_mode(Form1.VOLTAGE_3_3V);
+                        }
+                        else if (gbxcartPcbVersion == Form1.MINI_PCB_1_0) {
+                            canWrite = 1;
                         }
 
                         if (canWrite == 1) {
@@ -178,6 +184,9 @@ namespace GBxCart_RW {
                                 canWrite = 1;
                                 Program.set_mode(Form1.VOLTAGE_3_3V);
                             }
+                            else if (gbxcartPcbVersion == Form1.MINI_PCB_1_0) {
+                                canWrite = 1;
+                            }
 
                             if (canWrite == 1) {
                                 if (flashBankSelectBox.Text == "Bank 1") {
@@ -214,6 +223,9 @@ namespace GBxCart_RW {
                         else if (gbxcartPcbVersion == Form1.PCB_1_3) {
                             canWrite = 1;
                             Program.set_mode(Form1.VOLTAGE_3_3V);
+                        }
+                        else if (gbxcartPcbVersion == Form1.MINI_PCB_1_0) {
+                            canWrite = 1;
                         }
 
                         if (canWrite == 1) {
@@ -564,6 +576,10 @@ namespace GBxCart_RW {
                 chipEraseCheckbox.Checked = false;
                 System.Windows.Forms.MessageBox.Show("Please make sure you have power cycled GBxCart RW before proceeding with Banks 2, 3 & 4.");
             }
+        }
+
+        private void GB_Specify_Info_Load(object sender, EventArgs e) {
+
         }
     }
 }

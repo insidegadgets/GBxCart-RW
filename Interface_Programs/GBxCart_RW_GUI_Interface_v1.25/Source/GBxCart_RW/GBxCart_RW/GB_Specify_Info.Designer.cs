@@ -315,6 +315,7 @@
             this.ShowInTaskbar = false;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
             this.Text = " ";
+            this.Load += new System.EventHandler(this.GB_Specify_Info_Load);
             this.ResumeLayout(false);
             this.PerformLayout();
 

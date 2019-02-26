@@ -28,6 +28,7 @@
             this.AddDateTimeButton = new System.Windows.Forms.Button();
             this.OverwriteButton = new System.Windows.Forms.Button();
             this.CancelButton1 = new System.Windows.Forms.Button();
+            this.saveNameExisting = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
             // label2
@@ -44,18 +45,19 @@
             // 
             this.label11.AutoSize = true;
             this.label11.Font = new System.Drawing.Font("Segoe UI", 9F);
-            this.label11.Location = new System.Drawing.Point(12, 33);
+            this.label11.Location = new System.Drawing.Point(12, 59);
             this.label11.Name = "label11";
             this.label11.Size = new System.Drawing.Size(416, 90);
             this.label11.TabIndex = 100;
             this.label11.Text = "Existing Save Game detected on your PC.\r\n\r\nWould you like to:\r\n- Add the date/tim" +
     "e to the save file name, e.g F1RACE_2018.02.25-15.33.12.sav\r\n- Overwrite the exi" +
     "sting file\r\n- Cancel";
+            this.label11.Click += new System.EventHandler(this.label11_Click);
             // 
             // AddDateTimeButton
             // 
             this.AddDateTimeButton.Font = new System.Drawing.Font("Segoe UI", 9F);
-            this.AddDateTimeButton.Location = new System.Drawing.Point(15, 140);
+            this.AddDateTimeButton.Location = new System.Drawing.Point(15, 166);
             this.AddDateTimeButton.Name = "AddDateTimeButton";
             this.AddDateTimeButton.Size = new System.Drawing.Size(143, 22);
             this.AddDateTimeButton.TabIndex = 101;
@@ -66,7 +68,7 @@
             // OverwriteButton
             // 
             this.OverwriteButton.Font = new System.Drawing.Font("Segoe UI", 9F);
-            this.OverwriteButton.Location = new System.Drawing.Point(212, 140);
+            this.OverwriteButton.Location = new System.Drawing.Point(212, 166);
             this.OverwriteButton.Name = "OverwriteButton";
             this.OverwriteButton.Size = new System.Drawing.Size(67, 22);
             this.OverwriteButton.TabIndex = 102;
@@ -78,7 +80,7 @@
             // 
             this.CancelButton1.DialogResult = System.Windows.Forms.DialogResult.Cancel;
             this.CancelButton1.Font = new System.Drawing.Font("Segoe UI", 9F);
-            this.CancelButton1.Location = new System.Drawing.Point(337, 140);
+            this.CancelButton1.Location = new System.Drawing.Point(337, 166);
             this.CancelButton1.Name = "CancelButton1";
             this.CancelButton1.Size = new System.Drawing.Size(67, 22);
             this.CancelButton1.TabIndex = 103;
@@ -86,12 +88,24 @@
             this.CancelButton1.UseVisualStyleBackColor = true;
             this.CancelButton1.Click += new System.EventHandler(this.CancelButton1_Click);
             // 
+            // saveNameExisting
+            // 
+            this.saveNameExisting.AutoSize = true;
+            this.saveNameExisting.Font = new System.Drawing.Font("Segoe UI", 9F);
+            this.saveNameExisting.Location = new System.Drawing.Point(137, 32);
+            this.saveNameExisting.Name = "saveNameExisting";
+            this.saveNameExisting.Size = new System.Drawing.Size(102, 15);
+            this.saveNameExisting.TabIndex = 104;
+            this.saveNameExisting.Text = "saveNameExisting";
+            this.saveNameExisting.Click += new System.EventHandler(this.saveNameExisting_Click);
+            // 
             // SaveOptions
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(458, 174);
+            this.ClientSize = new System.Drawing.Size(458, 195);
             this.ControlBox = false;
+            this.Controls.Add(this.saveNameExisting);
             this.Controls.Add(this.CancelButton1);
             this.Controls.Add(this.OverwriteButton);
             this.Controls.Add(this.AddDateTimeButton);
@@ -113,5 +127,6 @@
         private System.Windows.Forms.Button AddDateTimeButton;
         private System.Windows.Forms.Button OverwriteButton;
         private System.Windows.Forms.Button CancelButton1;
+        public System.Windows.Forms.Label saveNameExisting;
     }
 }
