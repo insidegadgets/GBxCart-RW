@@ -1,9 +1,9 @@
 /*
  GBxCart RW - Console Interface Flasher
- Version: 1.15
+ Version: 1.16
  Author: Alex from insideGadgets (www.insidegadgets.com)
  Created: 26/08/2017
- Last Modified: 23/12/2018
+ Last Modified: 2/03/2019
  
  This program allows you to write ROM to Flash Carts that are supported.
  
@@ -25,7 +25,7 @@
 
 int main(int argc, char **argv) {
 	
-	printf("GBxCart RW Flasher v1.15 by insideGadgets\n");
+	printf("GBxCart RW Flasher v1.16 by insideGadgets\n");
 	printf("########################################\n");
 	
 	// Check arguments
@@ -960,6 +960,75 @@ int main(int argc, char **argv) {
 			fclose(romFile);
 		}
 		
+		else if (flashCartType == 11) {
+			printf("4 MByte (MX29LV320) Gameboy Flash Cart\n");
+			
+			printf("\nGoing to write to ROM (Flash cart) from %s\n", filenameOnly);
+			
+			currAddr = 0x0000;
+			endAddr = 0x7FFF;
+			
+			// Check file size
+			if (fileSize > 0x400000) {
+				fclose(romFile);
+				printf("\n%s \nFile size is larger than the available Flash cart space of 4 MByte\n", argv[1]);
+				read_one_letter();
+				return 1;
+			}
+			
+			// Calculate banks needed from ROM file size
+			romBanks = fileSize / 16384;
+			
+			// Flash Setup
+			set_mode(GB_CART_MODE); // Gameboy mode
+			gb_flash_pin_setup(WE_AS_WR_PIN); // WR pin
+			gb_flash_program_setup(GB_FLASH_PROGRAM_AAA);// Flash program byte method
+			set_number(0, SET_START_ADDRESS);
+			
+			// Chip erase
+			printf("\nErasing Flash ");
+			gb_flash_write_address_byte(0xAAA, 0xAA);
+			gb_flash_write_address_byte(0x555, 0x55);
+			gb_flash_write_address_byte(0xAAA, 0x80);
+			gb_flash_write_address_byte(0xAAA, 0xAA);
+			gb_flash_write_address_byte(0x555, 0x55);
+			gb_flash_write_address_byte(0xAAA, 0x10);
+			
+			// Wait for first byte to be 0xFF
+			wait_for_flash_chip_erase_ff();
+			
+			
+			printf("\n\nWriting to ROM (Flash cart) from %s\n", filenameOnly);
+			printf("[             25%%             50%%             75%%            100%%]\n[");
+			
+			// Write ROM
+			currAddr = 0x0000;
+			for (uint16_t bank = 1; bank < romBanks; bank++) {				
+				if (bank > 1) { currAddr = 0x4000; }
+				
+				// Set start address
+				set_number(currAddr, SET_START_ADDRESS);
+				
+				// Read data
+				while (currAddr < endAddr) {
+					if (currAddr == 0x4000) { // Switch banks here just before the next bank, not any time sooner
+						set_bank(0x2100, bank);
+					}
+					
+					com_write_bytes_from_file(GB_FLASH_WRITE_64BYTE, romFile, 64);
+					com_wait_for_ack();
+					currAddr += 64;
+					readBytes += 64;
+					
+					// Print progress
+					print_progress_percent(readBytes, (romBanks * 16384) / 64);
+				}
+			}
+			
+			printf("]");
+			fclose(romFile);
+		}
+		
 		
 		// ****** GBA Flash Carts ******
 		else if (flashCartType == 20) {
@@ -1308,7 +1377,8 @@ int main(int argc, char **argv) {
 					 "7. 32 MByte (4x 8MB Banks) (256M29)\n"\
 					 "8. 4 MByte (M29W640)\n"\
 					 "9. 64 MByte Mighty Flash Cart\n"\
-					 "10. 64 MByte Mighty Flash Cart Buffered (Experimental)\n\n"\
+					 "10. 64 MByte Mighty Flash Cart Buffered (Experimental)\n"\
+					 "11. 4 MByte (MX29LV320)\n\n"\
 					 "--- Gameboy Advance ---\n"\
 					 "20. 16 MByte (MSP55LV128 / 29LV128DTMC)\n"\
 					 "21. 16 MByte (MSP55LV128M / 29GL128EHMC / 256M29EWH)\n"\

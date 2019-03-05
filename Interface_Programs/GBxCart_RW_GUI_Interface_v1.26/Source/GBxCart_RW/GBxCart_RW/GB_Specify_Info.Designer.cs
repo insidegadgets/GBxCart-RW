@@ -202,13 +202,14 @@
             "32KB SST39SF010A",
             "32KB AT49F040",
             "512KB SST39SF040",
-            "2MB BV5",
             "1MB ES29LV160",
+            "2MB BV5",
             "2MB AM29LV160DB",
             "2MB 29LV160CTTC",
             "2MB 29LV160TE",
             "2MB AM29F016B",
             "4MB M29W640",
+            "4MB MX29LV320",
             "32MB 256M29"});
             this.gbflashchipbox.Location = new System.Drawing.Point(349, 38);
             this.gbflashchipbox.Name = "gbflashchipbox";

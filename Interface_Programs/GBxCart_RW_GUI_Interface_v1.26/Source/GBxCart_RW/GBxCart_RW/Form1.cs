@@ -1,10 +1,10 @@
 ﻿/*
 
 GBxCart RW - GUI  Interface
-Version : 1.23
+Version : 1.26
 Author : Alex from insideGadgets(www.insidegadgets.com)
 Created : 7 / 11 / 2016
-Last Modified : 4 / 12 / 2018
+Last Modified : 2 / 03 / 2018
 
 GBxCart RW allows you to dump your Gameboy / Gameboy Colour / Gameboy Advance games ROM, save the RAM and write to the RAM.
 
@@ -343,7 +343,7 @@ namespace GBxCart_RW
                 else if (commandReceived == WRITEROM) { // Write ROM
                     // First erase the flash chip if needed or if selected
                     if (chipEraseSelected == 1) {
-                        if (writeRomCartType == 2 || writeRomCartType == 4 || writeRomCartType == 5 || writeRomCartType == 6 || writeRomCartType == 7 || writeRomCartType == 8 || writeRomCartType == 9 || writeRomCartType == 10 || writeRomCartType == 14) {
+                        if (writeRomCartType == 2 || writeRomCartType == 4 || writeRomCartType == 5 || writeRomCartType == 6 || writeRomCartType == 7 || writeRomCartType == 8 || writeRomCartType == 9 || writeRomCartType == 10 || writeRomCartType == 14 || writeRomCartType == 17) {
                             Program.erase_rom(writeRomCartType, ref progress, ref cancelOperation);
                             
                             if (cancelOperation == 1) {

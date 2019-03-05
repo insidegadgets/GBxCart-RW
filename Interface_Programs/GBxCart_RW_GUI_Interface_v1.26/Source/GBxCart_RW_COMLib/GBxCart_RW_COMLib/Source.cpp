@@ -2611,6 +2611,18 @@ __declspec(dllexport) int erase_rom(uint8_t cartType, uint32_t &progress, uint8_
 		gb_flash_write_address_byte(0x555, 0x56);
 		gb_flash_write_address_byte(0xAAA, 0x10);
 	}
+	else if (cartType == 17) { // 4 MByte (MX29LV320) GB Flash Cart
+		set_mode(GB_CART_MODE); // Gameboy mode
+		gb_flash_pin_setup(WE_AS_WR_PIN); // WR pin
+		gb_flash_program_setup(GB_FLASH_PROGRAM_AAA); // Flash program byte method
+
+		gb_flash_write_address_byte(0xAAA, 0xAA);
+		gb_flash_write_address_byte(0x555, 0x55);
+		gb_flash_write_address_byte(0xAAA, 0x80);
+		gb_flash_write_address_byte(0xAAA, 0xAA);
+		gb_flash_write_address_byte(0x555, 0x55);
+		gb_flash_write_address_byte(0xAAA, 0x10);
+	}
 	
 
 	// Wait for first byte to be 0xFF
@@ -2707,7 +2719,7 @@ __declspec(dllexport) int write_rom(char* fileName, uint8_t flashCartType, uint3
 	}
 
 	// Other GB Flash Carts
-	else if (flashCartType == 2 || flashCartType == 4 || flashCartType == 5 || flashCartType == 8 || flashCartType == 9 || flashCartType == 14) {
+	else if (flashCartType == 2 || flashCartType == 4 || flashCartType == 5 || flashCartType == 8 || flashCartType == 9 || flashCartType == 14 || flashCartType == 17) {
 		currAddr = 0x0000;
 		endAddr = 0x7FFF;
 
@@ -2750,6 +2762,12 @@ __declspec(dllexport) int write_rom(char* fileName, uint8_t flashCartType, uint3
 			set_mode(GB_CART_MODE); // Gameboy mode
 			gb_flash_pin_setup(WE_AS_WR_PIN); // WR pin
 			gb_flash_program_setup(GB_FLASH_PROGRAM_AAA_BIT01_SWAPPED);// Flash program byte method
+		}
+		// 4 MByte (MX29LV320) GB Flash Cart
+		else if (flashCartType == 17) {
+			set_mode(GB_CART_MODE); // Gameboy mode
+			gb_flash_pin_setup(WE_AS_WR_PIN); // WR pin
+			gb_flash_program_setup(GB_FLASH_PROGRAM_AAA);// Flash program byte method
 		}
 
 		// Write ROM

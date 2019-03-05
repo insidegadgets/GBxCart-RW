@@ -262,6 +262,19 @@ namespace GBxCart_RW {
                             Form1.headerTokens[4] = "";
                         }
                     }
+                    else if (gbflashchipbox.Text == "4MB MX29LV320") {
+                        if (gbxcartFirmwareVersion <= 11) {
+                            Functions.MessageBoxHelper.PrepToCenterMessageBoxOnForm(this);
+                            System.Windows.Forms.MessageBox.Show("Please update to Firmware R12 or higher to support this function.");
+                        }
+                        else {
+                            Form1.writeRomCartType = 17;
+                            Form1.writeRomCartSize = 0x4000000;
+                            Form1.headerTokens[0] = "MX29LV320 GB Flash Cart";
+                            Form1.headerTokens[3] = "Choose a ROM file to write";
+                            Form1.headerTokens[4] = "";
+                        }
+                    }
                 }
             }
 
@@ -542,6 +555,17 @@ namespace GBxCart_RW {
                 gbflashwebox.Visible = false;
                 chipEraseCheckbox.Visible = false;
                 chipEraseCheckbox.Checked = false;
+                flashBankSelectBox.Visible = false;
+                flashBankLabel.Visible = false;
+            }
+            else if (gbflashchipbox.Text == "4MB MX29LV320") {
+                romsizebox.Text = "4MByte (256 banks)";
+                ramsizebox.Text = "32KB/128 KBytes";
+                gbflashpcbbox.Text = "insideGadgets";
+                gbflashwelabel.Visible = false;
+                gbflashwebox.Visible = false;
+                chipEraseCheckbox.Visible = true;
+                chipEraseCheckbox.Checked = true;
                 flashBankSelectBox.Visible = false;
                 flashBankLabel.Visible = false;
             }
