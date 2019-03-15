@@ -177,9 +177,14 @@
       <Install>true</Install>
     </BootstrapperPackage>
   </ItemGroup>
-  <ItemGroup />
   <ItemGroup>
     <None Include="Resources\!!Final Untitled-8.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\usb-on-16.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\usb-off.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

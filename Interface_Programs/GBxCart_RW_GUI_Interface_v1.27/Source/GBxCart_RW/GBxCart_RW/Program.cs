@@ -49,7 +49,7 @@ namespace GBxCart_RW
         public static extern int read_config(int type);
 
         [DllImport(dllLocation, CallingConvention = CallingConvention.Cdecl)]
-        public static extern void update_config(int comport, Int32 baudrate, int alwaysAddDateTimeToSave, int promptForRestoreSaveFile);
+        public static extern void update_config(int comport, Int32 baudrate, int alwaysAddDateTimeToSave, int promptForRestoreSaveFile, int reReadCartHeader);
 
         [DllImport(dllLocation, CallingConvention = CallingConvention.Cdecl)]
         public static extern void gb_specify_rom_size(int size);

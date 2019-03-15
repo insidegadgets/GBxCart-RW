@@ -164,10 +164,11 @@ uint8_t nintendoLogoGBA[] = { 0x24, 0xFF, 0xAE, 0x51, 0x69, 0x9A, 0xA2, 0x21, 0x
 __declspec(dllexport) int read_config(int type) {
 	int alwaysAddDateTimeToSave = 0;
 	int promptForRestoreSaveFile = 0;
+	int reReadCartHeader = 0;
 
 	FILE *configfile = fopen("config.ini", "rt");
 	if (configfile != NULL) {
-		if (fscanf(configfile, "%d\n%d\n%d\n%d", &cport_nr, &bdrate, &alwaysAddDateTimeToSave, &promptForRestoreSaveFile) > 4) {
+		if (fscanf(configfile, "%d\n%d\n%d\n%d\n%d", &cport_nr, &bdrate, &alwaysAddDateTimeToSave, &promptForRestoreSaveFile, &reReadCartHeader) > 5) {
 			fprintf(stderr, "Config file is corrupt\n");
 		}
 		fclose(configfile);
@@ -188,19 +189,21 @@ __declspec(dllexport) int read_config(int type) {
 	else if (type == 4) {
 		return promptForRestoreSaveFile;
 	}
-
+	else if (type == 5) {
+		return reReadCartHeader;
+	}
 
 	return 0;
 }
 
 // Update config file if com port or baudrate is changed
-__declspec(dllexport) void update_config(int comport, INT32 baudrate, int alwaysAddDateTimeToSave, int promptForRestoreSaveFile) {
+__declspec(dllexport) void update_config(int comport, INT32 baudrate, int alwaysAddDateTimeToSave, int promptForRestoreSaveFile, int reReadCartHeader) {
 	cport_nr = comport;
 	bdrate = baudrate;
 
 	FILE *configfile = fopen("config.ini", "wt");
 	if (configfile != NULL) {
-		fprintf(configfile, "%d\n%d\n%d\n%d\n", cport_nr+1, bdrate, alwaysAddDateTimeToSave, promptForRestoreSaveFile);
+		fprintf(configfile, "%d\n%d\n%d\n%d\n%d\n", cport_nr+1, bdrate, alwaysAddDateTimeToSave, promptForRestoreSaveFile, reReadCartHeader);
 		fclose(configfile);
 	}
 }

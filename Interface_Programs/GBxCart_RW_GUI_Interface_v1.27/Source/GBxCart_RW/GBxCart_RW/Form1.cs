@@ -72,6 +72,7 @@ namespace GBxCart_RW
         string writeSaveFileName;
         int alwaysAddDateTimeToSave = 0;
         int promptForRestoreSaveFile = 0;
+        int reReadCartHeader = 0;
         public static int writeRomCartType = 0;
         public static UInt32 writeRomCartSize = 0;
         public static UInt32 writeRomSize = 0;
@@ -98,13 +99,17 @@ namespace GBxCart_RW
             baudtextBox.Text = Convert.ToString(Program.read_config(2));
             alwaysAddDateTimeToSave = Program.read_config(3);
             promptForRestoreSaveFile = Program.read_config(4);
-            
+            reReadCartHeader = Program.read_config(5);
+
             // Update menu text if set
             if (alwaysAddDateTimeToSave == 1) {
                 alwaysAddDatetimeToSaveGamesYesToolStripMenuItem.Text = "Always add date/time to backed up Save Game files: Yes";
             }
             if (promptForRestoreSaveFile == 1) {
                 promptForFileToolStripMenuItem.Text = "Always prompt for Save Game file when restoring: Yes";
+            }
+            if (reReadCartHeader == 1) {
+                alwaysRereadHeaToolStripMenuItem.Text = "Always re-read cart info when backing up save: Yes";
             }
 
             // Load default directory
@@ -264,6 +269,20 @@ namespace GBxCart_RW
                             
                             statuslabel.Invoke((MethodInvoker)(() => {
                                 statuslabel.Text = "Device disconnected"; 
+                            }));
+
+                            // Change icon/buttons
+                            usbStatusPictureOff.Invoke((MethodInvoker)(() => {
+                                usbStatusPictureOff.Visible = true;
+                            }));
+                            usbStatusPictureOn.Invoke((MethodInvoker)(() => {
+                                usbStatusPictureOn.Visible = false;
+                            }));
+                            openportbutton.Invoke((MethodInvoker)(() => {
+                                openportbutton.Visible = true;
+                            }));
+                            closeportbutton.Invoke((MethodInvoker)(() => {
+                                closeportbutton.Visible = false;
                             }));
 
                             break;
@@ -478,7 +497,7 @@ namespace GBxCart_RW
             else {
                 // Try opening the port
                 if (Program.RS232_OpenComport(comPortInt, baudInt, "8N1") == 0) { // Port opened
-                    Program.update_config(comPortInt, baudInt, alwaysAddDateTimeToSave, promptForRestoreSaveFile);
+                    Program.update_config(comPortInt, baudInt, alwaysAddDateTimeToSave, promptForRestoreSaveFile, reReadCartHeader);
 
                     // See if device responds correctly
                     Program.set_mode('0');
@@ -495,7 +514,7 @@ namespace GBxCart_RW
                     for (int x = 0; x < 16; x++) {
                         if (Program.RS232_OpenComport(x, baudInt, "8N1") == 0) { // Port opened
                             comPortInt = x;
-                            Program.update_config(comPortInt, baudInt, alwaysAddDateTimeToSave, promptForRestoreSaveFile);
+                            Program.update_config(comPortInt, baudInt, alwaysAddDateTimeToSave, promptForRestoreSaveFile, reReadCartHeader);
 
                             // See if device responds correctly
                             Program.set_mode('0');
@@ -522,7 +541,7 @@ namespace GBxCart_RW
                 backgroundWorker1.ReportProgress(0);
                 
                 // Update config
-                Program.update_config(comPortInt, baudInt, alwaysAddDateTimeToSave, promptForRestoreSaveFile);
+                Program.update_config(comPortInt, baudInt, alwaysAddDateTimeToSave, promptForRestoreSaveFile, reReadCartHeader);
 
                 // Read PCB version
                 gbxcartPcbVersion = Program.request_value(Form1.READ_PCB_VERSION);
@@ -568,6 +587,12 @@ namespace GBxCart_RW
                     firmwareText.Text = "R" + firmwareVersion;
                     firmwareText.Visible = true;
                 }
+
+                // Change icon/buttons
+                usbStatusPictureOff.Visible = false;
+                usbStatusPictureOn.Visible = true;
+                openportbutton.Visible = false;
+                closeportbutton.Visible = true;
             }
             else {
                 comPortTextBox.BackColor = Color.FromArgb(255, 192, 192);
@@ -590,7 +615,13 @@ namespace GBxCart_RW
             headerRead = false;
             progress = 0;
             backgroundWorker1.ReportProgress(0);
-            
+
+            // Change icon/buttons
+            usbStatusPictureOff.Visible = true;
+            usbStatusPictureOn.Visible = false;
+            openportbutton.Visible = true;
+            closeportbutton.Visible = false;
+
             firmwareText.Visible = false;
         }
 
@@ -634,7 +665,7 @@ namespace GBxCart_RW
 
         // Save ram button 
         private void saverambutton_Click(object sender, EventArgs e) {
-            if (comConnected == true && commandReceived == 0) {
+            if (comConnected == true && commandReceived == 0 && reReadCartHeader == 1) {
                 progress = 0;
                 backgroundWorker1.ReportProgress(0);
 
@@ -943,7 +974,7 @@ namespace GBxCart_RW
             int comPortInt = Convert.ToInt32(comPortTextBox.Text);
             Int32 baudInt = Convert.ToInt32(baudtextBox.Text);
             comPortInt--;
-            Program.update_config(comPortInt, baudInt, alwaysAddDateTimeToSave, promptForRestoreSaveFile);
+            Program.update_config(comPortInt, baudInt, alwaysAddDateTimeToSave, promptForRestoreSaveFile, reReadCartHeader);
         }
 
         private void promptForFileToolStripMenuItem_Click(object sender, EventArgs e) {
@@ -960,7 +991,7 @@ namespace GBxCart_RW
             int comPortInt = Convert.ToInt32(comPortTextBox.Text);
             Int32 baudInt = Convert.ToInt32(baudtextBox.Text);
             comPortInt--;
-            Program.update_config(comPortInt, baudInt, alwaysAddDateTimeToSave, promptForRestoreSaveFile);
+            Program.update_config(comPortInt, baudInt, alwaysAddDateTimeToSave, promptForRestoreSaveFile, reReadCartHeader);
         }
 
         private void optionsToolStripMenuItem_Click(object sender, EventArgs e) {
@@ -977,6 +1008,31 @@ namespace GBxCart_RW
 
         private void gbaMode_CheckedChanged(object sender, EventArgs e) {
             cartMode = GBA_CART;
+        }
+
+        private void pictureBox1_Click(object sender, EventArgs e) {
+
+        }
+
+        private void pictureBox1_Click_1(object sender, EventArgs e) {
+
+        }
+
+        private void alwaysRereadHeaToolStripMenuItem_Click(object sender, EventArgs e) {
+            if (reReadCartHeader == 0) {
+                alwaysRereadHeaToolStripMenuItem.Text = "Always re-read cart info when backing up save: Yes";
+                reReadCartHeader = 1;
+            }
+            else {
+                alwaysRereadHeaToolStripMenuItem.Text = "Always re-read cart info when backing up save: No";
+                reReadCartHeader = 0;
+            }
+
+            // Update config
+            int comPortInt = Convert.ToInt32(comPortTextBox.Text);
+            Int32 baudInt = Convert.ToInt32(baudtextBox.Text);
+            comPortInt--;
+            Program.update_config(comPortInt, baudInt, alwaysAddDateTimeToSave, promptForRestoreSaveFile, reReadCartHeader);
         }
     }
 
