@@ -962,9 +962,13 @@ int main(int argc, char **argv) {
 		
 		else if (flashCartType == 11) {
 			printf("4 MByte (MX29LV320) Gameboy Flash Cart\n");
-			
 			printf("\nGoing to write to ROM (Flash cart) from %s\n", filenameOnly);
 			
+			// PCB v1.3 - Set 5V
+			if (gbxcartPcbVersion == PCB_1_3) {
+				set_mode(VOLTAGE_5V);
+				delay_ms(100);
+			}
 			currAddr = 0x0000;
 			endAddr = 0x7FFF;
 			

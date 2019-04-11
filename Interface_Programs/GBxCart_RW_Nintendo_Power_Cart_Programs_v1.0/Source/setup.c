@@ -1,9 +1,9 @@
 /*
- GBxCart RW - Console Interface Flasher
- Version: 1.16
+ GBxCart RW - Nintendo Power Cart
+ Version: 1.0
  Author: Alex from insideGadgets (www.insidegadgets.com)
- Created: 26/08/2017
- Last Modified: 2/03/2019
+ Created: 20/03/2019
+ Last Modified: 26/03/2019
  
  */
 
@@ -21,6 +21,10 @@
 #endif
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <string.h>
+#include <time.h>
 #include "setup.h"
 
 // COM Port settings (default)
@@ -48,12 +52,11 @@ int eepromSize = 0;
 uint16_t eepromEndAddress = 0;
 int hasFlashSave = 0;
 uint8_t cartridgeMode = GB_MODE;
-int flashCartType = 0;
 
-uint8_t nintendoLogo[] = {0xCE, 0xED, 0x66, 0x66, 0xCC, 0x0D, 0x00, 0x0B, 0x03, 0x73, 0x00, 0x83, 0x00, 0x0C, 0x00, 0x0D,
+static const uint8_t nintendoLogo[] = {0xCE, 0xED, 0x66, 0x66, 0xCC, 0x0D, 0x00, 0x0B, 0x03, 0x73, 0x00, 0x83, 0x00, 0x0C, 0x00, 0x0D,
 									0x00, 0x08, 0x11, 0x1F, 0x88, 0x89, 0x00, 0x0E, 0xDC, 0xCC, 0x6E, 0xE6, 0xDD, 0xDD, 0xD9, 0x99,
 									0xBB, 0xBB, 0x67, 0x63, 0x6E, 0x0E, 0xEC, 0xCC, 0xDD, 0xDC, 0x99, 0x9F, 0xBB, 0xB9, 0x33, 0x3E};
-uint8_t nintendoLogoGBA[] = {0x24, 0xFF, 0xAE, 0x51, 0x69, 0x9A, 0xA2, 0x21, 0x3D, 0x84, 0x82, 0x0A, 0x84, 0xE4, 0x09, 0xAD, 
+static const uint8_t nintendoLogoGBA[] = {0x24, 0xFF, 0xAE, 0x51, 0x69, 0x9A, 0xA2, 0x21, 0x3D, 0x84, 0x82, 0x0A, 0x84, 0xE4, 0x09, 0xAD,
 										0x11, 0x24, 0x8B, 0x98, 0xC0, 0x81, 0x7F, 0x21, 0xA3, 0x52, 0xBE, 0x19, 0x93, 0x09, 0xCE, 0x20,
 										0x10, 0x46, 0x4A, 0x4A, 0xF8, 0x27, 0x31, 0xEC, 0x58, 0xC7, 0xE8, 0x33, 0x82, 0xE3, 0xCE, 0xBF, 
 										0x85, 0xF4, 0xDF, 0x94, 0xCE, 0x4B, 0x09, 0xC1, 0x94, 0x56, 0x8A, 0xC0, 0x13, 0x72, 0xA7, 0xFC, 
@@ -63,20 +66,25 @@ uint8_t nintendoLogoGBA[] = {0x24, 0xFF, 0xAE, 0x51, 0x69, 0x9A, 0xA2, 0x21, 0x3
 										0xA9, 0x63, 0xBE, 0x03, 0x01, 0x4E, 0x38, 0xE2, 0xF9, 0xA2, 0x34, 0xFF, 0xBB, 0x3E, 0x03, 0x44, 
 										0x78, 0x00, 0x90, 0xCB, 0x88, 0x11, 0x3A, 0x94, 0x65, 0xC0, 0x7C, 0x63, 0x87, 0xF0, 0x3C, 0xAF, 
 										0xD6, 0x25, 0xE4, 0x8B, 0x38, 0x0A, 0xAC, 0x72, 0x21, 0xD4, 0xF8, 0x07};
-
+uint8_t npHiddenRegister[256] = {0xA8, 0x00, 0x00, 0x28, 0x04, 0x00, 0x31, 0x08, 0x00, 0x2D, 0x18, 0x04, 0xFF, 
+	0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 
+	0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 
+	0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 
+	0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 
+	0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 
+	0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x04, 0x00, 0x30, 0x28, 0x99, 0x12, 0x23, 0x07, 0x42, 0x49, 0xFF, 
+	0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 
+	0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 
+	0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 
+	0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 
+	0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 
+	0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 
+	0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 
+	0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 
 // Read the config.ini file for the COM port to use and baud rate
 void read_config(void) {
-	char configFilePath[253];
-	
-#if defined(__linux__) || defined(__FreeBSD__) || defined(__APPLE__)
-	strncpy(configFilePath, "config.ini", 11);
-#else
-	strncpy(configFilePath, getenv("USERPROFILE"), 200);
-	strncat(configFilePath, "\\gbxcart-config.ini", 20);
-#endif
-
-	FILE* configfile = fopen (configFilePath , "rt");
+	FILE* configfile = fopen ("config.ini" , "rt");
 	if (configfile != NULL) {
 		if (fscanf(configfile, "%d\n%d", &cport_nr, &bdrate) != 2) {
 			fprintf(stderr, "Config file is corrupt\n");
@@ -93,16 +101,7 @@ void read_config(void) {
 
 // Write the config.ini file for the COM port to use and baud rate
 void write_config(void) {
-	char configFilePath[253];
-	
-#if defined(__linux__) || defined(__FreeBSD__) || defined(__APPLE__)
-	strncpy(configFilePath, "config.ini", 11);
-#else
-	strncpy(configFilePath, getenv("USERPROFILE"), 200);
-	strncat(configFilePath, "\\gbxcart-config.ini", 20);
-#endif
-	
-	FILE *configfile = fopen(configFilePath, "wt");
+	FILE *configfile = fopen("config.ini", "wt");
 	if (configfile != NULL) {
 		fprintf(configfile, "%d\n%d\n", cport_nr+1, bdrate);
 		fclose(configfile);
@@ -197,13 +196,13 @@ void com_wait_for_ack (void) {
 }
 
 // Stop reading blocks of data
-void com_read_stop(void) {
+void com_read_stop() {
 	RS232_cputs(cport_nr, "0"); // Stop read
 	RS232_drain(cport_nr);
 }
 
 // Continue reading the next block of data
-void com_read_cont(void) {
+void com_read_cont() {
 	RS232_cputs(cport_nr, "1"); // Continue read
 	RS232_drain(cport_nr);
 }
@@ -247,10 +246,16 @@ uint8_t com_test_port(void) {
 // Read 1 to 256 bytes from the COM port and write it to the global read buffer or to a file if specified. 
 // When polling the com port it return less than the bytes we want, keep polling and wait until we have all bytes requested. 
 // We expect no more than 256 bytes.
-void com_read_bytes (FILE *file, int count) {
+uint16_t com_read_bytes (FILE *file, int count) {
 	uint8_t buffer[257];
-	uint8_t rxBytes = 0;
-	int readBytes = 0;
+	uint16_t rxBytes = 0;
+	uint16_t readBytes = 0;
+	
+	#if defined(__APPLE__)
+	uint8_t timeout = 0;
+	#else
+	uint16_t timeout = 0;
+	#endif
 	
 	while (readBytes < count) {
 		rxBytes = RS232_PollComport(cport_nr, buffer, 64);
@@ -267,7 +272,24 @@ void com_read_bytes (FILE *file, int count) {
 			
 			readBytes += rxBytes;
 		}
+		#if defined(__APPLE__)
+		else {
+			delay_ms(5);
+			timeout++;
+			if (timeout >= 50) {
+				return readBytes;
+			}
+		}
+		#else
+		else {
+			timeout++;
+			if (timeout >= 20000) {
+				return readBytes;
+			}
+		}
+		#endif
 	}
+	return readBytes;
 }
 
 // Read 1-256 bytes from the file (or buffer) and write it the COM port with the command given
@@ -282,7 +304,7 @@ void com_write_bytes_from_file(uint8_t command, FILE *file, int count) {
 		fread(&buffer[1], 1, count, file);
 	}
 	
-	RS232_SendBuf(cport_nr, buffer, (count + 1)); // command + 1-256 bytes
+	RS232_SendBuf(cport_nr, buffer, (count + 1)); // command + 1-128 bytes
 	RS232_drain(cport_nr);
 }
 
@@ -293,6 +315,10 @@ void set_mode (char command) {
 	
 	RS232_cputs(cport_nr, modeString);
 	RS232_drain(cport_nr);
+	
+	#if defined(__APPLE__) // Delay a bit on Apple Macs
+	delay_ms(5);
+	#endif
 }
 
 // Send a command with a hex number and a null terminator byte
@@ -303,6 +329,10 @@ void set_number (uint32_t number, uint8_t command) {
 	RS232_cputs(cport_nr, numberString);
 	RS232_SendByte(cport_nr, 0);
 	RS232_drain(cport_nr);
+	
+	#if defined(__APPLE__) // Delay a bit on Apple Macs
+	delay_ms(5);
+	#endif
 }
 
 // Send a single hex byte and wait for ACK back
@@ -314,7 +344,6 @@ void send_hex_wait_ack (uint16_t hex) {
 	RS232_drain(cport_nr);
 	com_wait_for_ack();
 }
-
 
 // Read the cartridge mode
 uint8_t read_cartridge_mode (void) {
@@ -396,8 +425,9 @@ void mbc2_fix (void) {
 	com_read_stop();
 }
 
+
 // Read the first 384 bytes of ROM and process the Gameboy header information
-void read_gb_header (void) {
+uint8_t check_for_valid_nintendo_logo (void) {
 	currAddr = 0x0000;
 	endAddr = 0x0180;
 	
@@ -406,12 +436,27 @@ void read_gb_header (void) {
 	
 	uint8_t startRomBuffer[385];
 	while (currAddr < endAddr) {
-		com_read_bytes(READ_BUFFER, 64);
-		memcpy(&startRomBuffer[currAddr], readBuffer, 64);
-		currAddr += 64;
+		uint8_t comReadBytes = com_read_bytes(READ_BUFFER, 64);
 		
-		if (currAddr < endAddr) {
-			com_read_cont();
+		if (comReadBytes == 64) {
+			memcpy(&startRomBuffer[currAddr], readBuffer, 64);
+			currAddr += 64;
+			
+			// Request 64 bytes more
+			if (currAddr < endAddr) {
+				com_read_cont();
+			}
+		}
+		else { // Didn't receive 64 bytes, usually this only happens for Apple MACs
+			com_read_stop();
+			delay_ms(500);
+			
+			// Flush buffer
+			RS232_PollComport(cport_nr, readBuffer, 64);											
+			
+			// Start off where we left off
+			set_number(currAddr, SET_START_ADDRESS);
+			set_mode(READ_ROM_RAM);				
 		}
 	}
 	com_read_stop();
@@ -423,13 +468,95 @@ void read_gb_header (void) {
 	// Read cartridge title and check for non-printable text
 	for (uint16_t titleAddress = 0x0134; titleAddress <= 0x143; titleAddress++) {
 		char headerChar = startRomBuffer[titleAddress];
-		if ((headerChar >= 0x30 && headerChar <= 0x57) || // 0-9
+		if ((headerChar >= 0x30 && headerChar <= 0x39) || // 0-9
 			 (headerChar >= 0x41 && headerChar <= 0x5A) || // A-Z
 			 (headerChar >= 0x61 && headerChar <= 0x7A) || // a-z
+			 (headerChar >= 0x24 && headerChar <= 0x29) || // #$%&'()
 			 (headerChar == 0x2E) || // .
 			 (headerChar == 0x5F) || // _
 			 (headerChar == 0x20)) { // Space
 			gameTitle[(titleAddress-0x0134)] = headerChar;
+		}
+		// Replace with an underscore
+		else if (headerChar == 0x3A) { //  : 
+			gameTitle[(titleAddress - 0x0134)] = '_';
+		}
+		else {
+			gameTitle[(titleAddress-0x0134)] = '\0';
+			break;
+		}
+	}
+	
+	// Nintendo Logo Check
+	uint8_t logoCheck = 1;
+	for (uint16_t logoAddress = 0x0104; logoAddress <= 0x133; logoAddress++) {
+		if (nintendoLogo[(logoAddress-0x0104)] != startRomBuffer[logoAddress]) {
+			logoCheck = 0;
+			break;
+		}
+	}
+	if (logoCheck == 1) {
+		return 1;
+	}
+	else {
+		return 0;
+	}
+}
+
+// Read the first 384 bytes of ROM and process the Gameboy header information
+void read_gb_header (void) {
+	currAddr = 0x0000;
+	endAddr = 0x0180;
+	
+	set_number(currAddr, SET_START_ADDRESS);
+	set_mode(READ_ROM_RAM);
+	
+	uint8_t startRomBuffer[385];
+	while (currAddr < endAddr) {
+		uint8_t comReadBytes = com_read_bytes(READ_BUFFER, 64);
+		
+		if (comReadBytes == 64) {
+			memcpy(&startRomBuffer[currAddr], readBuffer, 64);
+			currAddr += 64;
+			
+			// Request 64 bytes more
+			if (currAddr < endAddr) {
+				com_read_cont();
+			}
+		}
+		else { // Didn't receive 64 bytes, usually this only happens for Apple MACs
+			com_read_stop();
+			delay_ms(500);
+			
+			// Flush buffer
+			RS232_PollComport(cport_nr, readBuffer, 64);											
+			
+			// Start off where we left off
+			set_number(currAddr, SET_START_ADDRESS);
+			set_mode(READ_ROM_RAM);				
+		}
+	}
+	com_read_stop();
+	
+	// Blank out game title
+	for (uint8_t b = 0; b < 16; b++) {
+		gameTitle[b] = 0;
+	}
+	// Read cartridge title and check for non-printable text
+	for (uint16_t titleAddress = 0x0134; titleAddress <= 0x143; titleAddress++) {
+		char headerChar = startRomBuffer[titleAddress];
+		if ((headerChar >= 0x30 && headerChar <= 0x39) || // 0-9
+			 (headerChar >= 0x41 && headerChar <= 0x5A) || // A-Z
+			 (headerChar >= 0x61 && headerChar <= 0x7A) || // a-z
+			 (headerChar >= 0x24 && headerChar <= 0x29) || // #$%&'()
+			 (headerChar == 0x2E) || // .
+			 (headerChar == 0x5F) || // _
+			 (headerChar == 0x20)) { // Space
+			gameTitle[(titleAddress-0x0134)] = headerChar;
+		}
+		// Replace with an underscore
+		else if (headerChar == 0x3A) { //  : 
+			gameTitle[(titleAddress - 0x0134)] = '_';
 		}
 		else {
 			gameTitle[(titleAddress-0x0134)] = '\0';
@@ -457,6 +584,7 @@ void read_gb_header (void) {
 	if (ramSize == 5) { ramBanks = 8; }
 	
 	// RAM end address
+	ramEndAddress = 0;
 	if (cartridgeType == 6) { ramEndAddress = 0xA1FF; } // MBC2 512bytes (nibbles)
 	if (ramSize == 1) { ramEndAddress = 0xA7FF; } // 2K RAM
 	if (ramSize > 1) { ramEndAddress = 0xBFFF; } // 8K RAM
@@ -600,6 +728,7 @@ uint8_t gba_check_rom_size (void) {
 		
 		if (x % 10 == 0) {
 			printf(".");
+			fflush(stdout);
 		}
 	}
 	
@@ -662,6 +791,7 @@ uint8_t gba_test_sram_flash_write (void) {
 		printf("Flash found\n");
 		
 		set_mode(GBA_FLASH_READ_ID); // Read Flash ID and exit Flash ID mode
+		delay_ms(100);
 		
 		uint8_t idBuffer[2];
 		com_read_bytes(READ_BUFFER, 2);
@@ -700,7 +830,7 @@ uint8_t gba_test_sram_flash_write (void) {
 			delay_ms(5);
 			
 			// V1.1 PCB
-			if (gbxcartPcbVersion == PCB_1_1) {
+			if (gbxcartPcbVersion == PCB_1_1 || gbxcartPcbVersion == PCB_1_3) {
 				RS232_cputs(cport_nr, "LD0x40"); // WE low
 				RS232_SendByte(cport_nr, 0);
 				RS232_drain(cport_nr);
@@ -791,6 +921,7 @@ uint8_t gba_check_sram_flash (void) {
 		// Progress
 		if (x % 10 == 0) {
 			printf(".");
+			fflush(stdout);
 		}
 	}
 	
@@ -853,8 +984,10 @@ uint8_t gba_check_sram_flash (void) {
 		// Progress
 		if (x % 10 == 0) {
 			printf(".");
+			fflush(stdout);
 		}
 	}
+	
 	if (duplicateCount >= 2000) {
 		return SRAM_FLASH_256KBIT;
 	}
@@ -958,13 +1091,18 @@ uint8_t gba_check_eeprom (void) {
 		if (currAddr < endAddr) {
 			com_read_cont();
 		}
+		
+		if (currAddr % 20 == 0) {
+			printf(".");
+			fflush(stdout);
+		}
 	}
 	com_read_stop();
 	
 	if (zeroTotal >= 512) { // Blank, likely no EEPROM
 		return EEPROM_NONE;
 	}
-	if (repeatedCount >= 300) { // Likely a 4K EEPROM is present
+	if (repeatedCount >= 400) { // Likely a 4K EEPROM is present
 		return EEPROM_4KBIT;
 	}
 	else {
@@ -1050,13 +1188,18 @@ void gba_read_gametitle(void) {
 	// Read cartridge title and check for non-printable text
 	for (uint16_t titleAddress = 0xA0; titleAddress <= 0xAB; titleAddress++) {
 		char headerChar = startRomBuffer[titleAddress];
-		if ((headerChar >= 0x30 && headerChar <= 0x57) || // 0-9
+		if ((headerChar >= 0x30 && headerChar <= 0x39) || // 0-9
 			 (headerChar >= 0x41 && headerChar <= 0x5A) || // A-Z
 			 (headerChar >= 0x61 && headerChar <= 0x7A) || // a-z
+			 (headerChar >= 0x24 && headerChar <= 0x29) || // #$%&'()
 			 (headerChar == 0x2E) || // .
 			 (headerChar == 0x5F) || // _
 			 (headerChar == 0x20)) { // Space
 			gameTitle[(titleAddress-0xA0)] = headerChar;
+		}
+		// Replace with an underscore
+		else if (headerChar == 0x3A) { // :
+			gameTitle[(titleAddress - 0xA0)] = '_';
 		}
 		else {
 			gameTitle[(titleAddress-0xA0)] = '\0';
@@ -1067,22 +1210,58 @@ void gba_read_gametitle(void) {
 
 // Read the first 192 bytes of ROM, read the title, check and test for ROM, SRAM, EEPROM and Flash
 void read_gba_header (void) {
-	currAddr = 0x0000;
-	endAddr = 0x00BF;
-	set_number(currAddr, SET_START_ADDRESS);
-	set_mode(GBA_READ_ROM);
-	
+	uint8_t logoCheck = 0;
+	uint8_t logoCheckCounter = 0;
 	uint8_t startRomBuffer[385];
-	while (currAddr < endAddr) {
-		com_read_bytes(READ_BUFFER, 64);
-		memcpy(&startRomBuffer[currAddr], readBuffer, 64);
-		currAddr += 64;
+	
+	while (logoCheck == 0) {
+		currAddr = 0x0000;
+		endAddr = 0x00BF;
+		set_number(currAddr, SET_START_ADDRESS);
+		set_mode(GBA_READ_ROM);
 		
-		if (currAddr < endAddr) {
-			com_read_cont();
+		while (currAddr < endAddr) {
+			uint8_t comReadBytes = com_read_bytes(READ_BUFFER, 64);
+			
+			if (comReadBytes == 64) {
+				memcpy(&startRomBuffer[currAddr], readBuffer, 64);
+				currAddr += 64;
+				
+				// Request 64 bytes more
+				if (currAddr < endAddr) {
+					com_read_cont();
+				}
+			}
+			else { // Didn't receive 64 bytes, usually this only happens for Apple MACs
+				com_read_stop();
+				delay_ms(500);
+				
+				// Flush buffer
+				RS232_PollComport(cport_nr, readBuffer, 64);											
+				
+				// Start off where we left off
+				set_number(currAddr / 2, SET_START_ADDRESS);
+				set_mode(GBA_READ_ROM);	
+			}
+		}
+		com_read_stop();
+		
+		logoCheck = 1;
+		for (uint16_t logoAddress = 0x04; logoAddress <= 0x9F; logoAddress++) {
+			if (nintendoLogoGBA[(logoAddress-0x04)] != startRomBuffer[logoAddress]) {
+				logoCheck = 0;
+				printf(".");
+				break;
+			}
+		}
+		
+		delay_ms(250);
+		logoCheckCounter++;
+		
+		if (logoCheckCounter >= 20) {
+			break;
 		}
 	}
-	com_read_stop();
 	
 	// Blank out game title
 	for (uint8_t b = 0; b < 16; b++) {
@@ -1094,6 +1273,7 @@ void read_gba_header (void) {
 		if ((headerChar >= 0x30 && headerChar <= 0x57) || // 0-9
 			 (headerChar >= 0x41 && headerChar <= 0x5A) || // A-Z
 			 (headerChar >= 0x61 && headerChar <= 0x7A) || // a-z
+			 (headerChar >= 0x24 && headerChar <= 0x29) || // #$%&'()
 			 (headerChar == 0x2E) || // .
 			 (headerChar == 0x5F) || // _
 			 (headerChar == 0x20)) { // Space
@@ -1108,13 +1288,6 @@ void read_gba_header (void) {
 	
 	
 	// Nintendo Logo Check
-	uint8_t logoCheck = 1;
-	for (uint16_t logoAddress = 0x04; logoAddress <= 0x9F; logoAddress++) {
-		if (nintendoLogoGBA[(logoAddress-0x04)] != startRomBuffer[logoAddress]) {
-			logoCheck = 0;
-			break;
-		}
-	}
 	printf ("Logo check: ");
 	if (logoCheck == 1) {
 		printf ("OK\n");
@@ -1123,14 +1296,21 @@ void read_gba_header (void) {
 		printf ("Failed\n");
 	}
 	
-	
 	// ROM size
 	printf ("Calculating ROM size");
 	romSize = gba_check_rom_size();
 	
 	// EEPROM check
 	printf ("\nChecking for EEPROM");
-	eepromSize = gba_check_eeprom();
+	
+	// Check if we have a Intel flash cart, if so, skip the EEPROM check as it can interfer with reading the last 2MB of the ROM
+	if (gba_detect_intel_flash_cart() == FLASH_FOUND_INTEL) {
+		printf("... Skipping, Intel Flash cart detected");
+		eepromSize = 0;
+	}
+	else {
+		eepromSize = gba_check_eeprom();
+	}
 	
 	// SRAM/Flash check/size, if no EEPROM present
 	if (eepromSize == 0) {
@@ -1197,82 +1377,6 @@ void read_gba_header (void) {
 
 // ****** GB Cart Flasher functions ******
 
-// Write flash config file
-void write_flash_config(int number) {
-	char configFilePath[253];
-
-#if defined(__linux__) || defined(__FreeBSD__) || defined(__APPLE__)
-	strncpy(configFilePath, "config-flash.ini", 17);
-#else
-	strncpy(configFilePath, getenv("USERPROFILE"), 200);
-	strncat(configFilePath, "\\gbxcart-config-flash.ini", 26);
-#endif
-	
-	FILE* configfile = fopen(configFilePath, "wt");
-	if (configfile != NULL) {
-		fprintf(configfile, "%d,", number);
-		fclose(configfile);
-	}
-}
-
-// Read the config-flash.ini file for the flash cart type
-void read_config_flash(void) {
-	char configFilePath[253];
-	
-#if defined(__linux__) || defined(__FreeBSD__) || defined(__APPLE__)
-	strncpy(configFilePath, "config-flash.ini", 17);
-#else
-	strncpy(configFilePath, getenv("USERPROFILE"), 200);
-	strncat(configFilePath, "\\gbxcart-config-flash.ini", 26);
-#endif
-	
-	FILE* configfile = fopen(configFilePath, "rt");
-	if (configfile != NULL) {
-		if (fscanf(configfile, "%d", &flashCartType) != 1) {
-			fprintf(stderr, "Flash Config file is corrupt\n");
-		}
-		fclose(configfile);
-	}
-	else {
-		fprintf(stderr, "Flash Config file not found\n");
-	}
-}
-
-// Wait for first byte of chosen address to be 0xFF, that's when we know the sector has been erased
-void wait_for_flash_sector_ff(uint16_t address) {
-	readBuffer[0] = 0;
-	while (readBuffer[0] != 0xFF) {
-		set_number(address, SET_START_ADDRESS);
-		set_mode(READ_ROM_RAM);
-		
-		com_read_bytes(READ_BUFFER, 64);
-		com_read_stop(); // End read
-		
-		if (readBuffer[0] != 0xFF) {
-			delay_ms(20);
-		}
-	}
-}
-
-// Wait for first byte of Flash to be 0xFF, that's when we know the sector has been erased
-void wait_for_flash_chip_erase_ff() {
-	readBuffer[0] = 0;
-	while (readBuffer[0] != 0xFF) {
-		set_number(currAddr, SET_START_ADDRESS);
-		set_mode(READ_ROM_RAM);
-		
-		com_read_bytes(READ_BUFFER, 64);
-		com_read_stop(); // End read
-		
-		printf(".");
-		//printf("0x%X ", readBuffer[0]);
-		
-		if (readBuffer[0] != 0xFF) {
-			delay_ms(500);
-		}
-	}
-}
-
 // Select which pin need to pulse as WE (Audio or WR)
 void gb_flash_pin_setup(char pin) {
 	set_mode(GB_FLASH_WE_PIN);
@@ -1327,8 +1431,406 @@ void gb_flash_write_address_byte (uint16_t address, uint8_t byte) {
 	com_wait_for_ack(); 
 }
 
+// Nintendo Power - Enable flash chip access, disable flash chip protection
+void gb_np_enable_flash_chip_access(void) {
+	// Enable flash chip access
+	gb_flash_write_address_byte(0x120, 0x09);
+	gb_flash_write_address_byte(0x121, 0xaa);
+	gb_flash_write_address_byte(0x122, 0x55);
+	gb_flash_write_address_byte(0x13f, 0xa5);
+	
+	// Re-Enable writes to MBC registers
+	gb_flash_write_address_byte(0x120, 0x11);
+	gb_flash_write_address_byte(0x13f, 0xa5);
+	
+	// Disable flash chip protection
+	gb_flash_write_address_byte(0x120, 0x0a);
+	gb_flash_write_address_byte(0x125, 0x62);
+	gb_flash_write_address_byte(0x126, 0x04);
+	gb_flash_write_address_byte(0x13f, 0xa5);
+	gb_flash_write_address_byte(0x120, 0x02);
+	gb_flash_write_address_byte(0x13f, 0xa5);
+	delay_ms(5);
+	
+	// Set bank 1
+	set_bank(0x2100, 0x01);
+	delay_ms(5);
+}
+
+// Nintendo Power - Unlock sector 0
+void gb_np_unlock_sector_0(void) {
+	printf("Unlock sector 0: ");
+	gb_flash_write_address_byte(0x120, 0x0F);
+	gb_flash_write_address_byte(0x125, 0x55);
+	gb_flash_write_address_byte(0x126, 0x55);
+	gb_flash_write_address_byte(0x127, 0xAA);
+	gb_flash_write_address_byte(0x13f, 0xA5);
+	delay_ms(5);
+	
+	gb_flash_write_address_byte(0x120, 0x0F);
+	gb_flash_write_address_byte(0x125, 0x2A);
+	gb_flash_write_address_byte(0x126, 0xAA);
+	gb_flash_write_address_byte(0x127, 0x55);
+	gb_flash_write_address_byte(0x13f, 0xA5);
+	delay_ms(5);
+	
+	gb_flash_write_address_byte(0x120, 0x0F);
+	gb_flash_write_address_byte(0x125, 0x55);
+	gb_flash_write_address_byte(0x126, 0x55);
+	gb_flash_write_address_byte(0x127, 0x60);
+	gb_flash_write_address_byte(0x13f, 0xA5);
+	delay_ms(5);
+	
+	gb_flash_write_address_byte(0x120, 0x0F);
+	gb_flash_write_address_byte(0x125, 0x55);
+	gb_flash_write_address_byte(0x126, 0x55);
+	gb_flash_write_address_byte(0x127, 0xAA);
+	gb_flash_write_address_byte(0x13f, 0xA5);
+	delay_ms(5);
+	
+	gb_flash_write_address_byte(0x120, 0x0F);
+	gb_flash_write_address_byte(0x125, 0x2A);
+	gb_flash_write_address_byte(0x126, 0xAA);
+	gb_flash_write_address_byte(0x127, 0x55);
+	gb_flash_write_address_byte(0x13f, 0xA5);
+	delay_ms(5);
+	
+	gb_flash_write_address_byte(0x120, 0x0F);
+	gb_flash_write_address_byte(0x125, 0x00);
+	gb_flash_write_address_byte(0x126, 0x00);
+	gb_flash_write_address_byte(0x127, 0x40);
+	gb_flash_write_address_byte(0x13f, 0xA5);
+	delay_ms(50);
+	
+	// Read status
+	currAddr = 0x0000;	
+	set_number(currAddr, SET_START_ADDRESS);
+	set_mode(READ_ROM_RAM);
+	com_read_bytes(READ_BUFFER, 64);
+	com_read_stop();
+	printf("0x%X\n", readBuffer[0]);
+	
+	if (readBuffer[0] != 0xC0 && readBuffer[0] != 0x80) {
+		printf("Hidden sector appears to still be locked. Can't continue.\n");
+		read_one_letter();
+		exit(0);
+	}
+}
+
+// Nintendo Power - Backup hidden sector
+void gb_np_backup_hidden_sector(void) {
+	gb_flash_write_address_byte(0x120, 0x0F);
+	gb_flash_write_address_byte(0x125, 0x55);
+	gb_flash_write_address_byte(0x126, 0x55);
+	gb_flash_write_address_byte(0x127, 0xAA);
+	gb_flash_write_address_byte(0x13f, 0xA5);
+	delay_ms(5);
+	
+	gb_flash_write_address_byte(0x120, 0x0F);
+	gb_flash_write_address_byte(0x125, 0x2A);
+	gb_flash_write_address_byte(0x126, 0xAA);
+	gb_flash_write_address_byte(0x127, 0x55);
+	gb_flash_write_address_byte(0x13f, 0xA5);
+	delay_ms(5);
+	
+	gb_flash_write_address_byte(0x120, 0x0F);
+	gb_flash_write_address_byte(0x125, 0x55);
+	gb_flash_write_address_byte(0x126, 0x55);
+	gb_flash_write_address_byte(0x127, 0x77);
+	gb_flash_write_address_byte(0x13f, 0xA5);
+	delay_ms(5);
+	
+	gb_flash_write_address_byte(0x120, 0x0F);
+	gb_flash_write_address_byte(0x125, 0x55);
+	gb_flash_write_address_byte(0x126, 0x55);
+	gb_flash_write_address_byte(0x127, 0xAA);
+	gb_flash_write_address_byte(0x13f, 0xA5);
+	delay_ms(5);
+	
+	gb_flash_write_address_byte(0x120, 0x0F);
+	gb_flash_write_address_byte(0x125, 0x2A);
+	gb_flash_write_address_byte(0x126, 0xAA);
+	gb_flash_write_address_byte(0x127, 0x55);
+	gb_flash_write_address_byte(0x13f, 0xA5);
+	delay_ms(5);
+	
+	gb_flash_write_address_byte(0x120, 0x0F);
+	gb_flash_write_address_byte(0x125, 0x55);
+	gb_flash_write_address_byte(0x126, 0x55);
+	gb_flash_write_address_byte(0x127, 0x77);
+	gb_flash_write_address_byte(0x13f, 0xA5);
+	delay_ms(5);
+	
+	
+	// Get the date/time to be used for the filename
+	time_t rawtime;
+	struct tm* timeinfo;
+	char timebuffer[80];
+	
+	time (&rawtime);
+	timeinfo = localtime (&rawtime);
+	strftime (timebuffer,120,"NP_HiddenSector_%Y-%m-%d_%H-%M-%S.gb",timeinfo);
+	
+	FILE *npFile = fopen(timebuffer, "wb");
+	currAddr = 0x0000;
+	endAddr = 0x100;
+	set_number(currAddr, SET_START_ADDRESS);
+	set_mode(READ_ROM_RAM);
+	
+	// Read data
+	while (currAddr < endAddr) {
+		com_read_bytes(npFile, 64);
+		currAddr += 64;
+		
+		// Request 64 bytes more
+		if (currAddr < endAddr) {
+			com_read_cont();
+		}
+	}
+	
+	com_read_stop(); // Stop reading ROM (as we will bank switch)
+	fclose(npFile);
+}
+
+// Nintendo Power - Chip erase
+void gb_np_chip_erase(void) {
+	printf("Erasing Flash...");
+	gb_flash_write_address_byte(0x120, 0x0F);
+	gb_flash_write_address_byte(0x125, 0x55);
+	gb_flash_write_address_byte(0x126, 0x55);
+	gb_flash_write_address_byte(0x127, 0xAA);
+	gb_flash_write_address_byte(0x13f, 0xA5);
+	delay_ms(5);
+	
+	gb_flash_write_address_byte(0x120, 0x0F);
+	gb_flash_write_address_byte(0x125, 0x2A);
+	gb_flash_write_address_byte(0x126, 0xAA);
+	gb_flash_write_address_byte(0x127, 0x55);
+	gb_flash_write_address_byte(0x13f, 0xA5);
+	delay_ms(5);
+	
+	gb_flash_write_address_byte(0x120, 0x0F);
+	gb_flash_write_address_byte(0x125, 0x55);
+	gb_flash_write_address_byte(0x126, 0x55);
+	gb_flash_write_address_byte(0x127, 0x80);
+	gb_flash_write_address_byte(0x13f, 0xA5);
+	delay_ms(5);
+	
+	gb_flash_write_address_byte(0x120, 0x0F);
+	gb_flash_write_address_byte(0x125, 0x55);
+	gb_flash_write_address_byte(0x126, 0x55);
+	gb_flash_write_address_byte(0x127, 0xAA);
+	gb_flash_write_address_byte(0x13f, 0xA5);
+	delay_ms(5);
+	
+	gb_flash_write_address_byte(0x120, 0x0F);
+	gb_flash_write_address_byte(0x125, 0x2A);
+	gb_flash_write_address_byte(0x126, 0xAA);
+	gb_flash_write_address_byte(0x127, 0x55);
+	gb_flash_write_address_byte(0x13f, 0xA5);
+	delay_ms(5);
+	
+	gb_flash_write_address_byte(0x120, 0x0F);
+	gb_flash_write_address_byte(0x125, 0x55);
+	gb_flash_write_address_byte(0x126, 0x55);
+	gb_flash_write_address_byte(0x127, 0x10);
+	gb_flash_write_address_byte(0x13f, 0xA5);
+	delay_ms(5);
+	
+	delay_ms(2000);
+	
+	
+	// Reset flash to read mode
+	gb_flash_write_address_byte(0x120, 0x0F);
+	gb_flash_write_address_byte(0x125, 0x40);
+	gb_flash_write_address_byte(0x126, 0x80);
+	gb_flash_write_address_byte(0x127, 0xF0);
+	gb_flash_write_address_byte(0x13f, 0xA5);
+	delay_ms(5);
+}
+
+// Nintendo Power - Erase hidden sector
+void gb_np_erase_hidden_sector(void) {
+	printf("Erase hidden sector: ");
+	gb_flash_write_address_byte(0x120, 0x0F);
+	gb_flash_write_address_byte(0x125, 0x55);
+	gb_flash_write_address_byte(0x126, 0x55);
+	gb_flash_write_address_byte(0x127, 0xAA);
+	gb_flash_write_address_byte(0x13f, 0xA5);
+	delay_ms(5);
+	
+	gb_flash_write_address_byte(0x120, 0x0F);
+	gb_flash_write_address_byte(0x125, 0x2A);
+	gb_flash_write_address_byte(0x126, 0xAA);
+	gb_flash_write_address_byte(0x127, 0x55);
+	gb_flash_write_address_byte(0x13f, 0xA5);
+	delay_ms(5);
+	
+	gb_flash_write_address_byte(0x120, 0x0F);
+	gb_flash_write_address_byte(0x125, 0x55);
+	gb_flash_write_address_byte(0x126, 0x55);
+	gb_flash_write_address_byte(0x127, 0x60);
+	gb_flash_write_address_byte(0x13f, 0xA5);
+	delay_ms(50);
+	
+	gb_flash_write_address_byte(0x120, 0x0F);
+	gb_flash_write_address_byte(0x125, 0x55);
+	gb_flash_write_address_byte(0x126, 0x55);
+	gb_flash_write_address_byte(0x127, 0xAA);
+	gb_flash_write_address_byte(0x13f, 0xA5);
+	delay_ms(5);
+	
+	gb_flash_write_address_byte(0x120, 0x0F);
+	gb_flash_write_address_byte(0x125, 0x2A);
+	gb_flash_write_address_byte(0x126, 0xAA);
+	gb_flash_write_address_byte(0x127, 0x55);
+	gb_flash_write_address_byte(0x13f, 0xA5);
+	delay_ms(5);
+	
+	gb_flash_write_address_byte(0x120, 0x0F);
+	gb_flash_write_address_byte(0x125, 0x55);
+	gb_flash_write_address_byte(0x126, 0x55);
+	gb_flash_write_address_byte(0x127, 0x04);
+	gb_flash_write_address_byte(0x13f, 0xA5);
+	delay_ms(50);
+	
+	// Read
+	currAddr = 0x0000;	
+	set_number(currAddr, SET_START_ADDRESS);
+	set_mode(READ_ROM_RAM);
+	com_read_bytes(READ_BUFFER, 64);
+	com_read_stop();
+	printf("0x%X\n", readBuffer[0]);
+}
+
+
+// Nintendo Power - Write hidden sector
+void gb_np_write_hidden_sector(void) {
+	printf("Write hidden sector: ");
+	gb_flash_write_address_byte(0x120, 0x0F);
+	gb_flash_write_address_byte(0x125, 0x55);
+	gb_flash_write_address_byte(0x126, 0x55);
+	gb_flash_write_address_byte(0x127, 0xAA);
+	gb_flash_write_address_byte(0x13f, 0xA5);
+	delay_ms(5);
+	
+	gb_flash_write_address_byte(0x120, 0x0F);
+	gb_flash_write_address_byte(0x125, 0x2A);
+	gb_flash_write_address_byte(0x126, 0xAA);
+	gb_flash_write_address_byte(0x127, 0x55);
+	gb_flash_write_address_byte(0x13f, 0xA5);
+	delay_ms(5);
+	
+	gb_flash_write_address_byte(0x120, 0x0F);
+	gb_flash_write_address_byte(0x125, 0x55);
+	gb_flash_write_address_byte(0x126, 0x55);
+	gb_flash_write_address_byte(0x127, 0x60);
+	gb_flash_write_address_byte(0x13f, 0xA5);
+	delay_ms(50);
+	
+	gb_flash_write_address_byte(0x120, 0x0F);
+	gb_flash_write_address_byte(0x125, 0x55);
+	gb_flash_write_address_byte(0x126, 0x55);
+	gb_flash_write_address_byte(0x127, 0xAA);
+	gb_flash_write_address_byte(0x13f, 0xA5);
+	delay_ms(5);
+	
+	gb_flash_write_address_byte(0x120, 0x0F);
+	gb_flash_write_address_byte(0x125, 0x2A);
+	gb_flash_write_address_byte(0x126, 0xAA);
+	gb_flash_write_address_byte(0x127, 0x55);
+	gb_flash_write_address_byte(0x13f, 0xA5);
+	delay_ms(5);
+	
+	gb_flash_write_address_byte(0x120, 0x0F);
+	gb_flash_write_address_byte(0x125, 0x55);
+	gb_flash_write_address_byte(0x126, 0x55);
+	gb_flash_write_address_byte(0x127, 0xE0);
+	gb_flash_write_address_byte(0x13f, 0xA5);
+	delay_ms(50);
+	
+	
+	set_bank(0x2100, 0x01);
+	delay_ms(50);
+	
+	
+	// Disable writes to MBC registers
+	gb_flash_write_address_byte(0x120, 0x10);
+	gb_flash_write_address_byte(0x13f, 0xa5);
+	delay_ms(5);
+	
+	// Undo Wakeup
+	gb_flash_write_address_byte(0x120, 0x08);
+	gb_flash_write_address_byte(0x13f, 0xa5);
+	delay_ms(5);
+	
+	// Write
+	for (uint8_t x = 0; x < 128; x++) {
+		gb_flash_write_address_byte(x, npHiddenRegister[x]);
+		delay_ms(5);
+	}
+	gb_flash_write_address_byte(127, 0xFF);
+	gb_flash_write_address_byte(127, 0xFF);
+	delay_ms(250);
+	
+	// Read
+	currAddr = 0x0000;	
+	set_number(currAddr, SET_START_ADDRESS);
+	set_mode(READ_ROM_RAM);
+	com_read_bytes(READ_BUFFER, 64);
+	com_read_stop();
+	printf("0x%X\n", readBuffer[0]);
+}
+
+// Map all the flash memory before writing
+void gb_np_map_all_flash_memory(void) {
+	gb_flash_write_address_byte(0x120, 0x04);
+	gb_flash_write_address_byte(0x13f, 0xa5);
+	delay_ms(5);
+}
 
 // ****** GBA Cart Flasher functions ******
+
+// Check for Intel based flash carts
+uint8_t gba_detect_intel_flash_cart(void) {
+	// Set to reading mode
+	gba_flash_write_address_byte(0x00, 0xFF);
+	delay_ms(5);
+	
+	// Read rom a tiny bit before writing
+	set_number(0x00, SET_START_ADDRESS);
+	set_mode(GBA_READ_ROM);
+	com_read_bytes(READ_BUFFER, 64);
+	com_read_stop();
+	
+	// Flash ID command
+	gba_flash_write_address_byte(0x00, 0x90);
+	delay_ms(1);
+	
+	// Read ID
+	set_number(0x00, SET_START_ADDRESS);
+	set_mode(GBA_READ_ROM);
+	com_read_bytes(READ_BUFFER, 64);
+	com_read_stop(); // End read
+	
+	// Check Manufacturer/Chip ID
+	if ((readBuffer[0] == 0x8A && readBuffer[1] == 0 && readBuffer[2] == 0x15 && readBuffer[3] == 0x88) ||
+		 (readBuffer[0] == 0x20 && readBuffer[1] == 0 && readBuffer[2] == 0xC4 && readBuffer[3] == 0x88)) {
+		
+		// Back to reading mode
+		gba_flash_write_address_byte(currAddr, 0xFF);
+		delay_ms(5);
+		
+		return FLASH_FOUND_INTEL;
+	}
+	else {
+		// Back to reading mode
+		gba_flash_write_address_byte(currAddr, 0xFF);
+		delay_ms(5);
+		
+		return 0;
+	}
+}
 
 // GBA Flash Cart, write address and byte
 void gba_flash_write_address_byte (uint32_t address, uint16_t byte) {
@@ -1349,3 +1851,5 @@ void gba_flash_write_address_byte (uint32_t address, uint16_t byte) {
 	
 	com_wait_for_ack();
 }
+
+
