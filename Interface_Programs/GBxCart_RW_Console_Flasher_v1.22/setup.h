@@ -1,9 +1,9 @@
 /*
  GBxCart RW - Console Interface Flasher
- Version: 1.21
+ Version: 1.22
  Author: Alex from insideGadgets (www.insidegadgets.com)
  Created: 26/08/2017
- Last Modified: 7/07/2019
+ Last Modified: 9/08/2019
  License: GPL
  
  */
@@ -94,6 +94,7 @@ extern int bdrate;
 #define GBA_FLASH_WRITE_256BYTE_SWAPPED_D0D1 't'
 #define GBA_FLASH_WRITE_256BYTE 'f'
 #define GBA_FLASH_WRITE_INTEL_64BYTE 'l'
+#define GBA_FLASH_WRITE_INTEL_64BYTE_WORD 'u'
 
 // General commands
 #define CART_MODE 'C'

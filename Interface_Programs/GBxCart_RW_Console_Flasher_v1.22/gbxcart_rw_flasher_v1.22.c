@@ -1,9 +1,9 @@
 /*
  GBxCart RW - Console Interface Flasher
- Version: 1.21
+ Version: 1.22
  Author: Alex from insideGadgets (www.insidegadgets.com)
  Created: 26/08/2017
- Last Modified: 7/07/2019
+ Last Modified: 9/08/2019
  License: GPL
  
  This program allows you to write ROMs to Flash Carts that are supported.
@@ -26,7 +26,7 @@
 
 int main(int argc, char **argv) {
 	
-	printf("GBxCart RW Flasher v1.21 by insideGadgets\n");
+	printf("GBxCart RW Flasher v1.22 by insideGadgets\n");
 	printf("#########################################\n");
 	
 	// Check arguments
@@ -1713,6 +1713,129 @@ int main(int argc, char **argv) {
 			delay_ms(5);
 		}
 		else if (flashCartType == 25) {
+			printf("16 MByte GE28F128W30 Gameboy Advance Flash Cart\n");
+			printf("\nGoing to write to ROM (Flash cart) from %s\n", filenameOnly);
+			
+			// Check file size
+			if (fileSize > 0x1000000) {
+				fclose(romFile);
+				printf("\n%s \nFile size is larger than the available Flash cart space of 16 MBytes\n", argv[1]);
+				read_one_letter();
+				return 1;
+			}
+			
+			if (gbxcartFirmwareVersion <= 14) {
+				printf("Firmware R15 or higher is required for this functionality.\n");
+				read_one_letter();
+				return 1;
+			}
+			
+			printf("\nWriting to ROM (Flash cart) from %s\n", filenameOnly);
+			printf("[             25%%             50%%             75%%            100%%]\n[");
+			
+			
+			// Set to reading mode
+			currAddr = 0x0000;
+			gba_flash_write_address_byte(currAddr, 0xFF);
+			delay_ms(5);
+			
+			// Read rom a tiny bit before writing
+			currAddr = 0x0000;	
+			set_number(currAddr, SET_START_ADDRESS);
+			delay_ms(5);
+			set_mode(GBA_READ_ROM);
+			delay_ms(5);
+			com_read_bytes(READ_BUFFER, 64);
+			com_read_stop();
+			
+			// Set end address as file size
+			endAddr = fileSize;
+			uint32_t endAddrAligned = fileSize;
+			while ((endAddrAligned / 64)  % 64 != 0) { // Align to 64 for printing progress
+				endAddrAligned--;
+			}
+			
+			// Flash ID command
+			gba_flash_write_address_byte(0x00, 0x90);
+			delay_ms(1);
+			
+			// Read ID
+			set_number(0x00, SET_START_ADDRESS);
+			delay_ms(5);
+			set_mode(GBA_READ_ROM);
+			delay_ms(5);
+			com_read_bytes(READ_BUFFER, 64);
+			com_read_stop(); // End read
+			
+			// Sector erase length
+			int sectorEraseAddress = 0x10000;
+			// 28F128W30 (0x8A, 0x0, 0x5x, 0x88)
+			if (readBuffer[0] == 0x8A && readBuffer[1] == 0 && (readBuffer[2] & 0xF8) == 0x50 && readBuffer[3] == 0x88) {
+				sectorEraseAddress = 0x2000; // 8K sectors at start
+			}
+			
+			// Back to reading mode
+			gba_flash_write_address_byte(currAddr, 0xFF);
+			delay_ms(5);
+			
+			
+			// Write ROM
+			currAddr = 0x0000;	
+			set_number(currAddr, SET_START_ADDRESS);
+			delay_ms(5);
+			
+			while (currAddr < endAddr) {
+				if (currAddr % sectorEraseAddress == 0) { // Erase next sector
+					// For chips with 8x 8K sectors, after 64K, change to 0x10000 sector size
+					if (currAddr >= 0x10000 && sectorEraseAddress == 0x2000) {
+						sectorEraseAddress = 0x10000;
+					}
+					
+					// Unlock
+					gba_flash_write_address_byte(currAddr, 0x60);
+					gba_flash_write_address_byte(currAddr, 0xD0);
+					
+					// Erase
+					gba_flash_write_address_byte(currAddr, 0x20);
+					gba_flash_write_address_byte(currAddr, 0xD0);
+					delay_ms(50);
+					
+					// Wait for byte to be 0x80 or 0xB0
+					readBuffer[0] = 0;
+					readBuffer[1] = 0;
+					while (readBuffer[0] != 0x80 && readBuffer[0] != 0xB0) {
+						set_number(currAddr / 2, SET_START_ADDRESS);
+						delay_ms(5);
+						set_mode(GBA_READ_ROM);
+						delay_ms(5);
+						
+						com_read_bytes(READ_BUFFER, 64);
+						com_read_stop(); // End read
+						delay_ms(50);
+					}
+					
+					// Back to reading mode
+					gba_flash_write_address_byte(currAddr, 0xFF);
+					delay_ms(5);
+					
+					set_number(currAddr / 2, SET_START_ADDRESS); // Divide address by 2
+					delay_ms(5);
+				}
+				
+				// Word writing
+				com_write_bytes_from_file(GBA_FLASH_WRITE_INTEL_64BYTE_WORD, romFile, 64);
+				com_wait_for_ack();
+				currAddr += 64;
+				readBytes += 64;
+				
+				print_progress_percent(readBytes, (endAddrAligned) / 64);
+			}
+			
+			// Back to reading mode
+			gba_flash_write_address_byte(currAddr, 0xFF);
+			delay_ms(5);
+		}
+		else if (flashCartType == 26) {
 			printf("4 MByte (MX29LV320) Gameboy Advance Flash Cart\n");
 			printf("\nGoing to write to ROM (Flash cart) from %s\n", filenameOnly);
 			
@@ -1820,7 +1943,8 @@ int main(int argc, char **argv) {
 					 "22. 16 MByte (MSP55LV128M / 29GL128EHMC / 256M29EWH / MX29GL128ELT / M29W128 / S29GL128)\n"\
 					 "23. 16 MByte M36L0R706 / 32 MByte 256L30B / 4455LLZBQO / 4000L0YBQ0\n"\
 					 "24. 16 MByte M36L0R706 (2) / 32 MByte 256L30B (2) / 4455LLZBQO (2) / 4000L0YBQ0 (2)\n"\
-					 "25. 4 MByte (MX29LV320)\n\n"\
+					 "25. 16 MByte GE28F128W30\n"\
+					 "26. 4 MByte (MX29LV320)\n\n"\
 					 "x. Exit\n>");
 		
 		char optionString[5];
