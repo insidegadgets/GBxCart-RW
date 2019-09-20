@@ -479,10 +479,16 @@ int main(int argc, char **argv) {
 							
 							// Read RAM
 							uint32_t readBytes = 0;
+							gba_flash_write_address_byte(0x9000000, 0x0);
+
 							for (uint8_t bank = 0; bank < ramBanks; bank++) {
 								// Flash, switch bank 1
 								if (hasFlashSave >= FLASH_FOUND && bank == 1) {
 									set_number(1, GBA_FLASH_SET_BANK);
+								}
+								else if (hasFlashSave == NO_FLASH && bank == 1)
+								{
+									gba_flash_write_address_byte(0x9000000, 0x1);
 								}
 								
 								// Set start and end address
@@ -525,6 +531,9 @@ int main(int argc, char **argv) {
 								// Flash, switch back to bank 0
 								if (hasFlashSave >= FLASH_FOUND && bank == 1) {
 									set_number(0, GBA_FLASH_SET_BANK);
+								}
+								else if (hasFlashSave == NO_FLASH && bank == 1) {
+									gba_flash_write_address_byte(0x9000000, 0x0);
 								}
 							}
 						}
@@ -696,21 +705,30 @@ int main(int argc, char **argv) {
 							
 							// SRAM
 							if (hasFlashSave == NO_FLASH && eepromSize == EEPROM_NONE) {
-								// Set start and end address
-								currAddr = 0x0000;
-								endAddr = ramEndAddress;
-								set_number(currAddr, SET_START_ADDRESS);
 								
-								// Write
-								uint32_t readBytes = 0;
-								while (currAddr < endAddr) {
-									com_write_bytes_from_file(GBA_WRITE_SRAM, ramFile, 64);
-									currAddr += 64;
-									readBytes += 64;
+								for (uint8_t i_u8 = 0U; i_u8 < ramBanks; i_u8++)
+								{
 									
-									print_progress_percent(readBytes, ramEndAddress / 64);
-									com_wait_for_ack();
+									gba_flash_write_address_byte(0x9000000, i_u8);
+									// Set start and end address
+									currAddr = 0x0000;
+									endAddr = ramEndAddress;
+									set_number(currAddr, SET_START_ADDRESS);
+									
+									// Write
+									uint32_t readBytes = 0;
+									while (currAddr < endAddr) {
+										com_write_bytes_from_file(GBA_WRITE_SRAM, ramFile, 64);
+										currAddr += 64;
+										readBytes += 64;
+										
+										print_progress_percent(readBytes, ramEndAddress * ramBanks / 64);
+										com_wait_for_ack();
+									}
+									
 								}
+
+								
 							}
 							
 							// EEPROM
@@ -898,21 +916,30 @@ int main(int argc, char **argv) {
 						
 						// SRAM
 						if (hasFlashSave == NO_FLASH && eepromSize == EEPROM_NONE) {
-							// Set start and end address
-							currAddr = 0x0000;
-							endAddr = ramEndAddress;
-							set_number(currAddr, SET_START_ADDRESS);
 							
-							// Write
-							uint32_t readBytes = 0;
-							while (currAddr < endAddr) {
-								com_write_bytes_from_file(GBA_WRITE_SRAM, NULL, 64);
-								currAddr += 64;
-								readBytes += 64;
+							uint8_t banks = (gba_check_sram_flash() == 3) ? 1 : 2;
+							
+							for (uint8_t i_u8 = 0U; i_u8 < banks; i_u8++)
+							{
+								gba_flash_write_address_byte(0x9000000, i_u8);
+								// Set start and end address
+								currAddr = 0x0000;
+								endAddr = ramEndAddress;
+								set_number(currAddr, SET_START_ADDRESS);
 								
-								print_progress_percent(readBytes, ramEndAddress / 64);
-								com_wait_for_ack();
+								// Write
+								uint32_t readBytes = 0;
+								while (currAddr < endAddr) {
+									com_write_bytes_from_file(GBA_WRITE_SRAM, NULL, 64);
+									currAddr += 64;
+									readBytes += 64;
+									
+									print_progress_percent(readBytes, ramEndAddress * banks / 64);
+									com_wait_for_ack();
+								}
 							}
+
+							
 						}
 						
 						// EEPROM

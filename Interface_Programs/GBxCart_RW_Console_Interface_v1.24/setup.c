@@ -883,10 +883,113 @@ uint8_t gba_check_sram_flash (void) {
 	}
 	
 	
-	// Check if it's SRAM or Flash at this stage, maximum for SRAM is 512Kbit
+	// Check if it's SRAM or Flash at this stage, maximum for SRAM is 1MBit
 	printf("\n");
 	hasFlashSave = gba_test_sram_flash_write();
 	if (hasFlashSave == NO_FLASH) {
+		
+		uint8_t bank_0_buffer[65];
+		uint8_t bank_1_buffer[65];
+
+		uint8_t testNumber = 0x92;
+		
+		// Switch bank to 0
+		gba_flash_write_address_byte(0x9000000, 0x0);
+		
+		// Save the 1 byte first to buffer
+		set_number(0x0000, SET_START_ADDRESS);
+		set_mode(GBA_READ_SRAM);
+		com_read_bytes(READ_BUFFER, 64);
+		memcpy(&bank_0_buffer, readBuffer, 64);
+		com_read_stop();
+		
+		// Switch bank to 1
+		gba_flash_write_address_byte(0x9000000, 0x1);
+		
+		// Save the 1 byte first to buffer
+		set_number(0x0000, SET_START_ADDRESS);
+		set_mode(GBA_READ_SRAM);
+		com_read_bytes(READ_BUFFER, 64);
+		memcpy(&bank_1_buffer, readBuffer, 64);
+		com_read_stop();
+		
+		if (bank_0_buffer[0] != bank_1_buffer[0])
+		{
+			return SRAM_FLASH_1MBIT;
+		}
+		else
+		{
+			// Check to see if the first byte matches our test byte (1 in 255 chance), if so, use the another test byte
+			if (bank_1_buffer[0] == testNumber) {
+				testNumber = 0xA6;
+			}
+			
+			// Write 1 byte
+			set_number(0x0000, SET_START_ADDRESS);
+			uint8_t tempBuffer[3];
+			tempBuffer[0] = GBA_WRITE_ONE_BYTE_SRAM; // Set write sram 1 byte mode
+			tempBuffer[1] = testNumber;
+			RS232_SendBuf(cport_nr, tempBuffer, 2);
+			RS232_drain(cport_nr);
+			com_wait_for_ack();
+			
+			// Switch bank to 0
+			gba_flash_write_address_byte(0x9000000, 0x0);
+			
+			uint8_t controlBuffer[65];
+			
+			// Save the 1 byte first to buffer
+			set_number(0x0000, SET_START_ADDRESS);
+			set_mode(GBA_READ_SRAM);
+			com_read_bytes(READ_BUFFER, 64);
+			memcpy(&controlBuffer, readBuffer, 64);
+			com_read_stop();
+			
+			// Write back original value into bank 0
+			set_number(0x0000, SET_START_ADDRESS);
+			tempBuffer[0] = GBA_WRITE_ONE_BYTE_SRAM; // Set write sram 1 byte mode
+			tempBuffer[1] = bank_0_buffer[0];
+			RS232_SendBuf(cport_nr, tempBuffer, 2);
+			RS232_drain(cport_nr);
+			com_wait_for_ack();
+			
+			// If controlBuffer has the same value as the testNumber, no bank switching has happened
+			if (controlBuffer[0] == testNumber)
+			{
+				return SRAM_FLASH_512KBIT;
+			}
+			else
+			{
+				// Switch bank to 1
+				gba_flash_write_address_byte(0x9000000, 0x1);
+				
+				// Write 1 byte
+				set_number(0x0000, SET_START_ADDRESS);
+				tempBuffer[0] = GBA_WRITE_ONE_BYTE_SRAM; // Set write sram 1 byte mode
+				tempBuffer[1] = bank_1_buffer[0];
+				RS232_SendBuf(cport_nr, tempBuffer, 2);
+				RS232_drain(cport_nr);
+				com_wait_for_ack();
+				
+				return SRAM_FLASH_1MBIT;
+			}
+			
+		}
+		
+		
+		
+		// Switch bank
+		gba_flash_write_address_byte(0x9000000, 0x1);
+		
+
+		// Save the 1 byte first to buffer
+		set_number(0x0000, SET_START_ADDRESS);
+		set_mode(GBA_READ_SRAM);
+		com_read_bytes(READ_BUFFER, 64);
+		memcpy(&bank_1_buffer, readBuffer, 64);
+		com_read_stop();
+		
+		
 		return SRAM_FLASH_512KBIT;
 	}
 	
