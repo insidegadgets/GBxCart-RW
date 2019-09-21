@@ -1,9 +1,9 @@
 /*
  GBxCart RW - Console Interface
- Version: 1.24
+ Version: 1.25
  Author: Alex from insideGadgets (www.insidegadgets.com)
  Created: 7/11/2016
- Last Modified: 8/08/2019
+ Last Modified: 21/09/2019
  
  */
 
@@ -883,114 +883,80 @@ uint8_t gba_check_sram_flash (void) {
 	}
 	
 	
-	// Check if it's SRAM or Flash at this stage, maximum for SRAM is 1MBit
+	// Check if it's SRAM or Flash at this stage, maximum for SRAM is 512Kbit (or 1Mbit for special flash carts but requires a special command to be sent)
 	printf("\n");
 	hasFlashSave = gba_test_sram_flash_write();
-	if (hasFlashSave == NO_FLASH) {
-		
-		uint8_t bank_0_buffer[65];
-		uint8_t bank_1_buffer[65];
-
-		uint8_t testNumber = 0x92;
+	if (hasFlashSave == NO_FLASH) { // Test for 1Mbit special flash cart
 		
 		// Switch bank to 0
-		gba_flash_write_address_byte(0x9000000, 0x0);
+		gba_flash_write_address_byte(0x1000000, 0x00);
 		
 		// Save the 1 byte first to buffer
 		set_number(0x0000, SET_START_ADDRESS);
 		set_mode(GBA_READ_SRAM);
 		com_read_bytes(READ_BUFFER, 64);
-		memcpy(&bank_0_buffer, readBuffer, 64);
+		memcpy(&firstBuffer, readBuffer, 64);
 		com_read_stop();
 		
 		// Switch bank to 1
-		gba_flash_write_address_byte(0x9000000, 0x1);
+		gba_flash_write_address_byte(0x1000000, 0x01);
 		
 		// Save the 1 byte first to buffer
 		set_number(0x0000, SET_START_ADDRESS);
 		set_mode(GBA_READ_SRAM);
 		com_read_bytes(READ_BUFFER, 64);
-		memcpy(&bank_1_buffer, readBuffer, 64);
+		memcpy(&secondBuffer, readBuffer, 64);
 		com_read_stop();
 		
-		if (bank_0_buffer[0] != bank_1_buffer[0])
-		{
+		
+		if (firstBuffer[0] != secondBuffer[0]) {
 			return SRAM_FLASH_1MBIT;
 		}
-		else
-		{
-			// Check to see if the first byte matches our test byte (1 in 255 chance), if so, use the another test byte
-			if (bank_1_buffer[0] == testNumber) {
-				testNumber = 0xA6;
+		else { // Do a more through check of RAM contents
+			printf("Testing for 512Kbit or 1Mbit SRAM... ");
+			
+			duplicateCount = 0;
+			for (uint8_t x = 0; x < 32; x++) {
+				// Switch bank to 0
+				gba_flash_write_address_byte(0x1000000, 0x00);
+				
+				// Read bank 0
+				set_number((uint32_t) (x * 0x400), SET_START_ADDRESS);
+				set_mode(GBA_READ_SRAM);
+				com_read_bytes(READ_BUFFER, 64);
+				memcpy(&firstBuffer, readBuffer, 64);
+				com_read_stop();
+				
+				// Switch bank to 1
+				gba_flash_write_address_byte(0x1000000, 0x01);
+				
+				set_number((uint32_t) (x * 0x400), SET_START_ADDRESS);
+				set_mode(GBA_READ_SRAM);
+				com_read_bytes(READ_BUFFER, 64);
+				memcpy(&secondBuffer, readBuffer, 64);
+				com_read_stop();
+				
+				// Compare
+				for (uint8_t x = 0; x < 64; x++) {
+					if (firstBuffer[x] == secondBuffer[x]) {
+						duplicateCount++;
+					}
+				}
 			}
 			
-			// Write 1 byte
-			set_number(0x0000, SET_START_ADDRESS);
-			uint8_t tempBuffer[3];
-			tempBuffer[0] = GBA_WRITE_ONE_BYTE_SRAM; // Set write sram 1 byte mode
-			tempBuffer[1] = testNumber;
-			RS232_SendBuf(cport_nr, tempBuffer, 2);
-			RS232_drain(cport_nr);
-			com_wait_for_ack();
+			// Set back to bank to 0
+			gba_flash_write_address_byte(0x1000000, 0x00);
 			
-			// Switch bank to 0
-			gba_flash_write_address_byte(0x9000000, 0x0);
-			
-			uint8_t controlBuffer[65];
-			
-			// Save the 1 byte first to buffer
-			set_number(0x0000, SET_START_ADDRESS);
-			set_mode(GBA_READ_SRAM);
-			com_read_bytes(READ_BUFFER, 64);
-			memcpy(&controlBuffer, readBuffer, 64);
-			com_read_stop();
-			
-			// Write back original value into bank 0
-			set_number(0x0000, SET_START_ADDRESS);
-			tempBuffer[0] = GBA_WRITE_ONE_BYTE_SRAM; // Set write sram 1 byte mode
-			tempBuffer[1] = bank_0_buffer[0];
-			RS232_SendBuf(cport_nr, tempBuffer, 2);
-			RS232_drain(cport_nr);
-			com_wait_for_ack();
-			
-			// If controlBuffer has the same value as the testNumber, no bank switching has happened
-			if (controlBuffer[0] == testNumber)
-			{
+			// If bank 0 and 1 are duplicated, then it's 512Kbit SRAM
+			if (duplicateCount >= 2000) {
+				printf("512Kbit\n");
 				return SRAM_FLASH_512KBIT;
 			}
-			else
-			{
-				// Switch bank to 1
-				gba_flash_write_address_byte(0x9000000, 0x1);
-				
-				// Write 1 byte
-				set_number(0x0000, SET_START_ADDRESS);
-				tempBuffer[0] = GBA_WRITE_ONE_BYTE_SRAM; // Set write sram 1 byte mode
-				tempBuffer[1] = bank_1_buffer[0];
-				RS232_SendBuf(cport_nr, tempBuffer, 2);
-				RS232_drain(cport_nr);
-				com_wait_for_ack();
-				
+			else {
+				printf("1Mbit\n");
 				return SRAM_FLASH_1MBIT;
 			}
-			
 		}
-		
-		
-		
-		// Switch bank
-		gba_flash_write_address_byte(0x9000000, 0x1);
-		
-
-		// Save the 1 byte first to buffer
-		set_number(0x0000, SET_START_ADDRESS);
-		set_mode(GBA_READ_SRAM);
-		com_read_bytes(READ_BUFFER, 64);
-		memcpy(&bank_1_buffer, readBuffer, 64);
-		com_read_stop();
-		
-		
-		return SRAM_FLASH_512KBIT;
 	}
 	
 	// Test 512Kbit or 1Mbit Flash, read first 64 bytes on bank 0 then bank 1 and compare
@@ -1286,90 +1252,90 @@ void read_gba_header (void) {
 	printf ("Logo check: ");
 	if (logoCheck == 1) {
 		printf ("OK\n");
-	}
-	else {
-		printf ("Failed\n");
-	}
-	
-	// ROM size
-	printf ("Calculating ROM size");
-	romSize = gba_check_rom_size();
-	
-	// EEPROM check
-	printf ("\nChecking for EEPROM");
-	
-	// Check if we have a Intel flash cart, if so, skip the EEPROM check as it can interfer with reading the last 2MB of the ROM
-	if (gbxcartFirmwareVersion >= 10) {
-		if (gba_detect_intel_flash_cart() == FLASH_FOUND_INTEL) {
-			printf("... Skipping, Intel Flash cart detected");
-			eepromSize = 0;
+		
+		// ROM size
+		printf ("Calculating ROM size");
+		romSize = gba_check_rom_size();
+		
+		// EEPROM check
+		printf ("\nChecking for EEPROM");
+		
+		// Check if we have a Intel flash cart, if so, skip the EEPROM check as it can interfer with reading the last 2MB of the ROM
+		if (gbxcartFirmwareVersion >= 10) {
+			if (gba_detect_intel_flash_cart() == FLASH_FOUND_INTEL) {
+				printf("... Skipping, Intel Flash cart detected");
+				eepromSize = 0;
+			}
+			else {
+				eepromSize = gba_check_eeprom();
+			}
 		}
 		else {
 			eepromSize = gba_check_eeprom();
 		}
+		
+		// SRAM/Flash check/size, if no EEPROM present
+		if (eepromSize == 0) {
+			printf ("\nCalculating SRAM/Flash size");
+			ramSize = gba_check_sram_flash();
+		}
+		else {
+			ramSize = 0;
+		}
+		
+		// If file exists, we know the ram has been erased before, so read memory info from this file
+		load_cart_ram_info();
+		
+		// Print out
+		printf ("\nROM size: %iMByte\n", romSize);
+		romEndAddr = ((1024 * 1024) * romSize);
+		
+		if (hasFlashSave >= 2) {
+			printf("Flash size: ");
+		}
+		else if (hasFlashSave == NO_FLASH) {
+			printf("SRAM size: ");
+		}
+		else {
+			printf("SRAM/Flash size: ");
+		}
+		
+		if (ramSize == 0) {
+			ramEndAddress = 0;
+			printf ("None\n");
+		}
+		else if (ramSize == 1) {
+			ramEndAddress = 0x8000;
+			ramBanks = 1;
+			printf ("256Kbit\n");
+		}
+		else if (ramSize == 2) {
+			ramEndAddress = 0x10000;
+			ramBanks = 1;
+			printf ("512Kbit\n");
+		}
+		else if (ramSize == 3) {
+			ramEndAddress = 0x10000;
+			ramBanks = 2;
+			printf ("1Mbit\n");
+		}
+		
+		printf ("EEPROM: ");
+		if (eepromSize == EEPROM_NONE) {
+			eepromEndAddress = 0;
+			printf ("None\n");
+		}
+		else if (eepromSize == EEPROM_4KBIT) {
+			eepromEndAddress = 0x200;
+			printf ("4Kbit\n");
+		}
+		else if (eepromSize == EEPROM_64KBIT) {
+			eepromEndAddress = 0x2000;
+			printf ("64Kbit\n");
+		}
 	}
 	else {
-		eepromSize = gba_check_eeprom();
-	}
-	
-	// SRAM/Flash check/size, if no EEPROM present
-	if (eepromSize == 0) {
-		printf ("\nCalculating SRAM/Flash size");
-		ramSize = gba_check_sram_flash();
-	}
-	else {
-		ramSize = 0;
-	}
-	
-	// If file exists, we know the ram has been erased before, so read memory info from this file
-	load_cart_ram_info();
-	
-	// Print out
-	printf ("\nROM size: %iMByte\n", romSize);
-	romEndAddr = ((1024 * 1024) * romSize);
-	
-	if (hasFlashSave >= 2) {
-		printf("Flash size: ");
-	}
-	else if (hasFlashSave == NO_FLASH) {
-		printf("SRAM size: ");
-	}
-	else {
-		printf("SRAM/Flash size: ");
-	}
-	
-	if (ramSize == 0) {
-		ramEndAddress = 0;
-		printf ("None\n");
-	}
-	else if (ramSize == 1) {
-		ramEndAddress = 0x8000;
-		ramBanks = 1;
-		printf ("256Kbit\n");
-	}
-	else if (ramSize == 2) {
-		ramEndAddress = 0x10000;
-		ramBanks = 1;
-		printf ("512Kbit\n");
-	}
-	else if (ramSize == 3) {
-		ramEndAddress = 0x10000;
-		ramBanks = 2;
-		printf ("1Mbit\n");
-	}
-	
-	printf ("EEPROM: ");
-	if (eepromSize == EEPROM_NONE) {
-		eepromEndAddress = 0;
-		printf ("None\n");
-	}
-	else if (eepromSize == EEPROM_4KBIT) {
-		eepromEndAddress = 0x200;
-		printf ("4Kbit\n");
-	}
-	else if (eepromSize == EEPROM_64KBIT) {
-		eepromEndAddress = 0x2000;
-		printf ("64Kbit\n");
+		printf ("Failed\nSkipping ROM/RAM checks.\n");
 	}
 }
 

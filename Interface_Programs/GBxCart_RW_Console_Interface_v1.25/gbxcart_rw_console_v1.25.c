@@ -1,9 +1,9 @@
 /*
  GBxCart RW - Console Interface
- Version: 1.24
+ Version: 1.25
  Author: Alex from insideGadgets (www.insidegadgets.com)
  Created: 7/11/2016
- Last Modified: 8/08/2019
+ Last Modified: 21/09/2019
  
  GBxCart RW allows you to dump your Gameboy/Gameboy Colour/Gameboy Advance games ROM, save the RAM and write to the RAM.
  
@@ -25,7 +25,7 @@
 
 int main(int argc, char **argv) {
 	
-	printf("GBxCart RW v1.24 by insideGadgets\n");
+	printf("GBxCart RW v1.25 by insideGadgets\n");
 	printf("################################\n");
 	
 	read_config();
@@ -479,16 +479,13 @@ int main(int argc, char **argv) {
 							
 							// Read RAM
 							uint32_t readBytes = 0;
-							gba_flash_write_address_byte(0x9000000, 0x0);
-
 							for (uint8_t bank = 0; bank < ramBanks; bank++) {
 								// Flash, switch bank 1
 								if (hasFlashSave >= FLASH_FOUND && bank == 1) {
 									set_number(1, GBA_FLASH_SET_BANK);
 								}
-								else if (hasFlashSave == NO_FLASH && bank == 1)
-								{
-									gba_flash_write_address_byte(0x9000000, 0x1);
+								else if (hasFlashSave == NO_FLASH && bank == 1) { // 1Mbit SRAM
+									gba_flash_write_address_byte(0x1000000, 0x1);
 								}
 								
 								// Set start and end address
@@ -532,8 +529,9 @@ int main(int argc, char **argv) {
 								if (hasFlashSave >= FLASH_FOUND && bank == 1) {
 									set_number(0, GBA_FLASH_SET_BANK);
 								}
+								// SRAM 1Mbit, switch back to bank 0
 								else if (hasFlashSave == NO_FLASH && bank == 1) {
-									gba_flash_write_address_byte(0x9000000, 0x0);
+									gba_flash_write_address_byte(0x1000000, 0x0);
 								}
 							}
 						}
@@ -706,17 +704,18 @@ int main(int argc, char **argv) {
 							// SRAM
 							if (hasFlashSave == NO_FLASH && eepromSize == EEPROM_NONE) {
 								
-								for (uint8_t i_u8 = 0U; i_u8 < ramBanks; i_u8++)
-								{
+								uint32_t readBytes = 0;
+								for (uint8_t bank = 0; bank < ramBanks; bank++) {
+									if (bank == 1) { // 1Mbit SRAM
+										gba_flash_write_address_byte(0x1000000, 0x1);
+									}
 									
-									gba_flash_write_address_byte(0x9000000, i_u8);
 									// Set start and end address
 									currAddr = 0x0000;
 									endAddr = ramEndAddress;
 									set_number(currAddr, SET_START_ADDRESS);
 									
 									// Write
-									uint32_t readBytes = 0;
 									while (currAddr < endAddr) {
 										com_write_bytes_from_file(GBA_WRITE_SRAM, ramFile, 64);
 										currAddr += 64;
@@ -726,9 +725,11 @@ int main(int argc, char **argv) {
 										com_wait_for_ack();
 									}
 									
+									// SRAM 1Mbit, switch back to bank 0
+									if (bank == 1) {
+										gba_flash_write_address_byte(0x1000000, 0x0);
+									}
 								}
-
-								
 							}
 							
 							// EEPROM
@@ -916,30 +917,21 @@ int main(int argc, char **argv) {
 						
 						// SRAM
 						if (hasFlashSave == NO_FLASH && eepromSize == EEPROM_NONE) {
+							// Set start and end address
+							currAddr = 0x0000;
+							endAddr = ramEndAddress;
+							set_number(currAddr, SET_START_ADDRESS);
 							
-							uint8_t banks = (gba_check_sram_flash() == 3) ? 1 : 2;
-							
-							for (uint8_t i_u8 = 0U; i_u8 < banks; i_u8++)
-							{
-								gba_flash_write_address_byte(0x9000000, i_u8);
-								// Set start and end address
-								currAddr = 0x0000;
-								endAddr = ramEndAddress;
-								set_number(currAddr, SET_START_ADDRESS);
+							// Write
+							uint32_t readBytes = 0;
+							while (currAddr < endAddr) {
+								com_write_bytes_from_file(GBA_WRITE_SRAM, NULL, 64);
+								currAddr += 64;
+								readBytes += 64;
 								
-								// Write
-								uint32_t readBytes = 0;
-								while (currAddr < endAddr) {
-									com_write_bytes_from_file(GBA_WRITE_SRAM, NULL, 64);
-									currAddr += 64;
-									readBytes += 64;
-									
-									print_progress_percent(readBytes, ramEndAddress * banks / 64);
-									com_wait_for_ack();
-								}
+								print_progress_percent(readBytes, ramEndAddress / 64);
+								com_wait_for_ack();
 							}
-
-							
 						}
 						
 						// EEPROM
