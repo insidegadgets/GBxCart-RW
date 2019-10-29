@@ -1,9 +1,9 @@
 /*
  GBxCart RW - Console Interface Flasher
- Version: 1.22
+ Version: 1.24
  Author: Alex from insideGadgets (www.insidegadgets.com)
  Created: 26/08/2017
- Last Modified: 9/08/2019
+ Last Modified: 8/10/2019
  License: GPL
  
  */
@@ -16,7 +16,7 @@
 #endif
 
 #if defined(__linux__) || defined(__FreeBSD__) || defined(__APPLE__)
-#define RS232_PORTNR  45
+#define RS232_PORTNR  57
 #else
 #define RS232_PORTNR  30
 #endif

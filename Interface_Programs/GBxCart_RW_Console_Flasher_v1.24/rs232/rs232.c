@@ -40,7 +40,7 @@
 #include <IOKit/serial/ioss.h>
 #endif
 
-#define RS232_PORTNR  45
+#define RS232_PORTNR  57
 
 
 int Cport[RS232_PORTNR],
@@ -57,7 +57,14 @@ char *comports[RS232_PORTNR]={"/dev/ttyS0","/dev/ttyS1","/dev/ttyS2","/dev/ttyS3
                        "/dev/rfcomm0","/dev/rfcomm1","/dev/ircomm0","/dev/ircomm1",
                        "/dev/cuau0","/dev/cuau1","/dev/cuau2","/dev/cuau3",
                        "/dev/cuaU0","/dev/cuaU1","/dev/cuaU2","/dev/cuaU3",
-                       "/dev/tty.wchusbserial1430","/dev/tty.wchusbserial630","/dev/tty.wchusbserial1410","/dev/tty.wchusbserial1420","/dev/tty.usbserial-1410","/dev/tty.usbserial-1420","/dev/tty.usbserial-1430"};
+                       "/dev/tty.wchusbserial630",
+							  "/dev/tty.wchusbserial1410","/dev/tty.usbserial-14110","/dev/tty.usbserial-1410",
+							  "/dev/tty.wchusbserial1420","/dev/tty.usbserial-14120","/dev/tty.usbserial-1420",
+							  "/dev/tty.wchusbserial1430","/dev/tty.usbserial-14130","/dev/tty.usbserial-1430",
+							  "/dev/tty.wchusbserial1440","/dev/tty.usbserial-14140","/dev/tty.usbserial-1440",
+							  "/dev/tty.wchusbserial1450","/dev/tty.usbserial-14150","/dev/tty.usbserial-1450",
+							  "/dev/tty.wchusbserial1460","/dev/tty.usbserial-14160","/dev/tty.usbserial-1460",
+};
 
 int RS232_OpenComport(int comport_number, int baudrate, const char *mode)
 {

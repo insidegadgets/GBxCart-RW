@@ -1,9 +1,9 @@
 /*
  GBxCart RW - Console Interface Flasher
- Version: 1.22
+ Version: 1.24
  Author: Alex from insideGadgets (www.insidegadgets.com)
  Created: 26/08/2017
- Last Modified: 9/08/2019
+ Last Modified: 8/10/2019
  License: GPL
  
  This program allows you to write ROMs to Flash Carts that are supported.
@@ -26,7 +26,7 @@
 
 int main(int argc, char **argv) {
 	
-	printf("GBxCart RW Flasher v1.22 by insideGadgets\n");
+	printf("GBxCart RW Flasher v1.24 by insideGadgets\n");
 	printf("#########################################\n");
 	
 	// Check arguments
@@ -881,8 +881,83 @@ int main(int argc, char **argv) {
 			fclose(romFile);
 		}
 		
-		else if (flashCartType == 15 || flashCartType == 16) {
-			if (flashCartType == 15) {
+		else if (flashCartType == 15) {
+			printf("15. 4 MByte MBC30 (MBM29F033C) Gameboy Flash Cart\n");
+			printf("\nGoing to write to ROM (Flash cart) from %s\n", filenameOnly);
+			
+			// PCB v1.3 - Set 5V
+			if (gbxcartPcbVersion == PCB_1_3) {
+				set_mode(VOLTAGE_5V);
+				delay_ms(500);
+			}
+			
+			// Check file size
+			if (fileSize > 0x400000) {
+				fclose(romFile);
+				printf("\n%s \nFile size is larger than the available Flash cart space of 4 MByte\n", argv[1]);
+				read_one_letter();
+				return 1;
+			}
+			
+			currAddr = 0x0000;
+			endAddr = 0x7FFF;
+			
+			// Calculate banks needed from ROM file size
+			romBanks = fileSize / 16384;
+			
+			// Flash Setup
+			set_mode(GB_CART_MODE); // Gameboy mode
+			gb_flash_pin_setup(WE_AS_AUDIO_PIN); // Audio pin
+			gb_flash_program_setup(GB_FLASH_PROGRAM_555);// Flash program byte method
+			gb_check_change_flash_id(GB_FLASH_PROGRAM_555);
+			
+			// Chip erase
+			printf("\nErasing Flash");
+			gb_flash_write_address_byte(0x555, 0xAA);
+			gb_flash_write_address_byte(0x2AA, 0x55);
+			gb_flash_write_address_byte(0x555, 0x80);
+			gb_flash_write_address_byte(0x555, 0xAA);
+			gb_flash_write_address_byte(0x2AA, 0x55);
+			gb_flash_write_address_byte(0xAAA, 0x10);
+			
+			// Wait for first byte to be 0xFF
+			wait_for_flash_chip_erase_ff(1);
+			
+			
+			printf("\n\nWriting to ROM (Flash cart) from %s\n", filenameOnly);
+			printf("[             25%%             50%%             75%%            100%%]\n[");
+			
+			// Write ROM
+			currAddr = 0x0000;
+			for (uint16_t bank = 1; bank < romBanks; bank++) {				
+				if (bank > 1) { currAddr = 0x4000; }
+				
+				// Set start address
+				set_number(currAddr, SET_START_ADDRESS);
+				delay_ms(5);
+				
+				// Read data
+				while (currAddr < endAddr) {
+					if (currAddr == 0x4000) { // Switch banks here just before the next bank, not any time sooner
+						set_bank(0x2100, bank);
+					}
+					
+					com_write_bytes_from_file(GB_FLASH_WRITE_64BYTE, romFile, 64);
+					com_wait_for_ack();
+					currAddr += 64;
+					readBytes += 64;
+					
+					// Print progress
+					print_progress_percent(readBytes, (romBanks * 16384) / 64);
+				}
+			}
+			
+			printf("]");
+			fclose(romFile);
+		}
+		
+		else if (flashCartType == 16 || flashCartType == 17) {
+			if (flashCartType == 16) {
 				printf("32 MByte (4x 8MB Banks) (256M29) Gameboy Flash Cart\n");
 			}
 			else {
@@ -1489,13 +1564,13 @@ int main(int argc, char **argv) {
 			}
 		}
 		else if (flashCartType == 22) {
-			printf("16 MByte (MSP55LV128M / 29GL128EHMC / 256M29EWH / MX29GL128ELT / M29W128 / S29GL128) Gameboy Advance Flash Cart\n");
+			printf("16 MByte (MSP55LV128M / 29GL128EHMC / MX29GL128ELT / M29W128 / S29GL128) / 32MB (256M29EWH) Gameboy Advance Flash Cart\n");
 			printf("\nGoing to write to ROM (Flash cart) from %s\n", filenameOnly);
 			
 			// Check file size
-			if (fileSize > 0x1000000) {
+			if (fileSize > 0x2000000) {
 				fclose(romFile);
-				printf("\n%s \nFile size is larger than the available Flash cart space of 16 MBytes\n", argv[1]);
+				printf("\n%s \nFile size is larger than the available Flash cart space of 32 MBytes\n", argv[1]);
 				read_one_letter();
 				return 1;
 			}
@@ -1934,13 +2009,14 @@ int main(int argc, char **argv) {
 					 "12. 2 MByte (AM29F016B)\n"\
 					 "13. 2 MByte (GB Smart 16M)\n"\
 					 "14. 4 MByte (M29W640 / 29DL32BF / GL032A10BAIR4)\n"\
-					 "15. 32 MByte (4x 8MB Banks) (256M29)\n"\
-					 "16. 32 MByte (4x 8MB Banks) (M29W256 / MX29GL256)\n\n"\
+					 "15. 4 MByte MBC30 (MBM29F033C)\n"\
+					 "16. 32 MByte (4x 8MB Banks) (256M29)\n"\
+					 "17. 32 MByte (4x 8MB Banks) (M29W256 / MX29GL256)\n\n"\
 					 
 					 "--- Gameboy Advance ---\n"\
 					 "20. insideGadgets 32MB 512Kbit/1Mbit Flash Cart\n"\
 					 "21. 16 MByte (MSP55LV128 / 29LV128DTMC)\n"\
-					 "22. 16 MByte (MSP55LV128M / 29GL128EHMC / 256M29EWH / MX29GL128ELT / M29W128 / S29GL128)\n"\
+					 "22. 16 MByte (MSP55LV128M / 29GL128EHMC / MX29GL128ELT / M29W128 / S29GL128) / 32MB (256M29EWH)\n"\
 					 "23. 16 MByte M36L0R706 / 32 MByte 256L30B / 4455LLZBQO / 4000L0YBQ0\n"\
 					 "24. 16 MByte M36L0R706 (2) / 32 MByte 256L30B (2) / 4455LLZBQO (2) / 4000L0YBQ0 (2)\n"\
 					 "25. 16 MByte GE28F128W30\n"\
@@ -1951,7 +2027,7 @@ int main(int argc, char **argv) {
 		fgets(optionString, 5, stdin);
 		
 		int optionSelected = atoi(optionString);
-		if (optionSelected == 5) {
+		if (optionSelected == 7) {
 			printf("\nPlease select a Flash Chip:\n"\
 					 "1. AM29F010B (Audio as WE)\n"\
 					 "2. AM29F010B (WR as WE)\n"\
@@ -1962,13 +2038,13 @@ int main(int argc, char **argv) {
 			fgets(optionString, 5, stdin);
 			optionSelected = atoi(optionString);
 			write_flash_config(optionSelected+100);
-			printf("\nYou can now drag and drop your ROM file to this exe file. Press enter to exit.");
+			printf("\nPlease close this program. You can now drag and drop your ROM file to this exe file in Windows Explorer.\nYou can also use the following command: gbxcart_rw_flasher_v1.xx.exe <ROMFile>\nPress enter to exit.");
 			read_one_letter();
 			return 0;
 		}
 		else {
 			write_flash_config(optionSelected);
-			printf("\nYou can now drag and drop your ROM file to this exe file. Press enter to exit.");
+			printf("\nPlease close this program. You can now drag and drop your ROM file to this exe file in Windows Explorer.\nYou can also use the following command: gbxcart_rw_flasher_v1.xx.exe <ROMFile>\nPress enter to exit.");
 			read_one_letter();
 			return 0;
 		}
