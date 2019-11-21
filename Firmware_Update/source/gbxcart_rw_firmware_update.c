@@ -15,8 +15,10 @@
 
 #ifdef _WIN32
 #include <Windows.h>
+#define DIR_SEPARATOR "\\"
 #else
 #include <unistd.h>
+#define DIR_SEPARATOR "/"
 #endif
 
 #define MINI_FIRMWARE 14
@@ -70,11 +72,11 @@ int main(int argc, char **argv) {
 			if (modeSelected == 'y') {
 				printf("\n\n");
 				char tsbReset[100];
-				sprintf(tsbReset, "tsb\\gbxcart_rw_wdt_reset_v1.0.exe %i", cport_nr+1);
+				sprintf(tsbReset, "tsb" DIR_SEPARATOR "gbxcart_rw_wdt_reset_v1.0.exe %i", cport_nr+1);
 				system(tsbReset);
 				
 				char tsbFirmware[200];
-				sprintf(tsbFirmware, "tsb\\tsb.exe com%i:57600 fw gbxcart_rw_mini_v1.0_pcb_r14.hex", cport_nr+1);
+				sprintf(tsbFirmware, "tsb" DIR_SEPARATOR "tsb.exe com%i:57600 fw gbxcart_rw_mini_v1.0_pcb_r14.hex", cport_nr+1);
 				system(tsbFirmware);
 			}
 			else {
@@ -94,22 +96,22 @@ int main(int argc, char **argv) {
 				if (gbxcartPcbVersion == 2) { // v1.1-v1.2 PCB
 					printf("\n\n");
 					char tsbReset[100];
-					sprintf(tsbReset, "tsb\\gbxcart_rw_wdt_reset_v1.0.exe %i", cport_nr+1);
+					sprintf(tsbReset, "tsb" DIR_SEPARATOR "gbxcart_rw_wdt_reset_v1.0.exe %i", cport_nr+1);
 					system(tsbReset);
 					
 					char tsbFirmware[200];
-					sprintf(tsbFirmware, "tsb\\tsb.exe com%i:57600 fw gbxcart_rw_v1.1-1.2_pcb_r15.hex", cport_nr+1);
+					sprintf(tsbFirmware, "tsb" DIR_SEPARATOR "tsb.exe com%i:57600 fw gbxcart_rw_v1.1-1.2_pcb_r15.hex", cport_nr+1);
 					system(tsbFirmware);
 					printf(tsbFirmware);
 				}
 				else if (gbxcartPcbVersion == 4) { // v1.3 PCB
 					printf("\n\n");
 					char tsbReset[100];
-					sprintf(tsbReset, "tsb\\gbxcart_rw_wdt_reset_v1.0.exe %i", cport_nr+1);
+					sprintf(tsbReset, "tsb" DIR_SEPARATOR "gbxcart_rw_wdt_reset_v1.0.exe %i", cport_nr+1);
 					system(tsbReset);
 					
 					char tsbFirmware[200];
-					sprintf(tsbFirmware, "tsb\\tsb.exe com%i:57600 fw gbxcart_rw_v1.3_pcb_r15.hex", cport_nr+1);
+					sprintf(tsbFirmware, "tsb" DIR_SEPARATOR "tsb.exe com%i:57600 fw gbxcart_rw_v1.3_pcb_r15.hex", cport_nr+1);
 					system(tsbFirmware);
 				}
 			}
