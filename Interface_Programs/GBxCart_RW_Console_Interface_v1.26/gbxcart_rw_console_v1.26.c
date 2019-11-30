@@ -1,9 +1,9 @@
 /*
  GBxCart RW - Console Interface
- Version: 1.25
+ Version: 1.26
  Author: Alex from insideGadgets (www.insidegadgets.com)
  Created: 7/11/2016
- Last Modified: 21/09/2019
+ Last Modified: 18/11/2019
  
  GBxCart RW allows you to dump your Gameboy/Gameboy Colour/Gameboy Advance games ROM, save the RAM and write to the RAM.
  
@@ -25,7 +25,7 @@
 
 int main(int argc, char **argv) {
 	
-	printf("GBxCart RW v1.25 by insideGadgets\n");
+	printf("GBxCart RW v1.26 by insideGadgets\n");
 	printf("################################\n");
 	
 	read_config();
@@ -189,21 +189,10 @@ int main(int argc, char **argv) {
 				set_number(currAddr, SET_START_ADDRESS);
 				
 				uint16_t readLength = 64;
-				#if defined(__APPLE__)
 				set_mode(GBA_READ_ROM);
-				#else
-				if (gbxcartPcbVersion != PCB_1_0) {
-					set_mode(GBA_READ_ROM_256BYTE);
-					readLength = 256;
-				}
-				else {
-					set_mode(GBA_READ_ROM);
-				}
-				#endif
 				
 				// Read data
 				while (currAddr < endAddr) {
-					#if defined(__APPLE__) // Apple only seems to like reading 64 bytes and has occasional time outs
 					uint8_t comReadBytes = com_read_bytes(romFile, readLength);
 					if (comReadBytes == readLength) {
 						currAddr += readLength;
@@ -213,7 +202,7 @@ int main(int argc, char **argv) {
 							com_read_cont();
 						}
 					}
-					else { // Didn't receive 64 bytes, usually this only happens for Apple MACs
+					else { // Didn't receive 64 bytes
 						fflush(romFile);
 						com_read_stop();
 						delay_ms(500);
@@ -226,36 +215,6 @@ int main(int argc, char **argv) {
 						set_number(currAddr / 2, SET_START_ADDRESS);
 						set_mode(GBA_READ_ROM);				
 					}
-					#else // For Windows / Linux
-					int comReadBytes = com_read_bytes(romFile, readLength);
-					if (comReadBytes == readLength) {
-						currAddr += readLength;
-						
-						// Request 64 bytes more
-						if (currAddr < endAddr) {
-							com_read_cont();
-						}
-					}
-					else { // Didn't receive 256 bytes
-						fflush(romFile);
-						com_read_stop();
-						delay_ms(500);
-						printf("Retrying\n");
-						
-						// Flush buffer
-						RS232_PollComport(cport_nr, readBuffer, readLength);											
-						
-						// Start off where we left off
-						fseek(romFile, currAddr, SEEK_SET);
-						set_number(currAddr / 2, SET_START_ADDRESS);
-						if (gbxcartPcbVersion != PCB_1_0) {
-							set_mode(GBA_READ_ROM_256BYTE);
-						}
-						else {
-							set_mode(GBA_READ_ROM);
-						}			
-					}
-					#endif
 					
 					// Print progress
 					print_progress_percent(currAddr, endAddr / 64);

@@ -1,9 +1,9 @@
 /*
  GBxCart RW - Console Interface
- Version: 1.25
+ Version: 1.26
  Author: Alex from insideGadgets (www.insidegadgets.com)
  Created: 7/11/2016
- Last Modified: 21/09/2019
+ Last Modified: 18/11/2019
  
  */
 
@@ -15,9 +15,9 @@
 #endif
 
 #if defined(__linux__) || defined(__FreeBSD__) || defined(__APPLE__)
-#define RS232_PORTNR  45
+#define RS232_PORTNR  57
 #else
-#define RS232_PORTNR  16
+#define RS232_PORTNR  30
 #endif
 
 #include <stdio.h>
@@ -442,6 +442,7 @@ void read_gb_header (void) {
 			 (headerChar >= 0x41 && headerChar <= 0x5A) || // A-Z
 			 (headerChar >= 0x61 && headerChar <= 0x7A) || // a-z
 			 (headerChar >= 0x24 && headerChar <= 0x29) || // #$%&'()
+			 (headerChar == 0x2A) || // *
 			 (headerChar == 0x2D) || // -
 			 (headerChar == 0x2E) || // .
 			 (headerChar == 0x5F) || // _
