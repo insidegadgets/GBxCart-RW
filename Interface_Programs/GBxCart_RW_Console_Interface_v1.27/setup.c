@@ -1,9 +1,9 @@
 /*
  GBxCart RW - Console Interface
- Version: 1.26
+ Version: 1.27
  Author: Alex from insideGadgets (www.insidegadgets.com)
  Created: 7/11/2016
- Last Modified: 18/11/2019
+ Last Modified: 30/11/2019
  
  */
 
@@ -309,7 +309,7 @@ void set_number (uint32_t number, uint8_t command) {
 	RS232_SendByte(cport_nr, 0);
 	RS232_drain(cport_nr);
 	
-	#if defined(__APPLE__)
+	#if defined(__APPLE__) || defined(__linux__)
 	delay_ms(5);
 	#endif
 }
