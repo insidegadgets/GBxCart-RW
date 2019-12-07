@@ -1,9 +1,9 @@
 /*
  GBxCart RW - Console Interface Flasher
- Version: 1.24
+ Version: 1.25
  Author: Alex from insideGadgets (www.insidegadgets.com)
  Created: 26/08/2017
- Last Modified: 8/10/2019
+ Last Modified: 2/12/2019
  License: GPL
  
  */
