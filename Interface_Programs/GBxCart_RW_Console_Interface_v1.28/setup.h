@@ -1,10 +1,9 @@
 /*
- GBxCart RW - Console Interface Flasher
- Version: 1.25
+ GBxCart RW - Console Interface
+ Version: 1.28
  Author: Alex from insideGadgets (www.insidegadgets.com)
- Created: 26/08/2017
- Last Modified: 2/12/2019
- License: GPL
+ Created: 7/11/2016
+ Last Modified: 21/12/2019
  
  */
 
@@ -52,6 +51,7 @@ extern int bdrate;
 #define NO_FLASH 1
 #define FLASH_FOUND 2
 #define FLASH_FOUND_ATMEL 3
+#define FLASH_FOUND_INTEL 4
 
 #define GBA_READ_ROM 'r'
 #define GBA_READ_ROM_256BYTE 'j'
@@ -94,7 +94,6 @@ extern int bdrate;
 #define GBA_FLASH_WRITE_256BYTE_SWAPPED_D0D1 't'
 #define GBA_FLASH_WRITE_256BYTE 'f'
 #define GBA_FLASH_WRITE_INTEL_64BYTE 'l'
-#define GBA_FLASH_WRITE_INTEL_64BYTE_WORD 'u'
 
 // General commands
 #define CART_MODE 'C'
@@ -112,11 +111,14 @@ extern int bdrate;
 
 #define RESET_AVR '*'
 #define RESET_VALUE 0x7E5E1
+#define XMAS_LEDS '#'
+#define XMAS_VALUE 0x7690FCD
 
 // PCB versions
 #define PCB_1_0 1
 #define PCB_1_1 2
 #define PCB_1_3 4
+#define GBXMAS 90
 
 // Common vars
 #define READ_BUFFER 0
@@ -125,6 +127,7 @@ extern uint8_t gbxcartFirmwareVersion;
 extern uint8_t gbxcartPcbVersion;
 extern uint8_t readBuffer[257];
 extern uint8_t writeBuffer[257];
+extern char optionSelected;
 
 extern char gameTitle[17];
 extern uint16_t cartridgeType;
@@ -140,8 +143,9 @@ extern int eepromSize;
 extern uint16_t eepromEndAddress;
 extern int hasFlashSave;
 extern uint8_t cartridgeMode;
-extern int flashCartType;
-extern uint8_t flashID[10];
+extern uint32_t bytesReadPrevious;
+extern uint8_t ledBlinking;
+extern uint8_t ledProgress;
 
 // Read the config.ini file for the COM port to use and baud rate
 void read_config(void);
@@ -163,6 +167,13 @@ char read_one_letter(void);
 // Print progress
 void print_progress_percent(uint32_t bytesRead, uint32_t hashNumber);
 
+void led_progress_percent (uint32_t bytesRead, uint32_t hashNumber);
+void xmas_set_leds (uint32_t value);
+void xmas_blink_led (uint8_t value);
+void xmas_reset_values (void);
+void xmas_wake_up (void);
+void xmas_setup (uint32_t progressNumber);
+
 // Wait for a "1" acknowledgement from the ATmega
 void com_wait_for_ack (void);
 
@@ -175,10 +186,11 @@ void com_read_cont(void);
 // Test opening the COM port,if can't be open, try autodetecting device on other COM ports
 uint8_t com_test_port(void);
 
-// Read 1 to 256 bytes from the COM port and write it to the global read buffer or to a file if specified. 
+
+// Read 1 to 64 bytes from the COM port and write it to the global read buffer or to a file if specified. 
 // When polling the com port it return less than the bytes we want, keep polling and wait until we have all bytes requested. 
-// We expect no more than 256 bytes.
-uint8_t com_read_bytes(FILE *file, int count);
+// We expect no more than 64 bytes.
+uint16_t com_read_bytes(FILE *file, int count);
 
 // Read 1-128 bytes from the file (or buffer) and write it the COM port with the command given
 void com_write_bytes_from_file(uint8_t command, FILE *file, int count);
@@ -208,7 +220,6 @@ void mbc2_fix (void);
 
 // Read the first 384 bytes of ROM and process the Gameboy header information
 void read_gb_header (void);
-
 
 
 // ****** Gameboy Advance functions ****** 
@@ -242,7 +253,6 @@ void gba_read_gametitle(void);
 void read_gba_header (void);
 
 
-
 // ****** GB Cart Flasher functions ******
 
 // Write flash config file
@@ -255,7 +265,7 @@ void read_config_flash(void);
 void wait_for_flash_sector_ff(uint16_t address);
 
 // Wait for first byte of Flash to be 0xFF, that's when we know the sector has been erased
-void wait_for_flash_chip_erase_ff(uint8_t printProgress);
+void wait_for_flash_chip_erase_ff(void);
 
 // Select which pin need to pulse as WE (Audio or WR)
 void gb_flash_pin_setup(char pin);
@@ -266,10 +276,11 @@ void gb_flash_program_setup(uint8_t method);
 // Write address and byte to flash
 void gb_flash_write_address_byte (uint16_t address, uint8_t byte);
 
-void gb_check_change_flash_id (uint8_t flashMethod);
 
 
 // ****** GBA Cart Flasher functions ******
+uint8_t gba_detect_intel_flash_cart(void);
 
 // GBA Flash Cart, write address and byte
 void gba_flash_write_address_byte (uint32_t address, uint16_t byte);
+

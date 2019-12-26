@@ -1,9 +1,9 @@
 /*
  GBxCart RW - Console Interface
- Version: 1.27
+ Version: 1.28
  Author: Alex from insideGadgets (www.insidegadgets.com)
  Created: 7/11/2016
- Last Modified: 30/11/2019
+ Last Modified: 21/12/2019
  
  */
 
@@ -33,6 +33,7 @@ uint8_t gbxcartFirmwareVersion = 0;
 uint8_t gbxcartPcbVersion = 0;
 uint8_t readBuffer[257];
 uint8_t writeBuffer[257];
+char optionSelected = 0;
 
 char gameTitle[17];
 uint16_t cartridgeType = 0;
@@ -48,6 +49,13 @@ int eepromSize = 0;
 uint16_t eepromEndAddress = 0;
 int hasFlashSave = 0;
 uint8_t cartridgeMode = GB_MODE;
+uint32_t bytesReadPrevious = 0;
+uint32_t ledStatus = 0;
+uint32_t ledCountLeft = 0;
+uint32_t ledCountRight = 0;
+uint8_t ledSegment = 0;
+uint8_t ledProgress = 0;
+uint8_t ledBlinking = 0;
 
 static const uint8_t nintendoLogoGBA[] = {0x24, 0xFF, 0xAE, 0x51, 0x69, 0x9A, 0xA2, 0x21, 0x3D, 0x84, 0x82, 0x0A, 0x84, 0xE4, 0x09, 0xAD,
 										0x11, 0x24, 0x8B, 0x98, 0xC0, 0x81, 0x7F, 0x21, 0xA3, 0x52, 0xBE, 0x19, 0x93, 0x09, 0xCE, 0x20,
@@ -157,6 +165,90 @@ void print_progress_percent (uint32_t bytesRead, uint32_t hashNumber) {
 	}
 }
 
+// Print progress
+void led_progress_percent (uint32_t bytesRead, uint32_t divideNumber) {
+	if (gbxcartPcbVersion == GBXMAS) {
+		if (bytesRead >= bytesReadPrevious) {
+			bytesReadPrevious += divideNumber;
+			
+			if (ledSegment == 0) {
+				ledStatus |= (1<<ledCountLeft);
+				ledSegment = 1;
+				ledCountLeft++;
+			}
+			else {
+				ledSegment = 0;
+				ledStatus |= (1<<(ledCountRight+14));
+				ledCountRight++;
+			}
+			xmas_set_leds(ledStatus);
+			
+			if (ledBlinking <= 14) {
+				ledBlinking = ledBlinking + 14;
+			}
+			else {
+				ledBlinking = ledBlinking - 13;
+			}
+			
+			if (ledProgress < 27) {
+				xmas_blink_led(ledBlinking);
+			}
+			ledProgress++;
+		}
+	}
+}
+
+void xmas_set_leds (uint32_t value) {
+	if (optionSelected == 3) { // When writing, we need to break out of any commands the PC may have sent
+		set_mode('0');
+		delay_ms(5);
+	}
+	set_number(XMAS_VALUE, XMAS_LEDS);
+	delay_ms(5);
+	set_number(value, 'L');
+	delay_ms(5);
+}
+
+void xmas_blink_led (uint8_t value) {
+	if (optionSelected == 3) { // When writing, we need to break out of any commands the PC may have sent
+		set_mode('0');
+		delay_ms(5);
+	}
+	set_number(XMAS_VALUE, XMAS_LEDS);
+	delay_ms(5);
+	set_mode('B');
+	set_mode(value);
+	delay_ms(5);
+}
+
+void xmas_reset_values (void) {
+	ledStatus = 0;
+	ledCountLeft = 0;
+	ledCountRight = 0;
+	ledSegment = 0;
+	ledProgress = 0;
+	ledBlinking = 0;
+	bytesReadPrevious = 0;
+}
+
+void xmas_wake_up (void) {
+	if (gbxcartPcbVersion == GBXMAS) {
+		set_mode('!');
+		delay_ms(50);  // Wait for ATmega169 to WDT reset if in idle mode
+	}
+}
+
+void xmas_setup (uint32_t progressNumber) {
+	if (gbxcartPcbVersion == GBXMAS) {
+		xmas_wake_up();
+		xmas_reset_values();
+		xmas_set_leds(0);
+		ledBlinking = 1;
+		xmas_blink_led(ledBlinking);
+		bytesReadPrevious = progressNumber;
+	}
+}
+
 // Wait for a "1" acknowledgement from the ATmega
 void com_wait_for_ack (void) {
 	uint8_t buffer[2];
@@ -178,12 +270,18 @@ void com_wait_for_ack (void) {
 void com_read_stop() {
 	RS232_cputs(cport_nr, "0"); // Stop read
 	RS232_drain(cport_nr);
+	if (gbxcartPcbVersion == GBXMAS) { // Small delay as GBXMAS intercepts these commands
+		delay_ms(1);
+	}
 }
 
 // Continue reading the next block of data
 void com_read_cont() {
 	RS232_cputs(cport_nr, "1"); // Continue read
 	RS232_drain(cport_nr);
+	if (gbxcartPcbVersion == GBXMAS) { // Small delay as GBXMAS intercepts these commands
+		delay_ms(1);
+	}
 }
 
 // Test opening the COM port,if can't be open, try autodetecting device on other COM ports
@@ -295,6 +393,8 @@ void set_mode (char command) {
 	RS232_cputs(cport_nr, modeString);
 	RS232_drain(cport_nr);
 	
+	delay_ms(1);
+	
 	#if defined(__APPLE__)
 	delay_ms(5);
 	#endif
@@ -308,6 +408,9 @@ void set_number (uint32_t number, uint8_t command) {
 	RS232_cputs(cport_nr, numberString);
 	RS232_SendByte(cport_nr, 0);
 	RS232_drain(cport_nr);
+	delay_ms(1);
+	
+	//printf("%s\n", numberString);
 	
 	#if defined(__APPLE__) || defined(__linux__)
 	delay_ms(5);

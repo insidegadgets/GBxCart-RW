@@ -51,6 +51,13 @@ int hasFlashSave = 0;
 uint8_t cartridgeMode = GB_MODE;
 int flashCartType = 0;
 uint8_t flashID[10];
+uint32_t bytesReadPrevious = 0;
+uint32_t ledStatus = 0;
+uint32_t ledCountLeft = 0;
+uint32_t ledCountRight = 0;
+uint8_t ledSegment = 0;
+uint8_t ledProgress = 0;
+uint8_t ledBlinking = 0;
 
 uint8_t nintendoLogo[] = {0xCE, 0xED, 0x66, 0x66, 0xCC, 0x0D, 0x00, 0x0B, 0x03, 0x73, 0x00, 0x83, 0x00, 0x0C, 0x00, 0x0D,
 									0x00, 0x08, 0x11, 0x1F, 0x88, 0x89, 0x00, 0x0E, 0xDC, 0xCC, 0x6E, 0xE6, 0xDD, 0xDD, 0xD9, 0x99,
@@ -65,7 +72,7 @@ uint8_t nintendoLogoGBA[] = {0x24, 0xFF, 0xAE, 0x51, 0x69, 0x9A, 0xA2, 0x21, 0x3
 										0xA9, 0x63, 0xBE, 0x03, 0x01, 0x4E, 0x38, 0xE2, 0xF9, 0xA2, 0x34, 0xFF, 0xBB, 0x3E, 0x03, 0x44, 
 										0x78, 0x00, 0x90, 0xCB, 0x88, 0x11, 0x3A, 0x94, 0x65, 0xC0, 0x7C, 0x63, 0x87, 0xF0, 0x3C, 0xAF, 
 										0xD6, 0x25, 0xE4, 0x8B, 0x38, 0x0A, 0xAC, 0x72, 0x21, 0xD4, 0xF8, 0x07};
-uint8_t flashCartList[] = { 1, 29, 30, 2, 3, 4, 5, 6, 0, // GB iG carts (Array 1-9)
+uint8_t flashCartList[] = { 1, 29, 30, 31, 2, 3, 4, 5, 6, 0, // GB iG carts (Array 1-9)
 									  8, 9, 10, 11, 12, 13, 14, 15, 16, 17, // GB carts (Array 10-19)
 									  20, 27, 21, 22, 23, 24, 25, 26}; // GBA carts (Array 20-26)
 
@@ -185,6 +192,118 @@ void print_progress_percent (uint32_t bytesRead, uint32_t hashNumber) {
 	}
 }
 
+// LED progress
+void led_progress_percent (uint32_t bytesRead, uint32_t divideNumber) {
+	if (gbxcartPcbVersion == GBXMAS) {
+		if (bytesRead >= bytesReadPrevious) {
+			bytesReadPrevious += divideNumber;
+			
+			if (ledSegment == 0) {
+				ledStatus |= (1<<ledCountLeft);
+				ledSegment = 1;
+				ledCountLeft++;
+			}
+			else {
+				ledSegment = 0;
+				ledStatus |= (1<<(ledCountRight+14));
+				ledCountRight++;
+			}
+			xmas_set_leds(ledStatus);
+			
+			if (ledBlinking <= 14) {
+				ledBlinking = ledBlinking + 14;
+			}
+			else {
+				ledBlinking = ledBlinking - 13;
+			}
+			
+			if (ledProgress < 27) {
+				xmas_blink_led(ledBlinking);
+			}
+			ledProgress++;
+		}
+	}
+}
+
+void xmas_set_leds (uint32_t value) {
+	set_mode('0');
+	delay_ms(5);
+	set_number(XMAS_VALUE, XMAS_LEDS);
+	delay_ms(5);
+	set_number(value, 'L');
+	delay_ms(5);
+}
+
+void xmas_blink_led (uint8_t value) {
+	set_mode('0');
+	delay_ms(5);
+	set_number(XMAS_VALUE, XMAS_LEDS);
+	delay_ms(5);
+	set_mode('B');
+	set_mode(value);
+	delay_ms(5);
+}
+
+void xmas_reset_values (void) {
+	ledStatus = 0;
+	ledCountLeft = 0;
+	ledCountRight = 0;
+	ledSegment = 0;
+	ledProgress = 0;
+	ledBlinking = 0;
+	bytesReadPrevious = 0;
+}
+
+// Turn on idle timer
+void xmas_idle_on (void) {
+	if (gbxcartPcbVersion == GBXMAS) {
+		set_mode('0'); // Only send when writing
+		delay_ms(5);
+		set_number(XMAS_VALUE, XMAS_LEDS);
+		delay_ms(5);
+		set_mode('I');
+		delay_ms(5);
+	}
+}
+
+// Turn off idle timer
+void xmas_idle_off (void) {
+	set_mode('0'); // Only send when writing
+	delay_ms(5);
+	set_number(XMAS_VALUE, XMAS_LEDS);
+	delay_ms(5);
+	set_mode('O');
+	delay_ms(5);
+}
+
+void xmas_chip_erase_animation (void) {
+	set_mode('0');
+	delay_ms(5);
+	set_number(XMAS_VALUE, XMAS_LEDS);
+	delay_ms(5);
+	set_mode('E');
+	delay_ms(5);
+}
+
+void xmas_wake_up (void) {
+	if (gbxcartPcbVersion == GBXMAS) {
+		set_mode('!');
+		delay_ms(50);  // Wait for ATmega169 to WDT reset if in idle mode
+	}
+}
+
+void xmas_setup (uint32_t progressNumber) {
+	if (gbxcartPcbVersion == GBXMAS) {
+		xmas_wake_up();
+		xmas_reset_values();
+		xmas_idle_off();
+		xmas_set_leds(0);
+		ledBlinking = 1;
+		xmas_blink_led(ledBlinking);
+		bytesReadPrevious = progressNumber;
+	}
+}
+
 // Wait for a "1" acknowledgement from the ATmega
 void com_wait_for_ack (void) {
 	uint8_t buffer[2];
@@ -206,12 +325,18 @@ void com_wait_for_ack (void) {
 void com_read_stop(void) {
 	RS232_cputs(cport_nr, "0"); // Stop read
 	RS232_drain(cport_nr);
+	if (gbxcartPcbVersion == GBXMAS) { // Small delay as GBXMAS intercepts these commands
+		delay_ms(1);
+	}
 }
 
 // Continue reading the next block of data
 void com_read_cont(void) {
 	RS232_cputs(cport_nr, "1"); // Continue read
 	RS232_drain(cport_nr);
+	if (gbxcartPcbVersion == GBXMAS) { // Small delay as GBXMAS intercepts these commands
+		delay_ms(1);
+	}
 }
 
 // Test opening the COM port,if can't be open, try autodetecting device on other COM ports

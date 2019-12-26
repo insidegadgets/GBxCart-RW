@@ -1,9 +1,9 @@
 /*
  GBxCart RW - Console Interface
- Version: 1.27
+ Version: 1.28
  Author: Alex from insideGadgets (www.insidegadgets.com)
  Created: 7/11/2016
- Last Modified: 30/11/2019
+ Last Modified: 21/12/2019
  
  GBxCart RW allows you to dump your Gameboy/Gameboy Colour/Gameboy Advance games ROM, save the RAM and write to the RAM.
  
@@ -46,18 +46,25 @@ int main(int argc, char **argv) {
 	
 	// Get PCB version
 	gbxcartPcbVersion = request_value(READ_PCB_VERSION);
+	xmas_wake_up();
 	
 	// Prompt for GB or GBA mode
-	if (gbxcartPcbVersion == PCB_1_3) {
+	if (gbxcartPcbVersion == PCB_1_3 || gbxcartPcbVersion == GBXMAS) {
 		printf("\nPlease select a mode:\n"\
 				"1. GB/GBC\n"\
 				"2. GBA\n"); 
 		
 		char modeSelected = read_one_letter();
 		if (modeSelected == '1') {
+			if (gbxcartPcbVersion == GBXMAS) {
+				xmas_set_leds(0x6555955);	
+			}
 			set_mode(VOLTAGE_5V);
 		}
 		else {
+			if (gbxcartPcbVersion == GBXMAS) {
+				xmas_set_leds(0x9AAA6AA);
+			}
 			set_mode(VOLTAGE_3_3V);
 		}
 	}
@@ -75,11 +82,15 @@ int main(int argc, char **argv) {
 				 "7. Custom commands\n"\
 				 "8. Other options\n"\
 				 "x. Exit\n>"); 
-		char optionSelected = read_one_letter();
+		optionSelected = read_one_letter();
+		
+		if (gbxcartPcbVersion == GBXMAS) {
+			set_mode('!');
+			delay_ms(50); // Wait for ATmega169 to WDT reset if more than 2 mins idle
+		}
 		
 		// Get cartridge mode - Gameboy or Gameboy Advance
 		cartridgeMode = request_value(CART_MODE);
-		
 		
 		// Read header
 		if (optionSelected == '0') {
@@ -116,6 +127,8 @@ int main(int argc, char **argv) {
 				// Set start and end address
 				currAddr = 0x0000;
 				endAddr = 0x7FFF;
+				
+				xmas_setup((romBanks * 16384) / 28);
 				
 				// Read ROM
 				for (uint16_t bank = 1; bank < romBanks; bank++) {				
@@ -177,6 +190,7 @@ int main(int argc, char **argv) {
 						
 						// Print progress
 						print_progress_percent(readBytes, (romBanks * 16384) / 64);
+						led_progress_percent(readBytes, (romBanks * 16384) / 28);
 					}
 					com_read_stop(); // Stop reading ROM (as we will bank switch)
 				}
@@ -187,6 +201,7 @@ int main(int argc, char **argv) {
 				currAddr = 0x00000;
 				endAddr = romEndAddr;
 				set_number(currAddr, SET_START_ADDRESS);
+				xmas_setup(endAddr / 28);
 				
 				uint16_t readLength = 64;
 				set_mode(GBA_READ_ROM);
@@ -218,6 +233,7 @@ int main(int argc, char **argv) {
 					
 					// Print progress
 					print_progress_percent(currAddr, endAddr / 64);
+					led_progress_percent(currAddr, endAddr / 28);
 				}
 				printf("]");
 				com_read_stop();
@@ -343,6 +359,16 @@ int main(int argc, char **argv) {
 						}
 						
 						else {
+							if (ramEndAddress == 0xA1FF) {
+								xmas_setup(ramEndAddress / 28);
+							}
+							else if (ramEndAddress == 0xA7FF) {
+								xmas_setup(ramEndAddress / 4 / 28);
+							}
+							else {
+								xmas_setup((ramBanks * (ramEndAddress - 0xA000 + 1)) / 28);
+							}
+							
 							// Read RAM
 							uint32_t readBytes = 0;
 							for (uint8_t bank = 0; bank < ramBanks; bank++) {
@@ -380,12 +406,15 @@ int main(int argc, char **argv) {
 									// Print progress
 									if (ramEndAddress == 0xA1FF) {
 										print_progress_percent(readBytes, 64);
+										led_progress_percent(readBytes, 28);
 									}
 									else if (ramEndAddress == 0xA7FF) {
 										print_progress_percent(readBytes / 4, 64);
+										led_progress_percent(readBytes / 4, 28);
 									}
 									else {
 										print_progress_percent(readBytes, (ramBanks * (ramEndAddress - 0xA000 + 1)) / 64);
+										led_progress_percent(readBytes, (ramBanks * (ramEndAddress - 0xA000 + 1)) / 28);
 									}
 								}
 								com_read_stop(); // Stop reading RAM (as we will bank switch)
@@ -436,6 +465,8 @@ int main(int argc, char **argv) {
 							printf("Backing up save (SRAM/Flash) to %s\n", titleFilename);
 							printf("[             25%%             50%%             75%%            100%%]\n[");
 							
+							xmas_setup((ramBanks * ramEndAddress) / 28);
+							
 							// Read RAM
 							uint32_t readBytes = 0;
 							for (uint8_t bank = 0; bank < ramBanks; bank++) {
@@ -480,6 +511,7 @@ int main(int argc, char **argv) {
 									}
 									
 									print_progress_percent(readBytes, (ramBanks * ramEndAddress) / 64);
+									led_progress_percent(readBytes, (ramBanks * ramEndAddress) / 28);
 								}
 								
 								com_read_stop(); // End read (for bank if flash)
@@ -500,6 +532,7 @@ int main(int argc, char **argv) {
 							printf("Backing up save (EEPROM) to %s\n", titleFilename);
 							printf("[             25%%             50%%             75%%            100%%]\n[");
 							
+							xmas_setup(eepromEndAddress / 28);
 							set_number(eepromSize, GBA_SET_EEPROM_SIZE);
 							
 							// Set start and end address
@@ -521,6 +554,7 @@ int main(int argc, char **argv) {
 								}
 								
 								print_progress_percent(readBytes, endAddr / 64);
+								led_progress_percent(readBytes, endAddr / 28);
 							}
 							
 							com_read_stop(); // End read
@@ -570,6 +604,16 @@ int main(int argc, char **argv) {
 							}
 							set_bank(0x0000, 0x0A); // Initialise MBC
 							
+							if (ramEndAddress == 0xA1FF) {
+								xmas_setup(ramEndAddress / 28);
+							}
+							else if (ramEndAddress == 0xA7FF) {
+								xmas_setup(ramEndAddress / 4 / 28);
+							}
+							else {
+								xmas_setup((ramBanks * (ramEndAddress - 0xA000 + 1)) / 28);
+							}
+							
 							// Write RAM
 							uint32_t readBytes = 0;
 							for (uint8_t bank = 0; bank < ramBanks; bank++) {
@@ -581,19 +625,21 @@ int main(int argc, char **argv) {
 									com_write_bytes_from_file(WRITE_RAM, ramFile, 64);
 									ramAddress += 64;
 									readBytes += 64;
+									com_wait_for_ack();
 									
 									// Print progress
 									if (ramEndAddress == 0xA1FF) {
 										print_progress_percent(readBytes, 64);
+										led_progress_percent(readBytes, 28);
 									}
 									else if (ramEndAddress == 0xA7FF) {
 										print_progress_percent(readBytes / 4, 64);
+										led_progress_percent(readBytes / 4, 28);
 									}
 									else {
 										print_progress_percent(readBytes, (ramBanks * (ramEndAddress - 0xA000 + 1)) / 64);
+										led_progress_percent(readBytes, (ramBanks * (ramEndAddress - 0xA000 + 1)) / 28);
 									}
-									
-									com_wait_for_ack();
 								}
 							}
 							printf("]");
@@ -662,6 +708,7 @@ int main(int argc, char **argv) {
 							
 							// SRAM
 							if (hasFlashSave == NO_FLASH && eepromSize == EEPROM_NONE) {
+								xmas_setup((ramEndAddress * ramBanks) / 28);
 								
 								uint32_t readBytes = 0;
 								for (uint8_t bank = 0; bank < ramBanks; bank++) {
@@ -679,9 +726,10 @@ int main(int argc, char **argv) {
 										com_write_bytes_from_file(GBA_WRITE_SRAM, ramFile, 64);
 										currAddr += 64;
 										readBytes += 64;
+										com_wait_for_ack();
 										
 										print_progress_percent(readBytes, ramEndAddress * ramBanks / 64);
-										com_wait_for_ack();
+										led_progress_percent(readBytes, ramEndAddress * ramBanks / 28);
 									}
 									
 									// SRAM 1Mbit, switch back to bank 0
@@ -693,6 +741,7 @@ int main(int argc, char **argv) {
 							
 							// EEPROM
 							else if (eepromSize != EEPROM_NONE) {
+								xmas_setup(eepromEndAddress / 28);
 								set_number(eepromSize, GBA_SET_EEPROM_SIZE);
 								
 								// Set start and end address
@@ -707,15 +756,18 @@ int main(int argc, char **argv) {
 									currAddr += 8;
 									readBytes += 8;
 									
-									print_progress_percent(readBytes, endAddr / 64);
-									
 									// Wait for ATmega to process write (~320us) and for EEPROM to write data (6ms)
 									com_wait_for_ack();
+									
+									print_progress_percent(readBytes, endAddr / 64);
+									led_progress_percent(readBytes, endAddr / 28);
 								}
 							}
 							
 							// Flash
 							else if (hasFlashSave != NO_FLASH) {
+								xmas_setup((ramBanks * endAddr) / 28);
+								
 								uint32_t readBytes = 0;
 								for (uint8_t bank = 0; bank < ramBanks; bank++) {
 									// Set start and end address
@@ -729,10 +781,10 @@ int main(int argc, char **argv) {
 											com_write_bytes_from_file(GBA_FLASH_WRITE_ATMEL, ramFile, 128);
 											currAddr += 128;
 											readBytes += 128;
-											
-											print_progress_percent(readBytes, (ramBanks * endAddr) / 64);
 											com_wait_for_ack(); // Wait for write complete
 											
+											print_progress_percent(readBytes, (ramBanks * endAddr) / 64);
+											led_progress_percent(readBytes, (ramBanks * endAddr)  / 28);
 										}
 									}
 									else { // Program flash in 1 byte at a time
@@ -770,9 +822,10 @@ int main(int argc, char **argv) {
 											com_write_bytes_from_file(GBA_FLASH_WRITE_BYTE, ramFile, 64);
 											currAddr += 64;
 											readBytes += 64;
+											com_wait_for_ack(); // Wait for write complete
 											
 											print_progress_percent(readBytes, (ramBanks * endAddr) / 64);
-											com_wait_for_ack(); // Wait for write complete
+											led_progress_percent(readBytes, (ramBanks * endAddr)  / 28);
 										}
 									}
 									
@@ -826,6 +879,7 @@ int main(int argc, char **argv) {
 							set_bank(0x6000, 1); // Set RAM Mode
 						}
 						set_bank(0x0000, 0x0A); // Initialise MBC
+						xmas_setup((ramBanks * (ramEndAddress - 0xA000 + 1)) / 28);
 						
 						// Erase RAM
 						uint32_t readBytes = 0;
@@ -838,19 +892,21 @@ int main(int argc, char **argv) {
 								com_write_bytes_from_file(WRITE_RAM, NULL, 64);
 								ramAddress += 64;
 								readBytes += 64;
+								com_wait_for_ack();
 								
 								// Print progress
 								if (ramEndAddress == 0xA1FF) {
 									print_progress_percent(readBytes, 64);
+									led_progress_percent(readBytes, readBytes / 28);
 								}
 								else if (ramEndAddress == 0xA7FF) {
 									print_progress_percent(readBytes / 4, 64);
+									led_progress_percent(readBytes, readBytes / 4 / 28);
 								}
 								else {
 									print_progress_percent(readBytes, (ramBanks * (ramEndAddress - 0xA000 + 1)) / 64);
+									led_progress_percent(readBytes, (ramBanks * (ramEndAddress - 0xA000 + 1)) / 28);
 								}
-								
-								com_wait_for_ack();
 							}
 						}
 						printf("]");
@@ -876,6 +932,8 @@ int main(int argc, char **argv) {
 						
 						// SRAM
 						if (hasFlashSave == NO_FLASH && eepromSize == EEPROM_NONE) {
+							xmas_setup(ramEndAddress / 28);
+							
 							// Set start and end address
 							currAddr = 0x0000;
 							endAddr = ramEndAddress;
@@ -887,14 +945,16 @@ int main(int argc, char **argv) {
 								com_write_bytes_from_file(GBA_WRITE_SRAM, NULL, 64);
 								currAddr += 64;
 								readBytes += 64;
+								com_wait_for_ack();
 								
 								print_progress_percent(readBytes, ramEndAddress / 64);
-								com_wait_for_ack();
+								led_progress_percent(readBytes, ramEndAddress / 28);
 							}
 						}
 						
 						// EEPROM
 						else if (eepromSize != EEPROM_NONE) {
+							xmas_setup(eepromEndAddress / 28);
 							set_number(eepromSize, GBA_SET_EEPROM_SIZE);
 							
 							// Set start and end address
@@ -909,15 +969,18 @@ int main(int argc, char **argv) {
 								currAddr += 8;
 								readBytes += 8;
 								
-								print_progress_percent(readBytes, endAddr / 64);
-								
 								// Wait for ATmega to process write (~320us) and for EEPROM to write data (6ms)
 								com_wait_for_ack();
+								
+								print_progress_percent(readBytes, endAddr / 64);
+								led_progress_percent(readBytes, endAddr / 28);
 							}
 						}
 						
 						// Flash
 						else if (hasFlashSave != NO_FLASH) {
+							xmas_setup((ramBanks * endAddr) / 28);
+							
 							uint32_t readBytes = 0;
 							for (uint8_t bank = 0; bank < ramBanks; bank++) {
 								// Set start and end address
@@ -931,9 +994,10 @@ int main(int argc, char **argv) {
 										com_write_bytes_from_file(GBA_FLASH_WRITE_ATMEL, NULL, 128);
 										currAddr += 128;
 										readBytes += 128;
+										com_wait_for_ack(); // Wait for write complete	
 										
 										print_progress_percent(readBytes, (ramBanks * endAddr) / 64);
-										com_wait_for_ack(); // Wait for write complete	
+										led_progress_percent(readBytes, (ramBanks * endAddr) / 28);										
 									}
 								}
 								else {
@@ -966,9 +1030,10 @@ int main(int argc, char **argv) {
 										com_write_bytes_from_file(GBA_FLASH_WRITE_BYTE, NULL, 64);
 										currAddr += 64;
 										readBytes += 64;
+										com_wait_for_ack(); // Wait for write complete
 										
 										print_progress_percent(readBytes, (ramBanks * endAddr) / 64);
-										com_wait_for_ack(); // Wait for write complete
+										led_progress_percent(readBytes, (ramBanks * endAddr) / 28);
 									}
 								}
 								
@@ -1635,7 +1700,7 @@ int main(int argc, char **argv) {
 				printf("\n");
 				
 				// Switch to 5V
-				if (gbxcartPcbVersion == PCB_1_3) {
+				if (gbxcartPcbVersion == PCB_1_3 || gbxcartPcbVersion == GBXMAS) {
 					set_mode(VOLTAGE_5V);
 					delay_ms(300);
 				}

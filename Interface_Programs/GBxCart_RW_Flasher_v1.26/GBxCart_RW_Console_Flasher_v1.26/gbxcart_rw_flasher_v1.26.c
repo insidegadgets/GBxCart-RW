@@ -1,9 +1,9 @@
 /*
  GBxCart RW - Console Interface Flasher
- Version: 1.25
+ Version: 1.26
  Author: Alex from insideGadgets (www.insidegadgets.com)
  Created: 26/08/2017
- Last Modified: 2/12/2019
+ Last Modified: 18/12/2019
  License: GPL
  
  This program allows you to write ROMs to Flash Carts that are supported.
@@ -26,7 +26,7 @@
 
 int main(int argc, char **argv) {
 	
-	printf("GBxCart RW Flasher v1.25 by insideGadgets\n");
+	printf("GBxCart RW Flasher v1.26 by insideGadgets\n");
 	printf("#########################################\n");
 	
 	// Check arguments
@@ -52,6 +52,7 @@ int main(int argc, char **argv) {
 		
 		// Get PCB version
 		gbxcartPcbVersion = request_value(READ_PCB_VERSION);
+		xmas_wake_up();
 		
 		if (gbxcartPcbVersion == PCB_1_0) {
 			printf("\nPCB v1.0 is not supported for this function.");
@@ -124,7 +125,7 @@ int main(int argc, char **argv) {
 			endAddr = 0x7FFF;
 			
 			// PCB v1.3 - Set 5V
-			if (gbxcartPcbVersion == PCB_1_3) {
+			if (gbxcartPcbVersion == PCB_1_3 || gbxcartPcbVersion == GBXMAS) {
 				set_mode(VOLTAGE_5V);
 				delay_ms(500);
 			}
@@ -157,6 +158,7 @@ int main(int argc, char **argv) {
 			// Chip erase for this flash chip
 			if (flashCartType == 103 || flashCartType == 104) {
 				printf("\nErasing Flash");
+				xmas_chip_erase_animation();
 				gb_flash_write_address_byte(0x5555, 0xAA);
 				gb_flash_write_address_byte(0x2AAA, 0x55);
 				gb_flash_write_address_byte(0x5555, 0x80);
@@ -168,9 +170,10 @@ int main(int argc, char **argv) {
 				wait_for_flash_chip_erase_ff(1);
 			}
 			
+			xmas_setup((endAddr+1) / 28);
+			
 			printf("\nWriting to ROM (Flash cart) from %s\n", filenameOnly);
 			printf("[             25%%             50%%             75%%            100%%]\n[");
-			
 			
 			// Write ROM
 			set_number(currAddr, SET_START_ADDRESS);
@@ -198,6 +201,7 @@ int main(int argc, char **argv) {
 				readBytes += 64;
 				
 				print_progress_percent(readBytes, (endAddr+1) / 64);
+				led_progress_percent(readBytes, (endAddr+1) / 28);
 			}
 			
 			printf("]");
@@ -212,7 +216,7 @@ int main(int argc, char **argv) {
 			endAddr = 0x7FFF;
 			
 			// PCB v1.3 - Set 5V
-			if (gbxcartPcbVersion == PCB_1_3) {
+			if (gbxcartPcbVersion == PCB_1_3 || gbxcartPcbVersion == GBXMAS) {
 				set_mode(VOLTAGE_5V);
 				delay_ms(500);
 			}
@@ -239,6 +243,7 @@ int main(int argc, char **argv) {
 			
 			// Chip erase for this flash chip
 			printf("\nErasing Flash");
+			xmas_chip_erase_animation();
 			gb_flash_write_address_byte(0x5555, 0xAA);
 			gb_flash_write_address_byte(0x2AAA, 0x55);
 			gb_flash_write_address_byte(0x5555, 0x80);
@@ -248,10 +253,10 @@ int main(int argc, char **argv) {
 			
 			// Wait for first byte to be 0xFF
 			wait_for_flash_chip_erase_ff(1);
+			xmas_setup((endAddr+1) / 28);
 			
 			printf("\nWriting to ROM (Flash cart) from %s\n", filenameOnly);
 			printf("[             25%%             50%%             75%%            100%%]\n[");
-			
 			
 			// Write ROM
 			set_number(currAddr, SET_START_ADDRESS);
@@ -262,6 +267,7 @@ int main(int argc, char **argv) {
 				readBytes += 64;
 				
 				print_progress_percent(readBytes, (endAddr+1) / 64);
+				led_progress_percent(readBytes, (endAddr+1) / 28);
 			}
 			
 			printf("]");
@@ -278,7 +284,7 @@ int main(int argc, char **argv) {
 			printf("\nGoing to write to ROM (Flash cart) from %s\n", filenameOnly);
 			
 			// PCB v1.3 - Set 5V
-			if (gbxcartPcbVersion == PCB_1_3) {
+			if (gbxcartPcbVersion == PCB_1_3 || gbxcartPcbVersion == GBXMAS) {
 				set_mode(VOLTAGE_5V);
 				delay_ms(500);
 			}
@@ -308,6 +314,7 @@ int main(int argc, char **argv) {
 			
 			// Chip erase for this flash chip
 			printf("\nErasing Flash");
+			xmas_chip_erase_animation();
 			gb_flash_write_address_byte(0x5555, 0xAA);
 			gb_flash_write_address_byte(0x2AAA, 0x55);
 			gb_flash_write_address_byte(0x5555, 0x80);
@@ -317,7 +324,7 @@ int main(int argc, char **argv) {
 			
 			// Wait for first byte to be 0xFF
 			wait_for_flash_chip_erase_ff(1);
-			
+			xmas_setup((romBanks * 16384) / 28);
 			
 			printf("\nWriting to ROM (Flash cart) from %s\n", filenameOnly);
 			printf("[             25%%             50%%             75%%            100%%]\n[");
@@ -344,6 +351,7 @@ int main(int argc, char **argv) {
 					
 					// Print progress
 					print_progress_percent(readBytes, (romBanks * 16384) / 64);
+					led_progress_percent(readBytes, (romBanks * 16384) / 28);
 				}
 			}
 			
@@ -361,7 +369,7 @@ int main(int argc, char **argv) {
 				read_one_letter();
 				return 1;
 			}
-			else if (gbxcartPcbVersion == PCB_1_3) { // PCB v1.3, set 3.3V
+			else if (gbxcartPcbVersion == PCB_1_3 || gbxcartPcbVersion == GBXMAS) { // PCB v1.3, set 3.3V
 				set_mode(VOLTAGE_3_3V);
 			}
 			
@@ -389,6 +397,7 @@ int main(int argc, char **argv) {
 			
 			// Chip erase (data byte's bit 0 & 1 are swapped for chip commands as BV5 D0 & D1 lines are swapped)
 			printf("\nErasing Flash");
+			xmas_chip_erase_animation();
 			gb_flash_write_address_byte(0x555, 0xA9);
 			gb_flash_write_address_byte(0x2AA, 0x56);
 			gb_flash_write_address_byte(0x555, 0x80);
@@ -398,7 +407,7 @@ int main(int argc, char **argv) {
 			
 			// Wait for first byte to be 0xFF
 			wait_for_flash_chip_erase_ff(1);
-			
+			xmas_setup((romBanks * 16384) / 28);
 			
 			printf("\n\nWriting to ROM (Flash cart) from %s\n", filenameOnly);
 			printf("[             25%%             50%%             75%%            100%%]\n[");
@@ -425,6 +434,7 @@ int main(int argc, char **argv) {
 					
 					// Print progress
 					print_progress_percent(readBytes, (romBanks * 16384) / 64);
+					led_progress_percent(readBytes, (romBanks * 16384) / 28);
 				}
 			}
 			
@@ -437,7 +447,7 @@ int main(int argc, char **argv) {
 			printf("\nGoing to write to ROM (Flash cart) from %s\n", filenameOnly);
 			
 			// PCB v1.3 - Set 5V
-			if (gbxcartPcbVersion == PCB_1_3) {
+			if (gbxcartPcbVersion == PCB_1_3 || gbxcartPcbVersion == GBXMAS) {
 				set_mode(VOLTAGE_5V);
 				delay_ms(500);
 			}
@@ -464,6 +474,7 @@ int main(int argc, char **argv) {
 			
 			// Chip erase (data byte's bit 0 & 1 are swapped for chip commands as BV5 D0 & D1 lines are swapped)
 			printf("\nErasing Flash");
+			xmas_chip_erase_animation();
 			gb_flash_write_address_byte(0xAAA, 0xA9);
 			gb_flash_write_address_byte(0x555, 0x56);
 			gb_flash_write_address_byte(0xAAA, 0x80);
@@ -473,7 +484,7 @@ int main(int argc, char **argv) {
 			
 			// Wait for first byte to be 0xFF
 			wait_for_flash_chip_erase_ff(1);
-			
+			xmas_setup((romBanks * 16384) / 28);
 			
 			printf("\n\nWriting to ROM (Flash cart) from %s\n", filenameOnly);
 			printf("[             25%%             50%%             75%%            100%%]\n[");
@@ -500,6 +511,7 @@ int main(int argc, char **argv) {
 					
 					// Print progress
 					print_progress_percent(readBytes, (romBanks * 16384) / 64);
+					led_progress_percent(readBytes, (romBanks * 16384) / 28);
 				}
 			}
 			
@@ -517,7 +529,7 @@ int main(int argc, char **argv) {
 				read_one_letter();
 				return 1;
 			}
-			else if (gbxcartPcbVersion == PCB_1_3) { // PCB v1.3, Set 3.3V
+			else if (gbxcartPcbVersion == PCB_1_3 || gbxcartPcbVersion == GBXMAS) { // PCB v1.3, Set 3.3V
 				set_mode(VOLTAGE_3_3V);
 			}
 			
@@ -545,6 +557,7 @@ int main(int argc, char **argv) {
 			
 			// Chip erase
 			printf("\nErasing Flash");
+			xmas_chip_erase_animation();
 			gb_flash_write_address_byte(0xAAA, 0xAA);
 			gb_flash_write_address_byte(0x555, 0x55);
 			gb_flash_write_address_byte(0xAAA, 0x80);
@@ -554,7 +567,7 @@ int main(int argc, char **argv) {
 			
 			// Wait for first byte to be 0xFF
 			wait_for_flash_chip_erase_ff(0);
-			
+			xmas_setup((romBanks * 16384) / 28);
 			
 			printf("\n\nWriting to ROM (Flash cart) from %s\n", filenameOnly);
 			printf("[             25%%             50%%             75%%            100%%]\n[");
@@ -581,6 +594,7 @@ int main(int argc, char **argv) {
 					
 					// Print progress
 					print_progress_percent(readBytes, (romBanks * 16384) / 64);
+					led_progress_percent(readBytes, (romBanks * 16384) / 28);
 				}
 			}
 			
@@ -601,7 +615,7 @@ int main(int argc, char **argv) {
 			printf("\nGoing to write to ROM (Flash cart) from %s\n", filenameOnly);
 			
 			// PCB v1.3 - Set 5V
-			if (gbxcartPcbVersion == PCB_1_3) {
+			if (gbxcartPcbVersion == PCB_1_3 || gbxcartPcbVersion == GBXMAS) {
 				set_mode(VOLTAGE_5V);
 				delay_ms(500);
 			}
@@ -636,6 +650,7 @@ int main(int argc, char **argv) {
 			
 			// Chip erase
 			printf("\nErasing Flash");
+			xmas_chip_erase_animation();
 			gb_flash_write_address_byte(0x555, 0xAA);
 			gb_flash_write_address_byte(0x2AA, 0x55);
 			gb_flash_write_address_byte(0x555, 0x80);
@@ -645,7 +660,7 @@ int main(int argc, char **argv) {
 			
 			// Wait for first byte to be 0xFF
 			wait_for_flash_chip_erase_ff(1);
-			
+			xmas_setup((romBanks * 16384) / 28);
 			
 			printf("\n\nWriting to ROM (Flash cart) from %s\n", filenameOnly);
 			printf("[             25%%             50%%             75%%            100%%]\n[");
@@ -672,6 +687,7 @@ int main(int argc, char **argv) {
 					
 					// Print progress
 					print_progress_percent(readBytes, (romBanks * 16384) / 64);
+					led_progress_percent(readBytes, (romBanks * 16384) / 28);
 				}
 			}
 			
@@ -684,7 +700,7 @@ int main(int argc, char **argv) {
 			printf("\nGoing to write to ROM (Flash cart) from %s\n", filenameOnly);
 			
 			// PCB v1.3 - Set 5V
-			if (gbxcartPcbVersion == PCB_1_3) {
+			if (gbxcartPcbVersion == PCB_1_3 || gbxcartPcbVersion == GBXMAS) {
 				set_mode(VOLTAGE_5V);
 				delay_ms(500);
 			}
@@ -709,6 +725,7 @@ int main(int argc, char **argv) {
 			gb_flash_pin_setup(WE_AS_AUDIO_PIN); // WR pin
 			gb_flash_program_setup(GB_FLASH_PROGRAM_5555); // Flash program byte method
 			gb_check_change_flash_id(GB_FLASH_PROGRAM_5555);
+			xmas_setup((romBanks * 16384) / 28);
 			
 			printf("\nWriting to ROM (Flash cart) from %s\n", filenameOnly);
 			printf("[             25%%             50%%             75%%            100%%]\n[");
@@ -789,6 +806,7 @@ int main(int argc, char **argv) {
 						
 						// Print progress
 						print_progress_percent(readBytes, (romBanks * 16384) / 64);
+						led_progress_percent(readBytes, (romBanks * 16384) / 28);
 					}
 				}
 				
@@ -817,7 +835,7 @@ int main(int argc, char **argv) {
 				read_one_letter();
 				return 1;
 			}
-			else if (gbxcartPcbVersion == PCB_1_3) { // PCB v1.3, Set 3.3V
+			else if (gbxcartPcbVersion == PCB_1_3 || gbxcartPcbVersion == GBXMAS) { // PCB v1.3, Set 3.3V
 				set_mode(VOLTAGE_3_3V);
 			}
 			
@@ -843,6 +861,7 @@ int main(int argc, char **argv) {
 			
 			// Chip erase (data byte's bit 0 & 1 are swapped for chip commands as BV5 D0 & D1 lines are swapped)
 			printf("\nErasing Flash");
+			xmas_chip_erase_animation();
 			gb_flash_write_address_byte(0xAAA, 0xA9);
 			gb_flash_write_address_byte(0x555, 0x56);
 			gb_flash_write_address_byte(0xAAA, 0x80);
@@ -852,7 +871,7 @@ int main(int argc, char **argv) {
 			
 			// Wait for first byte to be 0xFF
 			wait_for_flash_chip_erase_ff(1);
-			
+			xmas_setup((romBanks * 16384) / 28);
 			
 			printf("\n\nWriting to ROM (Flash cart) from %s\n", filenameOnly);
 			printf("[             25%%             50%%             75%%            100%%]\n[");
@@ -879,6 +898,7 @@ int main(int argc, char **argv) {
 					
 					// Print progress
 					print_progress_percent(readBytes, (romBanks * 16384) / 64);
+					led_progress_percent(readBytes, (romBanks * 16384) / 28);
 				}
 			}
 			
@@ -891,7 +911,7 @@ int main(int argc, char **argv) {
 			printf("\nGoing to write to ROM (Flash cart) from %s\n", filenameOnly);
 			
 			// PCB v1.3 - Set 5V
-			if (gbxcartPcbVersion == PCB_1_3) {
+			if (gbxcartPcbVersion == PCB_1_3 || gbxcartPcbVersion == GBXMAS) {
 				set_mode(VOLTAGE_5V);
 				delay_ms(500);
 			}
@@ -918,6 +938,7 @@ int main(int argc, char **argv) {
 			
 			// Chip erase
 			printf("\nErasing Flash");
+			xmas_chip_erase_animation();
 			gb_flash_write_address_byte(0x555, 0xAA);
 			gb_flash_write_address_byte(0x2AA, 0x55);
 			gb_flash_write_address_byte(0x555, 0x80);
@@ -927,7 +948,7 @@ int main(int argc, char **argv) {
 			
 			// Wait for first byte to be 0xFF
 			wait_for_flash_chip_erase_ff(1);
-			
+			xmas_setup((romBanks * 16384) / 28);
 			
 			printf("\n\nWriting to ROM (Flash cart) from %s\n", filenameOnly);
 			printf("[             25%%             50%%             75%%            100%%]\n[");
@@ -954,6 +975,7 @@ int main(int argc, char **argv) {
 					
 					// Print progress
 					print_progress_percent(readBytes, (romBanks * 16384) / 64);
+					led_progress_percent(readBytes, (romBanks * 16384) / 28);
 				}
 			}
 			
@@ -978,7 +1000,7 @@ int main(int argc, char **argv) {
 				read_one_letter();
 				return 1;
 			}
-			else if (gbxcartPcbVersion == PCB_1_3) { // PCB v1.3, Set 3.3V
+			else if (gbxcartPcbVersion == PCB_1_3 || gbxcartPcbVersion == GBXMAS) { // PCB v1.3, Set 3.3V
 				set_mode(VOLTAGE_3_3V);
 			}
 			
@@ -1016,6 +1038,7 @@ int main(int argc, char **argv) {
 			if (bankNumber == 1) {
 				// Chip erase
 				printf("\nErasing Flash (may take 1 minute)");
+				xmas_chip_erase_animation();
 				gb_flash_write_address_byte(0xAAA, 0xA9);
 				gb_flash_write_address_byte(0x555, 0x56);
 				gb_flash_write_address_byte(0xAAA, 0x80);
@@ -1050,7 +1073,7 @@ int main(int argc, char **argv) {
 				gb_flash_write_address_byte(0x7002, 0x93);
 				delay_ms(1);
 			}
-			
+			xmas_setup((romBanks * 16384) / 28);
 			
 			printf("\n\nWriting to ROM (Flash cart) from %s\n", filenameOnly);
 			printf("[             25%%             50%%             75%%            100%%]\n[");
@@ -1091,6 +1114,7 @@ int main(int argc, char **argv) {
 					
 					// Print progress
 					print_progress_percent(readBytes, (romBanks * 16384) / 64);
+					led_progress_percent(readBytes, (romBanks * 16384) / 28);
 				}
 			}
 			
@@ -1108,7 +1132,7 @@ int main(int argc, char **argv) {
 			printf("\nGoing to write to ROM (Flash cart) from %s\n", filenameOnly);
 			
 			// PCB v1.3 - Set 5V
-			if (gbxcartPcbVersion == PCB_1_3) {
+			if (gbxcartPcbVersion == PCB_1_3 || gbxcartPcbVersion == GBXMAS) {
 				set_mode(VOLTAGE_5V);
 				delay_ms(500);
 			}
@@ -1181,6 +1205,7 @@ int main(int argc, char **argv) {
 			set_bank(0x6000, 0x00); // Bank
 			set_bank(0x0000, 0xAA); // Turn off multi-game mode
 			
+			xmas_setup((romBanks * 16384) / 28);
 			
 			// Write ROM
 			currAddr = 0x0000;
@@ -1244,6 +1269,7 @@ int main(int argc, char **argv) {
 						
 						// Print progress
 						print_progress_percent(readBytes, (romBanksTotal * 16384) / 64);
+						led_progress_percent(readBytes, (romBanksTotal * 16384) / 28);
 					}
 				}
 				
@@ -1288,7 +1314,7 @@ int main(int argc, char **argv) {
 			printf("\nGoing to write to ROM (Flash cart) from %s\n", filenameOnly);
 			
 			// PCB v1.3 - Set 5V
-			if (gbxcartPcbVersion == PCB_1_3) {
+			if (gbxcartPcbVersion == PCB_1_3 || gbxcartPcbVersion == GBXMAS) {
 				set_mode(VOLTAGE_5V);
 				delay_ms(500);
 			}
@@ -1326,6 +1352,7 @@ int main(int argc, char **argv) {
 			
 			// Chip erase
 			printf("\nErasing Flash ");
+			xmas_chip_erase_animation();
 			gb_flash_write_address_byte(0xAAA, 0xAA);
 			gb_flash_write_address_byte(0x555, 0x55);
 			gb_flash_write_address_byte(0xAAA, 0x80);
@@ -1335,7 +1362,7 @@ int main(int argc, char **argv) {
 			
 			// Wait for first byte to be 0xFF
 			wait_for_flash_chip_erase_ff(1);
-			
+			xmas_setup((romBanks * 16384) / 28);
 			
 			printf("\n\nWriting to ROM (Flash cart) from %s\n", filenameOnly);
 			printf("[             25%%             50%%             75%%            100%%]\n[");
@@ -1362,6 +1389,7 @@ int main(int argc, char **argv) {
 					
 					// Print progress
 					print_progress_percent(readBytes, (romBanks * 16384) / 64);
+					led_progress_percent(readBytes, (romBanks * 16384) / 28);
 				}
 			}
 			
@@ -1369,12 +1397,17 @@ int main(int argc, char **argv) {
 			fclose(romFile);
 		}
 		
-		else if (flashCartType == 30) {
-			printf("insideGadgets 1 MByte 128KB SRAM Gameboy Flash Cart\n");
+		else if (flashCartType == 30 || flashCartType == 31) {
+			if (flashCartType == 30) {
+				printf("insideGadgets 1 MByte 128KB SRAM Gameboy Flash Cart\n");
+			}
+			else {
+				printf("insideGadgets 1 MByte 128KB SRAM Custom Logo Flash Cart\n");
+			}
 			printf("\nGoing to write to ROM (Flash cart) from %s\n", filenameOnly);
 			
 			// PCB v1.3 - Set 5V
-			if (gbxcartPcbVersion == PCB_1_3) {
+			if (gbxcartPcbVersion == PCB_1_3 || gbxcartPcbVersion == GBXMAS) {
 				set_mode(VOLTAGE_5V);
 				delay_ms(500);
 			}
@@ -1395,11 +1428,19 @@ int main(int argc, char **argv) {
 			// Flash Setup
 			set_mode(GB_CART_MODE); // Gameboy mode
 			gb_flash_pin_setup(WE_AS_WR_PIN); // WR pin
+			
+			// Disable Nintendo logo detection for logo cart
+			if (flashCartType == 31) {
+				set_bank(0x31, 0x2D);
+				delay_ms(5);
+			}
+			
 			gb_flash_program_setup(GB_FLASH_PROGRAM_AAA);// Flash program byte method
 			gb_check_change_flash_id(GB_FLASH_PROGRAM_AAA);
 			
 			// Chip erase
 			printf("\nErasing Flash");
+			xmas_chip_erase_animation();
 			gb_flash_write_address_byte(0xAAA, 0xAA);
 			gb_flash_write_address_byte(0x555, 0x55);
 			gb_flash_write_address_byte(0xAAA, 0x80);
@@ -1409,7 +1450,7 @@ int main(int argc, char **argv) {
 			
 			// Wait for first byte to be 0xFF
 			wait_for_flash_chip_erase_ff(1);
-			
+			xmas_setup((romBanks * 16384) / 28);
 			
 			printf("\n\nWriting to ROM (Flash cart) from %s\n", filenameOnly);
 			printf("[             25%%             50%%             75%%            100%%]\n[");
@@ -1436,6 +1477,7 @@ int main(int argc, char **argv) {
 					
 					// Print progress
 					print_progress_percent(readBytes, (romBanks * 16384) / 64);
+					led_progress_percent(readBytes, (romBanks * 16384) / 28);
 				}
 			}
 			
@@ -1447,7 +1489,7 @@ int main(int argc, char **argv) {
 		
 		// ****** GBA Flash Carts ******
 		else if (flashCartType == 20) {
-			printf("32 MByte (insideGadgets 32MB 512Kbit/1Mbit) Gameboy Advance Flash Cart\n");
+			printf("insideGadgets 32MB (512Kbit/1Mbit Flash Save) or (256Kbit FRAM) Gameboy Advance Flash Cart\n");
 			printf("\nGoing to write to ROM (Flash cart) from %s\n", filenameOnly);
 			
 			// Check file size
@@ -1527,6 +1569,8 @@ int main(int argc, char **argv) {
 				printf("\n");
 			}
 			
+			xmas_setup(endAddr / 28);
+			
 			printf("\nWriting to ROM (Flash cart) from %s\n", filenameOnly);
 			printf("[             25%%             50%%             75%%            100%%]\n[");
 			
@@ -1569,7 +1613,8 @@ int main(int argc, char **argv) {
 				currAddr += 256;
 				readBytes += 256;
 				
-				print_progress_percent(readBytes, (endAddr) / 64);
+				print_progress_percent(readBytes, endAddr / 64);
+				led_progress_percent(readBytes, endAddr / 28);
 			}
 		}
 		else if (flashCartType == 21) {
@@ -1602,6 +1647,8 @@ int main(int argc, char **argv) {
 			while ((endAddrAligned / 64)  % 64 != 0) { // Align to 64 for printing progress
 				endAddrAligned--;
 			}
+			
+			xmas_setup(endAddrAligned / 28);
 			
 			// Write ROM
 			currAddr = 0x0000;	
@@ -1640,7 +1687,8 @@ int main(int argc, char **argv) {
 				currAddr += 256;
 				readBytes += 256;
 				
-				print_progress_percent(readBytes, (endAddrAligned) / 64);
+				print_progress_percent(readBytes, endAddrAligned / 64);
+				led_progress_percent(readBytes, endAddrAligned / 28);
 			}
 		}
 		else if (flashCartType == 22) {
@@ -1673,6 +1721,8 @@ int main(int argc, char **argv) {
 			while ((endAddrAligned / 64)  % 64 != 0) { // Align to 64 for printing progress
 				endAddrAligned--;
 			}
+			
+			xmas_setup(endAddrAligned / 28);
 			
 			// Write ROM
 			currAddr = 0x0000;	
@@ -1711,7 +1761,8 @@ int main(int argc, char **argv) {
 				currAddr += 256;
 				readBytes += 256;
 				
-				print_progress_percent(readBytes, (endAddrAligned) / 64);
+				print_progress_percent(readBytes, endAddrAligned / 64);
+				led_progress_percent(readBytes, endAddrAligned / 28);
 			}
 		}
 		else if (flashCartType == 23 || flashCartType == 24) {
@@ -1782,6 +1833,7 @@ int main(int argc, char **argv) {
 			gba_flash_write_address_byte(currAddr, 0xFF);
 			delay_ms(5);
 			
+			xmas_setup(endAddrAligned / 28);
 			
 			// Write ROM
 			currAddr = 0x0000;	
@@ -1860,7 +1912,8 @@ int main(int argc, char **argv) {
 						readBytes += 64;
 					}
 				}
-				print_progress_percent(readBytes, (endAddrAligned) / 64);
+				print_progress_percent(readBytes, endAddrAligned / 64);
+				led_progress_percent(readBytes, endAddrAligned / 28);
 			}
 			
 			// Back to reading mode
@@ -1983,7 +2036,8 @@ int main(int argc, char **argv) {
 				currAddr += 64;
 				readBytes += 64;
 				
-				print_progress_percent(readBytes, (endAddrAligned) / 64);
+				print_progress_percent(readBytes, endAddrAligned / 64);
+				led_progress_percent(readBytes, endAddrAligned / 28);
 			}
 			
 			// Back to reading mode
@@ -2020,6 +2074,8 @@ int main(int argc, char **argv) {
 			while ((endAddrAligned / 64)  % 64 != 0) { // Align to 64 for printing progress
 				endAddrAligned--;
 			}
+			
+			xmas_setup(endAddrAligned / 28);
 			
 			// Write ROM
 			currAddr = 0x0000;	
@@ -2061,11 +2117,12 @@ int main(int argc, char **argv) {
 				currAddr += 256;
 				readBytes += 256;
 				
-				print_progress_percent(readBytes, (endAddrAligned) / 64);
+				print_progress_percent(readBytes, endAddrAligned / 64);
+				led_progress_percent(readBytes, endAddrAligned / 28);
 			}
 		}
 		else if (flashCartType == 27) {
-			printf("32 MByte (insideGadgets 32MB 4K/64K EEPROM) Gameboy Advance Flash Cart\n");
+			printf("insideGadgets 32MB 4K/64K EEPROM Gameboy Advance Flash Cart\n");
 			printf("\nGoing to write to ROM (Flash cart) from %s\n", filenameOnly);
 			
 			// Check file size
@@ -2145,6 +2202,8 @@ int main(int argc, char **argv) {
 				printf("\n");
 			}
 			
+			xmas_setup(endAddrAligned / 28);
+			
 			printf("\nWriting to ROM (Flash cart) from %s\n", filenameOnly);
 			printf("[             25%%             50%%             75%%            100%%]\n[");
 			
@@ -2187,7 +2246,8 @@ int main(int argc, char **argv) {
 				currAddr += 256;
 				readBytes += 256;
 				
-				print_progress_percent(readBytes, (endAddr) / 64);
+				print_progress_percent(readBytes, endAddr / 64);
+				led_progress_percent(readBytes, endAddrAligned / 28);
 				
 				// Break when reaching 0x1FFF00 as this is when the EEPROM is mapped to
 				if (currAddr == 0x1FFFF00) {
@@ -2208,38 +2268,39 @@ int main(int argc, char **argv) {
 					 "1. insideGadgets 32 KByte (incl 4KB FRAM) Flash Cart\n"\
 					 "2. insideGadgets 512KB Flash Cart\n"\
 					 "3. insideGadgets 1 MByte 128KB SRAM Flash Cart\n"\
-					 "4. insideGadgets 2 MByte 128KB SRAM Flash Cart\n"\
-					 "5. insideGadgets 2 MByte 32KB FRAM Flash Cart\n"\
-					 "6. insideGadgets 4 MByte 128KB SRAM Flash Cart\n"\
-					 "7. insideGadgets 64 MByte 128KB SRAM Mighty Flash Cart\n"\
-					 "8. insideGadgets 64 MByte 128KB SRAM Mighty Flash Cart Buffered (Experimental)\n\n"\
+					 "4. insideGadgets 1 MByte 128KB SRAM Custom Logo Flash Cart\n"\
+					 "5. insideGadgets 2 MByte 128KB SRAM Flash Cart\n"\
+					 "6. insideGadgets 2 MByte 32KB FRAM Flash Cart\n"\
+					 "7. insideGadgets 4 MByte 128KB SRAM Flash Cart\n"\
+					 "8. insideGadgets 64 MByte 128KB SRAM Mighty Flash Cart\n"\
+					 "9. insideGadgets 64 MByte 128KB SRAM Mighty Flash Cart Buffered (Experimental)\n\n"\
 					 
 					 "--- Gameboy ---\n"\
-					 "9. 32 KByte\n"\
-					 "10. 512 KByte (SST39SF040)\n"\
-					 "11. 1 MByte (ES29LV160)\n"\
-					 "12. 2 MByte (BV5)\n"\
-					 "13. 2 MByte (AM29LV160DB / 29LV160CTTC / 29LV160TE)\n");
+					 "10. 32 KByte\n"\
+					 "11. 512 KByte (SST39SF040)\n"\
+					 "12. 1 MByte (ES29LV160)\n"\
+					 "13. 2 MByte (BV5)\n"\
+					 "14. 2 MByte (AM29LV160DB / 29LV160CTTC / 29LV160TE)\n");
 		
 		printf("\nPress any key to see the next page...");
 		getchar();
 		
-		printf("\n14. 2 MByte (AM29F016B)\n"\
-					 "15. 2 MByte (GB Smart 16M)\n"\
-					 "16. 4 MByte (M29W640 / 29DL32BF / GL032A10BAIR4 / S29AL016M9)\n"\
-					 "17. 4 MByte MBC30 (MBM29F033C)\n"\
-					 "18. 32 MByte (4x 8MB Banks) (256M29)\n"\
-					 "19. 32 MByte (4x 8MB Banks) (M29W256 / MX29GL256)\n\n"\
+		printf("\n15. 2 MByte (AM29F016B)\n"\
+					 "16. 2 MByte (GB Smart 16M)\n"\
+					 "17. 4 MByte (M29W640 / 29DL32BF / GL032A10BAIR4 / S29AL016M9)\n"\
+					 "18. 4 MByte MBC30 (MBM29F033C)\n"\
+					 "19. 32 MByte (4x 8MB Banks) (256M29)\n"\
+					 "20. 32 MByte (4x 8MB Banks) (M29W256 / MX29GL256)\n\n"\
 					 
 					 "--- Gameboy Advance ---\n"\
-					 "20. insideGadgets 32MB 512Kbit/1Mbit Flash Save Flash Cart\n"\
-					 "21. insideGadgets 32MB 4Kbit/64Kbit EEPROM Save Flash Cart\n"\
-					 "22. 16 MByte (MSP55LV128 / 29LV128DTMC)\n"\
-					 "23. 16 MByte (MSP55LV128M / 29GL128EHMC / MX29GL128ELT / M29W128 / S29GL128) / 32MB (256M29EWH)\n"\
-					 "24. 16 MByte M36L0R706 / 32 MByte 256L30B / 4455LLZBQO / 4000L0YBQ0\n"\
-					 "25. 16 MByte M36L0R706 (2) / 32 MByte 256L30B (2) / 4455LLZBQO (2) / 4000L0YBQ0 (2)\n"\
-					 "26. 16 MByte GE28F128W30\n"\
-					 "27. 4 MByte (MX29LV320)\n\n"\
+					 "21. insideGadgets 32MB (512Kbit/1Mbit Flash Save) or (256Kbit FRAM) Flash Cart\n"\
+					 "22. insideGadgets 32MB 4Kbit/64Kbit EEPROM Save Flash Cart\n"\
+					 "23. 16 MByte (MSP55LV128 / 29LV128DTMC)\n"\
+					 "24. 16 MByte (MSP55LV128M / 29GL128EHMC / MX29GL128ELT / M29W128 / S29GL128) / 32MB (256M29EWH)\n"\
+					 "25. 16 MByte M36L0R706 / 32 MByte 256L30B / 4455LLZBQO / 4000L0YBQ0\n"\
+					 "26. 16 MByte M36L0R706 (2) / 32 MByte 256L30B (2) / 4455LLZBQO (2) / 4000L0YBQ0 (2)\n"\
+					 "27. 16 MByte GE28F128W30\n"\
+					 "28. 4 MByte (MX29LV320)\n\n"\
 					 "x. Exit\n>");
 		
 		char optionString[5];
@@ -2270,6 +2331,7 @@ int main(int argc, char **argv) {
 	}
 	
 	printf("\n");
+	xmas_idle_on();
 	
 	return 0;
 }
