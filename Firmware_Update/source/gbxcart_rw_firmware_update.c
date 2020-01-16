@@ -1,9 +1,9 @@
 /*
  GBxCart RW - Firmware update
- Version: 1.0
+ Version: 1.1
  Author: Alex from insideGadgets (www.insidegadgets.com)
  Created: 2/11/2019
- Last Modified: 2/11/2019
+ Last Modified: 16/01/2020
  
  */
 
@@ -23,8 +23,8 @@
 #define EXE_SUFFIX ""
 #endif
 
-#define MINI_FIRMWARE 14
-#define STANDARD_FIRMWARE 15
+#define MINI_FIRMWARE 15
+#define STANDARD_FIRMWARE 16
 
 #include "setup.h" // See defines, variables, constants, functions here
 
@@ -83,7 +83,7 @@ int main(int argc, char **argv) {
 				system(tsbReset);
 				
 				char tsbFirmware[200];
-				sprintf(tsbFirmware, "tsb" DIR_SEPARATOR "tsb" EXE_SUFFIX " %s:57600 fw gbxcart_rw_mini_v1.0_pcb_r14.hex", portname);
+				sprintf(tsbFirmware, "tsb" DIR_SEPARATOR "tsb" EXE_SUFFIX " %s:57600 fw gbxcart_rw_mini_v1.0_pcb_r15.hex", portname);
 				system(tsbFirmware);
 			}
 			else {
@@ -95,7 +95,7 @@ int main(int argc, char **argv) {
 		}
 	}
 	else if (gbxcartPcbVersion == 2 || gbxcartPcbVersion == 4) {
-		if (gbxcartFirmwareVersion < STANDARD_FIRMWARE) {
+		if (gbxcartFirmwareVersion <= STANDARD_FIRMWARE) {
 			printf("Firmware R%i is available. Would you like to update? (Y/[N])\n>", STANDARD_FIRMWARE);
 			
 			char modeSelected = read_one_letter();
@@ -107,7 +107,7 @@ int main(int argc, char **argv) {
 					system(tsbReset);
 					
 					char tsbFirmware[200];
-					sprintf(tsbFirmware, "tsb" DIR_SEPARATOR "tsb" EXE_SUFFIX " %s:57600 fw gbxcart_rw_v1.1-1.2_pcb_r15.hex", portname);
+					sprintf(tsbFirmware, "tsb" DIR_SEPARATOR "tsb" EXE_SUFFIX " %s:57600 fw gbxcart_rw_v1.1-1.2_pcb_r16.hex", portname);
 					system(tsbFirmware);
 					printf(tsbFirmware);
 				}
@@ -118,7 +118,7 @@ int main(int argc, char **argv) {
 					system(tsbReset);
 					
 					char tsbFirmware[200];
-					sprintf(tsbFirmware, "tsb" DIR_SEPARATOR "tsb" EXE_SUFFIX " %s:57600 fw gbxcart_rw_v1.3_pcb_r15.hex", portname);
+					sprintf(tsbFirmware, "tsb" DIR_SEPARATOR "tsb" EXE_SUFFIX " %s:57600 fw gbxcart_rw_v1.3_pcb_r16.hex", portname);
 					system(tsbFirmware);
 				}
 			}
