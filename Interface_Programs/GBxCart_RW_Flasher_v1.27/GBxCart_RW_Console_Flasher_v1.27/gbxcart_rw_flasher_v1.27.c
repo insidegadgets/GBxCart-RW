@@ -1,9 +1,9 @@
 /*
  GBxCart RW - Console Interface Flasher
- Version: 1.26
+ Version: 1.27
  Author: Alex from insideGadgets (www.insidegadgets.com)
  Created: 26/08/2017
- Last Modified: 18/12/2019
+ Last Modified: 16/01/2020
  License: GPL
  
  This program allows you to write ROMs to Flash Carts that are supported.
@@ -26,7 +26,7 @@
 
 int main(int argc, char **argv) {
 	
-	printf("GBxCart RW Flasher v1.26 by insideGadgets\n");
+	printf("GBxCart RW Flasher v1.27 by insideGadgets\n");
 	printf("#########################################\n");
 	
 	// Check arguments
@@ -345,6 +345,100 @@ int main(int argc, char **argv) {
 					}
 					
 					com_write_bytes_from_file(GB_FLASH_WRITE_64BYTE, romFile, 64);
+					com_wait_for_ack();
+					currAddr += 64;
+					readBytes += 64;
+					
+					// Print progress
+					print_progress_percent(readBytes, (romBanks * 16384) / 64);
+					led_progress_percent(readBytes, (romBanks * 16384) / 28);
+				}
+			}
+			
+			printf("]");
+			fclose(romFile);
+		}
+		
+		else if (flashCartType == 32 || flashCartType == 33) {
+			if (flashCartType == 32) {
+				printf("512 KByte (AM29LV160 with CPLD) Gameboy Flash Cart\n");
+			}
+			else {
+				printf("1 MByte (29LV320 with CPLD) Gameboy Flash Cart\n");
+			}
+			
+			// PCB v1.1/1.2
+			if (gbxcartPcbVersion == PCB_1_1 && cartridgeMode == GB_MODE) {
+				printf("You must switch GBxCart RW to be powered by 3.3V.\n");
+				printf("Please unplug it, switch the voltage and re-connect.\n");
+				read_one_letter();
+				return 1;
+			}
+			else if (gbxcartPcbVersion == PCB_1_3 || gbxcartPcbVersion == GBXMAS) { // PCB v1.3, Set 3.3V
+				set_mode(VOLTAGE_3_3V);
+				delay_ms(500);
+			}
+			
+			// Check file size
+			if (flashCartType == 32 && fileSize > 0x80000) {
+				fclose(romFile);
+				printf("\n%s \nFile size is larger than the available Flash cart space of 512 KByte\n", argv[1]);
+				read_one_letter();
+				return 1;
+			}
+			else if (flashCartType == 33 && fileSize > 0x100000) {
+				fclose(romFile);
+				printf("\n%s \nFile size is larger than the available Flash cart space of 1 MByte\n", argv[1]);
+				read_one_letter();
+				return 1;
+			}
+			
+			currAddr = 0x0000;
+			endAddr = 0x7FFF;
+			
+			// Calculate banks needed from ROM file size
+			romBanks = fileSize / 16384;
+			
+			// Flash Setup
+			set_mode(GB_CART_MODE); // Gameboy mode
+			gb_flash_pin_setup(WE_AS_WR_PIN); // WR pin
+			gb_flash_program_setup(GB_FLASH_PROGRAM_7AAA_BIT01_SWAPPED);// Flash program byte method
+			gb_check_change_flash_id(GB_FLASH_PROGRAM_7AAA_BIT01_SWAPPED);
+			
+			// Chip erase (data byte's bit 0 & 1 are swapped for chip commands as D0 & D1 lines are swapped)
+			printf("\nErasing Flash");
+			xmas_chip_erase_animation();
+			gb_flash_write_address_byte(0x7AAA, 0xA9);
+			gb_flash_write_address_byte(0x7555, 0x56);
+			gb_flash_write_address_byte(0x7AAA, 0x80);
+			gb_flash_write_address_byte(0x7AAA, 0xA9);
+			gb_flash_write_address_byte(0x7555, 0x56);
+			gb_flash_write_address_byte(0x7AAA, 0x10);
+			
+			// Wait for first byte to be 0xFF
+			wait_for_flash_chip_erase_ff(1);
+			xmas_setup((romBanks * 16384) / 28);			
+			
+			printf("\n\nWriting to ROM (Flash cart) from %s\n", filenameOnly);
+			printf("[             25%%             50%%             75%%            100%%]\n[");
+			
+			// Write ROM
+			for (uint16_t bank = 0; bank < romBanks; bank++) {				
+				currAddr = 0x4000;
+				
+				// Set start address
+				set_number(currAddr, SET_START_ADDRESS);
+				delay_ms(5);
+				
+				if (bank >= 1) {
+					set_mode(GB_FLASH_BANK_1_COMMAND_WRITES); // Set bank again as we reset the CPLD after every write
+					delay_ms(5);
+					set_bank(0x2100, bank);
+				}
+				
+				// Read data
+				while (currAddr < endAddr) {
+					com_write_bytes_from_file(GB_FLASH_WRITE_64BYTE_PULSE_RESET, romFile, 64);
 					com_wait_for_ack();
 					currAddr += 64;
 					readBytes += 64;
@@ -1310,7 +1404,7 @@ int main(int argc, char **argv) {
 		}
 		
 		else if (flashCartType == 4) {
-			printf("insideGadgets 4 MByte 128KB SRAM Gameboy Flash Cart\n");
+			printf("insideGadgets 4 MByte 128KB SRAM/FRAM Gameboy Flash Cart\n");
 			printf("\nGoing to write to ROM (Flash cart) from %s\n", filenameOnly);
 			
 			// PCB v1.3 - Set 5V
@@ -2271,36 +2365,38 @@ int main(int argc, char **argv) {
 					 "4. insideGadgets 1 MByte 128KB SRAM Custom Logo Flash Cart\n"\
 					 "5. insideGadgets 2 MByte 128KB SRAM Flash Cart\n"\
 					 "6. insideGadgets 2 MByte 32KB FRAM Flash Cart\n"\
-					 "7. insideGadgets 4 MByte 128KB SRAM Flash Cart\n"\
+					 "7. insideGadgets 4 MByte 128KB SRAM/FRAM Flash Cart\n"\
 					 "8. insideGadgets 64 MByte 128KB SRAM Mighty Flash Cart\n"\
 					 "9. insideGadgets 64 MByte 128KB SRAM Mighty Flash Cart Buffered (Experimental)\n\n"\
 					 
 					 "--- Gameboy ---\n"\
 					 "10. 32 KByte\n"\
 					 "11. 512 KByte (SST39SF040)\n"\
-					 "12. 1 MByte (ES29LV160)\n"\
-					 "13. 2 MByte (BV5)\n"\
-					 "14. 2 MByte (AM29LV160DB / 29LV160CTTC / 29LV160TE)\n");
+					 "12. 512 KByte (AM29LV160 CPLD cart)\n"\
+					 "13. 1 MByte (ES29LV160)\n"\
+					 "14. 1 MByte (29LV320 CPLD cart)\n"\
+					 "15. 2 MByte (BV5)\n"\
+					 "16. 2 MByte (AM29LV160DB / 29LV160CTTC / 29LV160TE)\n");
 		
 		printf("\nPress any key to see the next page...");
 		getchar();
 		
-		printf("\n15. 2 MByte (AM29F016B)\n"\
-					 "16. 2 MByte (GB Smart 16M)\n"\
-					 "17. 4 MByte (M29W640 / 29DL32BF / GL032A10BAIR4 / S29AL016M9)\n"\
-					 "18. 4 MByte MBC30 (MBM29F033C)\n"\
-					 "19. 32 MByte (4x 8MB Banks) (256M29)\n"\
-					 "20. 32 MByte (4x 8MB Banks) (M29W256 / MX29GL256)\n\n"\
+		printf("\n17. 2 MByte (AM29F016B)\n"\
+					 "18. 2 MByte (GB Smart 16M)\n"\
+					 "19. 4 MByte (M29W640 / 29DL32BF / GL032A10BAIR4 / S29AL016M9)\n"\
+					 "20. 4 MByte MBC30 (MBM29F033C)\n"\
+					 "21. 32 MByte (4x 8MB Banks) (256M29)\n"\
+					 "22. 32 MByte (4x 8MB Banks) (M29W256 / MX29GL256)\n\n"\
 					 
 					 "--- Gameboy Advance ---\n"\
-					 "21. insideGadgets 32MB (512Kbit/1Mbit Flash Save) or (256Kbit FRAM) Flash Cart\n"\
-					 "22. insideGadgets 32MB 4Kbit/64Kbit EEPROM Save Flash Cart\n"\
-					 "23. 16 MByte (MSP55LV128 / 29LV128DTMC)\n"\
-					 "24. 16 MByte (MSP55LV128M / 29GL128EHMC / MX29GL128ELT / M29W128 / S29GL128) / 32MB (256M29EWH)\n"\
-					 "25. 16 MByte M36L0R706 / 32 MByte 256L30B / 4455LLZBQO / 4000L0YBQ0\n"\
-					 "26. 16 MByte M36L0R706 (2) / 32 MByte 256L30B (2) / 4455LLZBQO (2) / 4000L0YBQ0 (2)\n"\
-					 "27. 16 MByte GE28F128W30\n"\
-					 "28. 4 MByte (MX29LV320)\n\n"\
+					 "23. insideGadgets 32MB (512Kbit/1Mbit Flash Save) or (256Kbit FRAM) Flash Cart\n"\
+					 "24. insideGadgets 32MB 4Kbit/64Kbit EEPROM Save Flash Cart\n"\
+					 "25. 16 MByte (MSP55LV128 / 29LV128DTMC)\n"\
+					 "26. 16 MByte (MSP55LV128M / 29GL128EHMC / MX29GL128ELT / M29W128 / S29GL128) / 32MB (256M29EWH)\n"\
+					 "27. 16 MByte M36L0R706 / 32 MByte 256L30B / 4455LLZBQO / 4000L0YBQ0\n"\
+					 "28. 16 MByte M36L0R706 (2) / 32 MByte 256L30B (2) / 4455LLZBQO (2) / 4000L0YBQ0 (2)\n"\
+					 "29. 16 MByte GE28F128W30\n"\
+					 "30. 4 MByte (MX29LV320)\n\n"\
 					 "x. Exit\n>");
 		
 		char optionString[5];

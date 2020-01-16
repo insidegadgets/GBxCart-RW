@@ -1,9 +1,9 @@
 /*
  GBxCart RW - Console Interface Flasher
- Version: 1.25
+ Version: 1.27
  Author: Alex from insideGadgets (www.insidegadgets.com)
  Created: 26/08/2017
- Last Modified: 2/12/2019
+ Last Modified: 26/12/2019
  License: GPL
  
  */
@@ -73,7 +73,7 @@ uint8_t nintendoLogoGBA[] = {0x24, 0xFF, 0xAE, 0x51, 0x69, 0x9A, 0xA2, 0x21, 0x3
 										0x78, 0x00, 0x90, 0xCB, 0x88, 0x11, 0x3A, 0x94, 0x65, 0xC0, 0x7C, 0x63, 0x87, 0xF0, 0x3C, 0xAF, 
 										0xD6, 0x25, 0xE4, 0x8B, 0x38, 0x0A, 0xAC, 0x72, 0x21, 0xD4, 0xF8, 0x07};
 uint8_t flashCartList[] = { 1, 29, 30, 31, 2, 3, 4, 5, 6, 0, // GB iG carts (Array 1-9)
-									  8, 9, 10, 11, 12, 13, 14, 15, 16, 17, // GB carts (Array 10-19)
+									  8, 32, 9, 33, 10, 11, 12, 13, 14, 15, 16, 17, // GB carts (Array 10-19)
 									  20, 27, 21, 22, 23, 24, 25, 26}; // GBA carts (Array 20-26)
 
 // Read the config.ini file for the COM port to use and baud rate
@@ -1492,6 +1492,11 @@ void gb_flash_program_setup(uint8_t method) {
 		send_hex_wait_ack(0xAAA);	send_hex_wait_ack(0xA9);
 		send_hex_wait_ack(0x555);	send_hex_wait_ack(0x56);
 		send_hex_wait_ack(0xAAA);	send_hex_wait_ack(0xA0);
+	}
+	else if (method == GB_FLASH_PROGRAM_7AAA_BIT01_SWAPPED) {
+		send_hex_wait_ack(0x7AAA);	send_hex_wait_ack(0xA9);
+		send_hex_wait_ack(0x7555);	send_hex_wait_ack(0x56);
+		send_hex_wait_ack(0x7AAA);	send_hex_wait_ack(0xA0);
 	}
 	else if (method == GB_FLASH_PROGRAM_5555) {
 		send_hex_wait_ack(0x5555);	send_hex_wait_ack(0xAA);
