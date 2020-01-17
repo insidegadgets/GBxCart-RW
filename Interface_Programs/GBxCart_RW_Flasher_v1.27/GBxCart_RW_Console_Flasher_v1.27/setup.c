@@ -277,12 +277,14 @@ void xmas_idle_off (void) {
 }
 
 void xmas_chip_erase_animation (void) {
-	set_mode('0');
-	delay_ms(5);
-	set_number(XMAS_VALUE, XMAS_LEDS);
-	delay_ms(5);
-	set_mode('E');
-	delay_ms(5);
+	if (gbxcartPcbVersion == GBXMAS) {
+		set_mode('0');
+		delay_ms(5);
+		set_number(XMAS_VALUE, XMAS_LEDS);
+		delay_ms(5);
+		set_mode('E');
+		delay_ms(5);
+	}
 }
 
 void xmas_wake_up (void) {
