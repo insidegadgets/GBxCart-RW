@@ -1,9 +1,9 @@
 /*
  GBxCart RW - Console Interface Flasher
- Version: 1.27
+ Version: 1.28
  Author: Alex from insideGadgets (www.insidegadgets.com)
  Created: 26/08/2017
- Last Modified: 26/12/2019
+ Last Modified: 17/04/2020
  License: GPL
  
  */
@@ -291,3 +291,7 @@ void gb_check_change_flash_id (uint8_t flashMethod);
 
 // GBA Flash Cart, write address and byte
 void gba_flash_write_address_byte (uint32_t address, uint16_t byte);
+
+void wait_for_gba_flash_erase_ff(uint32_t address);
+
+void wait_for_gba_flash_sector_ff(uint32_t address, uint8_t byteOne,  uint8_t byteTwo);

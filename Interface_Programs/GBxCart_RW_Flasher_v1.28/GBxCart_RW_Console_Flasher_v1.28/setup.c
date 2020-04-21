@@ -1,12 +1,18 @@
 /*
  GBxCart RW - Console Interface Flasher
- Version: 1.27
+ Version: 1.28
  Author: Alex from insideGadgets (www.insidegadgets.com)
  Created: 26/08/2017
- Last Modified: 26/12/2019
+ Last Modified: 17/04/2020
  License: GPL
  
  */
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <string.h>
+#include <time.h>
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -310,6 +316,7 @@ void xmas_setup (uint32_t progressNumber) {
 void com_wait_for_ack (void) {
 	uint8_t buffer[2];
 	uint8_t rxBytes = 0;
+	uint32_t timeout = 0;
 	
 	while (rxBytes < 1) {
 		rxBytes = RS232_PollComport(cport_nr, buffer, 1);
@@ -320,6 +327,26 @@ void com_wait_for_ack (void) {
 			}
 			rxBytes = 0;
 		}
+		#if defined(__APPLE__)
+		else {
+			delay_ms(5);
+			timeout++;
+			if (timeout >= 250) {
+				printf("\n\nWriting has timed out. Please unplug GBxCart RW, re-seat the cartridge and try again.\n");
+				read_one_letter();
+				exit(1);
+			}
+		}
+		#else
+		else {
+			timeout++;
+			if (timeout >= 200000) {
+				printf("\n\nWriting has timed out. Please unplug GBxCart RW, re-seat the cartridge and try again.\n");
+				read_one_letter();
+				exit(1);
+			}
+		}
+		#endif
 	}
 }
 
@@ -1413,7 +1440,9 @@ void read_config_flash(void) {
 
 // Wait for first byte of chosen address to be 0xFF, that's when we know the sector has been erased
 void wait_for_flash_sector_ff(uint16_t address) {
+	uint16_t timeout = 0;
 	readBuffer[0] = 0;
+	
 	while (readBuffer[0] != 0xFF) {
 		set_number(address, SET_START_ADDRESS);
 		set_mode(READ_ROM_RAM);
@@ -1431,13 +1460,76 @@ void wait_for_flash_sector_ff(uint16_t address) {
 		
 		if (readBuffer[0] != 0xFF) {
 			delay_ms(20);
+			
+			timeout++;
+			if (timeout >= 200) {
+				printf("\n\nWaiting for sector erase has timed out. Please unplug GBxCart RW, re-seat the cartridge and try again.\n");
+				read_one_letter();
+				exit(1);
+			}
+		}
+	}
+}
+
+// Wait for 2 bytes of chosen address to be 0xFF, that's when we know the sector has been erased
+void wait_for_gba_flash_sector_ff(uint32_t address, uint8_t byteOne,  uint8_t byteTwo) {
+	uint16_t timeout = 0;
+	
+	// Wait for first 2 bytes to be 0xFF
+	readBuffer[0] = 0;
+	readBuffer[1] = 0;
+	while (readBuffer[0] != byteOne && readBuffer[1] != byteTwo) {
+		set_number(address / 2, SET_START_ADDRESS);
+		delay_ms(5);
+		set_mode(GBA_READ_ROM);
+		delay_ms(5);
+		
+		com_read_bytes(READ_BUFFER, 64);
+		com_read_stop(); // End read
+		delay_ms(50);
+		
+		timeout++;
+		if (timeout >= 200) {
+			printf("\n\nWaiting for sector erase has timed out. Please unplug GBxCart RW, re-seat the cartridge and try again.\n");
+			read_one_letter();
+			exit(1);
+		}
+	}
+}
+
+
+// Wait for first byte of Flash to be 0xFF, that's when we know the sector has been erased
+void wait_for_gba_flash_erase_ff(uint32_t currAddr) {
+	uint16_t timeout = 0;
+	readBuffer[0] = 0;
+	readBuffer[1] = 0;
+	
+	while (readBuffer[0] != 0xFF && readBuffer[1] != 0xFF) {
+		set_number(currAddr / 2, SET_START_ADDRESS);
+		delay_ms(5);
+		set_mode(GBA_READ_ROM);
+		delay_ms(5);
+		
+		com_read_bytes(READ_BUFFER, 64);
+		com_read_stop(); // End read
+		
+		printf(".");
+		delay_ms(2000);
+		
+		timeout++;
+		if (timeout >= 200) {
+			printf("\n\nWaiting for sector erase has timed out. Please unplug GBxCart RW, re-seat the cartridge and try again.\n");
+			read_one_letter();
+			exit(1);
 		}
 	}
 }
 
 // Wait for first byte of Flash to be 0xFF, that's when we know the sector has been erased
 void wait_for_flash_chip_erase_ff(uint8_t printProgress) {
+	uint16_t timeout = 0;
 	readBuffer[0] = 0;
+	
 	while (readBuffer[0] != 0xFF) {
 		set_number(currAddr, SET_START_ADDRESS);
 		set_mode(READ_ROM_RAM);
@@ -1461,6 +1553,13 @@ void wait_for_flash_chip_erase_ff(uint8_t printProgress) {
 		
 		if (readBuffer[0] != 0xFF) {
 			delay_ms(500);
+			
+			timeout++;
+			if (timeout >= 100) {
+				printf("\n\n Waiting for chip erase has timed out. Please unplug GBxCart RW, re-seat the cartridge and try again.\n");
+				read_one_letter();
+				exit(1);
+			}
 		}
 	}
 }

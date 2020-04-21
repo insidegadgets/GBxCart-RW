@@ -1,9 +1,9 @@
 /*
  GBxCart RW - Console Interface Flasher
- Version: 1.27
+ Version: 1.28
  Author: Alex from insideGadgets (www.insidegadgets.com)
  Created: 26/08/2017
- Last Modified: 16/01/2020
+ Last Modified: 17/04/2020
  License: GPL
  
  This program allows you to write ROMs to Flash Carts that are supported.
@@ -26,7 +26,7 @@
 
 int main(int argc, char **argv) {
 	
-	printf("GBxCart RW Flasher v1.27 by insideGadgets\n");
+	printf("GBxCart RW Flasher v1.28 by insideGadgets\n");
 	printf("#########################################\n");
 	
 	// Check arguments
@@ -614,7 +614,7 @@ int main(int argc, char **argv) {
 		}
 		
 		else if (flashCartType == 11) {
-			printf("2 MByte (AM29LV160DB / 29LV160CTTC / 29LV160TE) Gameboy Flash Cart\n");
+			printf("2 MByte (AM29LV160DB / 29LV160CTTC / 29LV160TE / S29AL016) Gameboy Flash Cart\n");
 			
 			// PCB v1.1/1.2
 			if (gbxcartPcbVersion == PCB_1_1 && cartridgeMode == GB_MODE) {
@@ -660,7 +660,7 @@ int main(int argc, char **argv) {
 			gb_flash_write_address_byte(0xAAA, 0x10);
 			
 			// Wait for first byte to be 0xFF
-			wait_for_flash_chip_erase_ff(0);
+			wait_for_flash_chip_erase_ff(1);
 			xmas_setup((romBanks * 16384) / 28);
 			
 			printf("\n\nWriting to ROM (Flash cart) from %s\n", filenameOnly);
@@ -1001,7 +1001,7 @@ int main(int argc, char **argv) {
 		}
 		
 		else if (flashCartType == 15) {
-			printf("15. 4 MByte MBC30 (MBM29F033C) Gameboy Flash Cart\n");
+			printf("15. 4 MByte MBC30 (AM29F032B / MBM29F033C) Gameboy Flash Cart\n");
 			printf("\nGoing to write to ROM (Flash cart) from %s\n", filenameOnly);
 			
 			// PCB v1.3 - Set 5V
@@ -1646,20 +1646,7 @@ int main(int argc, char **argv) {
 				gba_flash_write_address_byte(0xAAA, 0x10);
 				
 				// Wait for first 2 bytes to be 0xFF
-				readBuffer[0] = 0;
-				readBuffer[1] = 0;
-				while (readBuffer[0] != 0xFF && readBuffer[1] != 0xFF) {
-					set_number(currAddr / 2, SET_START_ADDRESS);
-					delay_ms(5);
-					set_mode(GBA_READ_ROM);
-					delay_ms(5);
-					
-					com_read_bytes(READ_BUFFER, 64);
-					com_read_stop(); // End read
-					
-					printf(".");
-					delay_ms(2000);
-				}
+				wait_for_gba_flash_erase_ff(currAddr);
 				printf("\n");
 			}
 			
@@ -1684,19 +1671,7 @@ int main(int argc, char **argv) {
 					sector++;
 					
 					// Wait for first 2 bytes to be 0xFF
-					readBuffer[0] = 0;
-					readBuffer[1] = 0;
-					while (readBuffer[0] != 0xFF && readBuffer[1] != 0xFF) {
-						set_number(currAddr / 2, SET_START_ADDRESS);
-						delay_ms(5);
-						set_mode(GBA_READ_ROM);
-						delay_ms(5);
-						
-						com_read_bytes(READ_BUFFER, 64);
-						com_read_stop(); // End read
-						
-						delay_ms(500);
-					}
+					wait_for_gba_flash_sector_ff(currAddr, 0xFF, 0xFF);
 					
 					set_number(currAddr / 2, SET_START_ADDRESS); // Divide address by 2
 					delay_ms(5);
@@ -1759,18 +1734,7 @@ int main(int argc, char **argv) {
 					sector++;
 					
 					// Wait for first 2 bytes to be 0xFF
-					readBuffer[0] = 0;
-					readBuffer[1] = 0;
-					while (readBuffer[0] != 0xFF && readBuffer[1] != 0xFF) {
-						set_number(currAddr / 2, SET_START_ADDRESS);
-						delay_ms(5);
-						set_mode(GBA_READ_ROM);
-						delay_ms(5);
-						
-						com_read_bytes(READ_BUFFER, 64);
-						com_read_stop(); // End read
-						delay_ms(50);
-					}
+					wait_for_gba_flash_sector_ff(currAddr, 0xFF, 0xFF);
 					
 					set_number(currAddr / 2, SET_START_ADDRESS); // Divide address by 2
 					delay_ms(5);
@@ -1833,18 +1797,7 @@ int main(int argc, char **argv) {
 					sector++;
 					
 					// Wait for first 2 bytes to be 0xFF
-					readBuffer[0] = 0;
-					readBuffer[1] = 0;
-					while (readBuffer[0] != 0xFF && readBuffer[1] != 0xFF) {
-						set_number(currAddr / 2, SET_START_ADDRESS);
-						delay_ms(5);
-						set_mode(GBA_READ_ROM);
-						delay_ms(5);
-						
-						com_read_bytes(READ_BUFFER, 64);
-						com_read_stop(); // End read
-						delay_ms(50);
-					}
+					wait_for_gba_flash_sector_ff(currAddr, 0xFF, 0xFF);
 					
 					set_number(currAddr / 2, SET_START_ADDRESS); // Divide address by 2
 					delay_ms(5);
@@ -1951,18 +1904,7 @@ int main(int argc, char **argv) {
 					delay_ms(50);
 					
 					// Wait for first 2 bytes to be 0x80, 0x00
-					readBuffer[0] = 0;
-					readBuffer[1] = 0;
-					while (readBuffer[0] != 0x80 && readBuffer[0] != 0xB0) {
-						set_number(currAddr / 2, SET_START_ADDRESS);
-						delay_ms(5);
-						set_mode(GBA_READ_ROM);
-						delay_ms(5);
-						
-						com_read_bytes(READ_BUFFER, 64);
-						com_read_stop(); // End read
-						delay_ms(500);
-					}
+					wait_for_gba_flash_sector_ff(currAddr, 0x80, 0x00);
 					
 					// Back to reading mode
 					gba_flash_write_address_byte(currAddr, 0xFF);
@@ -2103,6 +2045,7 @@ int main(int argc, char **argv) {
 					delay_ms(50);
 					
 					// Wait for byte to be 0x80 or 0xB0
+					uint16_t timeout = 0;
 					readBuffer[0] = 0;
 					readBuffer[1] = 0;
 					while (readBuffer[0] != 0x80 && readBuffer[0] != 0xB0) {
@@ -2114,6 +2057,13 @@ int main(int argc, char **argv) {
 						com_read_bytes(READ_BUFFER, 64);
 						com_read_stop(); // End read
 						delay_ms(50);
+						
+						timeout++;
+						if (timeout >= 200) {
+							printf("\n\nWaiting for sector erase has timed out. Please unplug GBxCart RW, re-seat the cartridge and try again.\n");
+							read_one_letter();
+							exit(1);
+						}
 					}
 					
 					// Back to reading mode
@@ -2189,18 +2139,7 @@ int main(int argc, char **argv) {
 					sector++;
 					
 					// Wait for first 2 bytes to be 0xFF
-					readBuffer[0] = 0;
-					readBuffer[1] = 0;
-					while (readBuffer[0] != 0xFF && readBuffer[1] != 0xFF) {
-						set_number(currAddr / 2, SET_START_ADDRESS);
-						delay_ms(5);
-						set_mode(GBA_READ_ROM);
-						delay_ms(5);
-						
-						com_read_bytes(READ_BUFFER, 64);
-						com_read_stop(); // End read
-						delay_ms(50);
-					}
+					wait_for_gba_flash_sector_ff(currAddr, 0xFF, 0xFF);
 					
 					set_number(currAddr / 2, SET_START_ADDRESS); // Divide address by 2
 					delay_ms(5);
@@ -2279,20 +2218,7 @@ int main(int argc, char **argv) {
 				gba_flash_write_address_byte(0xAAA, 0x10);
 				
 				// Wait for first 2 bytes to be 0xFF
-				readBuffer[0] = 0;
-				readBuffer[1] = 0;
-				while (readBuffer[0] != 0xFF && readBuffer[1] != 0xFF) {
-					set_number(currAddr / 2, SET_START_ADDRESS);
-					delay_ms(5);
-					set_mode(GBA_READ_ROM);
-					delay_ms(5);
-					
-					com_read_bytes(READ_BUFFER, 64);
-					com_read_stop(); // End read
-					
-					printf(".");
-					delay_ms(2000);
-				}
+				wait_for_gba_flash_erase_ff(currAddr);
 				printf("\n");
 			}
 			
@@ -2317,19 +2243,7 @@ int main(int argc, char **argv) {
 					sector++;
 					
 					// Wait for first 2 bytes to be 0xFF
-					readBuffer[0] = 0;
-					readBuffer[1] = 0;
-					while (readBuffer[0] != 0xFF && readBuffer[1] != 0xFF) {
-						set_number(currAddr / 2, SET_START_ADDRESS);
-						delay_ms(5);
-						set_mode(GBA_READ_ROM);
-						delay_ms(5);
-						
-						com_read_bytes(READ_BUFFER, 64);
-						com_read_stop(); // End read
-						
-						delay_ms(500);
-					}
+					wait_for_gba_flash_sector_ff(currAddr, 0xFF, 0xFF);
 					
 					set_number(currAddr / 2, SET_START_ADDRESS); // Divide address by 2
 					delay_ms(5);
@@ -2348,7 +2262,6 @@ int main(int argc, char **argv) {
 					break;
 				}
 			}
-		
 		}
 		else {
 			printf("No Flash Cart selected, please run this program by itself.");
@@ -2376,7 +2289,7 @@ int main(int argc, char **argv) {
 					 "13. 1 MByte (ES29LV160)\n"\
 					 "14. 1 MByte (29LV320 CPLD cart)\n"\
 					 "15. 2 MByte (BV5)\n"\
-					 "16. 2 MByte (AM29LV160DB / 29LV160CTTC / 29LV160TE)\n");
+					 "16. 2 MByte (AM29LV160DB / 29LV160CTTC / 29LV160TE / S29AL016)\n");
 		
 		printf("\nPress any key to see the next page...");
 		getchar();
@@ -2384,7 +2297,7 @@ int main(int argc, char **argv) {
 		printf("\n17. 2 MByte (AM29F016B)\n"\
 					 "18. 2 MByte (GB Smart 16M)\n"\
 					 "19. 4 MByte (M29W640 / 29DL32BF / GL032A10BAIR4 / S29AL016M9)\n"\
-					 "20. 4 MByte MBC30 (MBM29F033C)\n"\
+					 "20. 4 MByte MBC30 (AM29F032B / MBM29F033C)\n"\
 					 "21. 32 MByte (4x 8MB Banks) (256M29)\n"\
 					 "22. 32 MByte (4x 8MB Banks) (M29W256 / MX29GL256)\n\n"\
 					 
