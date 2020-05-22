@@ -1,9 +1,9 @@
 /*
  GBxCart RW - Console Interface Flasher
- Version: 1.28
+ Version: 1.29
  Author: Alex from insideGadgets (www.insidegadgets.com)
  Created: 26/08/2017
- Last Modified: 17/04/2020
+ Last Modified: 22/05/2020
  License: GPL
  
  */
@@ -78,8 +78,8 @@ uint8_t nintendoLogoGBA[] = {0x24, 0xFF, 0xAE, 0x51, 0x69, 0x9A, 0xA2, 0x21, 0x3
 										0xA9, 0x63, 0xBE, 0x03, 0x01, 0x4E, 0x38, 0xE2, 0xF9, 0xA2, 0x34, 0xFF, 0xBB, 0x3E, 0x03, 0x44, 
 										0x78, 0x00, 0x90, 0xCB, 0x88, 0x11, 0x3A, 0x94, 0x65, 0xC0, 0x7C, 0x63, 0x87, 0xF0, 0x3C, 0xAF, 
 										0xD6, 0x25, 0xE4, 0x8B, 0x38, 0x0A, 0xAC, 0x72, 0x21, 0xD4, 0xF8, 0x07};
-uint8_t flashCartList[] = { 1, 29, 30, 31, 2, 3, 4, 5, 6, 0, // GB iG carts (Array 1-9)
-									  8, 32, 9, 33, 10, 11, 12, 13, 14, 15, 16, 17, // GB carts (Array 10-19)
+uint8_t flashCartList[] = { 1, 29, 30, 31, 2, 3, 4, 35, 5, 6, // GB iG carts (Array 1-10)
+									  8, 32, 9, 33, 10, 11, 12, 34, 13, 14, 15, 16, 17, // GB carts (Array 10-19)
 									  20, 27, 21, 22, 23, 24, 25, 26}; // GBA carts (Array 20-26)
 
 // Read the config.ini file for the COM port to use and baud rate
@@ -1625,6 +1625,35 @@ void gb_flash_write_address_byte (uint16_t address, uint8_t byte) {
 	com_wait_for_ack(); 
 }
 
+
+// Read a bit of the ROM a few times to see if anything changes
+void gb_check_stable_cart_data (void) {
+	uint8_t readRomResult[10];
+	
+	// Read ROM a few times to see if anything changes
+	for (uint8_t x = 0; x < 10; x++) {
+		set_number(0, SET_START_ADDRESS);
+		delay_ms(5);
+		set_mode(READ_ROM_RAM);
+		delay_ms(5);
+		com_read_bytes(READ_BUFFER, 64);
+		com_read_stop(); // End read
+		delay_ms(50);
+		
+		//printf("Read rom: 0x%X,0x%X,0x%X,0x%X\n", readBuffer[0], readBuffer[1], readBuffer[2], readBuffer[3]);
+		
+		// Check if ROM read is different than last time
+		if (x >= 1) {
+			for (uint8_t r = 0; r < 8; r++) {
+				if (readBuffer[r] != readRomResult[r]) {
+					printf("\n*** The cartridge is changing it's data when being read back.\nPlease re-seat the cart and power cycle GBxCart. ***\n");
+					read_one_letter();
+					break;
+				}
+			}
+		}
+	}
+}
 
 // Check if the ROM reads differently when issuing the Flash ID command
 void gb_check_change_flash_id (uint8_t flashMethod) {
