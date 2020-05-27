@@ -1,7 +1,7 @@
 ﻿/*
 
 GBxCart RW - GUI  Interface
-Version : 1.33
+Version : 1.34
 Author : Alex from insideGadgets(www.insidegadgets.com)
 Created : 7 / 11 / 2016
 Last Modified : 21 / 12 / 2019
@@ -660,8 +660,13 @@ namespace GBxCart_RW
                 progress = 0;
                 backgroundWorker1.ReportProgress(0);
 
-                commandReceived = READROM;
-                statuslabel.Text = "Reading ROM...";
+                if (headerTokens[4] == "Header Checksum: OK") {
+                    commandReceived = READROM;
+                    statuslabel.Text = "Reading ROM...";
+                }
+                else {
+                    System.Windows.Forms.MessageBox.Show("Header Checksum has failed. Can't proceed as corruption could occur.");
+                }
             }
         }
 
@@ -683,29 +688,34 @@ namespace GBxCart_RW
                 progress = 0;
                 backgroundWorker1.ReportProgress(0);
 
-                if (alwaysAddDateTimeToSave == 1) {
-                    saveAsNewFile = true;
-                    commandReceived = SAVERAM;
-                    statuslabel.Text = "Backing up Save...";
-                }
-                else {
-                    saveAsNewFile = false;
-                    if (Program.check_if_file_exists() == 1) {
-                        SaveOptions SaveOptionsForm = new SaveOptions();
-                        SaveOptionsForm.saveNameExisting.Text = headerTokens[0];
-                        SaveOptionsForm.ShowDialog();
-
-                        if (commandReceived == SAVERAM) {
-                            statuslabel.Text = "Backing up Save...";
-                        }
-                        else {
-                            statuslabel.Text = "Backing up Save cancelled";
-                        }
-                    }
-                    else {
+                if (headerTokens[4] == "Header Checksum: OK") {
+                    if (alwaysAddDateTimeToSave == 1) {
+                        saveAsNewFile = true;
                         commandReceived = SAVERAM;
                         statuslabel.Text = "Backing up Save...";
                     }
+                    else {
+                        saveAsNewFile = false;
+                        if (Program.check_if_file_exists() == 1) {
+                            SaveOptions SaveOptionsForm = new SaveOptions();
+                            SaveOptionsForm.saveNameExisting.Text = headerTokens[0];
+                            SaveOptionsForm.ShowDialog();
+
+                            if (commandReceived == SAVERAM) {
+                                statuslabel.Text = "Backing up Save...";
+                            }
+                            else {
+                                statuslabel.Text = "Backing up Save cancelled";
+                            }
+                        }
+                        else {
+                            commandReceived = SAVERAM;
+                            statuslabel.Text = "Backing up Save...";
+                        }
+                    }
+                }
+                else {
+                    System.Windows.Forms.MessageBox.Show("Header Checksum has failed. Can't proceed as corruption could occur.");
                 }
             }
         }
@@ -716,37 +726,42 @@ namespace GBxCart_RW
                 progress = 0;
                 backgroundWorker1.ReportProgress(0);
 
-                bool promptToRestore = false;
-                if (promptForRestoreSaveFile == 1) { // Select a save file
-                    openFileDialog2.InitialDirectory = this.directoryNameToolStripMenuItem.Text;
-                    DialogResult result = openFileDialog2.ShowDialog();
-                    if (result == DialogResult.OK) {
-                        FileInfo fileSelected = new FileInfo(openFileDialog2.FileName);
-                        writeSaveFileName = openFileDialog2.FileName;
-                        promptToRestore = true;
+                if (headerTokens[4] == "Header Checksum: OK") {
+                    bool promptToRestore = false;
+                    if (promptForRestoreSaveFile == 1) { // Select a save file
+                        openFileDialog2.InitialDirectory = this.directoryNameToolStripMenuItem.Text;
+                        DialogResult result = openFileDialog2.ShowDialog();
+                        if (result == DialogResult.OK) {
+                            FileInfo fileSelected = new FileInfo(openFileDialog2.FileName);
+                            writeSaveFileName = openFileDialog2.FileName;
+                            promptToRestore = true;
+                        }
                     }
-                }
-                else { // Use the default save file name
-                    writeSaveFileName = "";
-                    if (Program.check_if_file_exists() == 1) {
-                        promptToRestore = true;
+                    else { // Use the default save file name
+                        writeSaveFileName = "";
+                        if (Program.check_if_file_exists() == 1) {
+                            promptToRestore = true;
+                        }
+                        else {
+                            statuslabel.Text = "Save file not found.";
+                        }
                     }
-                    else {
-                        statuslabel.Text = "Save file not found.";
-                    }
-                }
 
-                // Prompt to overwrite save
-                if (promptToRestore == true) {
-                    Functions.MessageBoxHelper.PrepToCenterMessageBoxOnForm(this);
-                    DialogResult dialogResult = MessageBox.Show("This will erase the save game from your Gameboy / Gameboy Advance cart\nPress Yes to continue or No to abort.", "Confirm Write", MessageBoxButtons.YesNo);
-                    if (dialogResult == DialogResult.Yes) {
-                        commandReceived = WRITERAM;
-                        statuslabel.Text = "Restoring Save...";
+                    // Prompt to overwrite save
+                    if (promptToRestore == true) {
+                        Functions.MessageBoxHelper.PrepToCenterMessageBoxOnForm(this);
+                        DialogResult dialogResult = MessageBox.Show("This will erase the save game from your Gameboy / Gameboy Advance cart\nPress Yes to continue or No to abort.", "Confirm Write", MessageBoxButtons.YesNo);
+                        if (dialogResult == DialogResult.Yes) {
+                            commandReceived = WRITERAM;
+                            statuslabel.Text = "Restoring Save...";
+                        }
+                        else if (dialogResult == DialogResult.No) {
+                            statuslabel.Text = "Restoring Save cancelled";
+                        }
                     }
-                    else if (dialogResult == DialogResult.No) {
-                        statuslabel.Text = "Restoring Save cancelled";
-                    }
+                }
+                else {
+                    System.Windows.Forms.MessageBox.Show("Header Checksum has failed. Can't proceed as corruption could occur.");
                 }
             }
         }

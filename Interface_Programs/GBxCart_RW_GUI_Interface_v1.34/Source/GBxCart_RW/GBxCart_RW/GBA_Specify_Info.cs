@@ -327,6 +327,9 @@ namespace GBxCart_RW {
                 gbaromsizebox.Text = "16 MByte";
                 memorytypebox.Text = "SRAM";
                 gbaramsizebox.Text = "512Kbit";
+
+                TopMostMessageBox.Show("We recommend you use the dedicated Flasher software instead of the GUI as the GUI is more likely to stall and it's quicker to use too.", "GBxCart RW Dedicated Flasher", MessageBoxButtons.OK);
+
             }
             else {
                 gbaflashchiplabel.Visible = false;

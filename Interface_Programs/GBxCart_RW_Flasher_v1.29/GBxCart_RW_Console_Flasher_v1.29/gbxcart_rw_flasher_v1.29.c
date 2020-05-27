@@ -2337,7 +2337,7 @@ int main(int argc, char **argv) {
 		fgets(optionString, 5, stdin);
 		
 		int optionSelected = atoi(optionString);
-		if (optionSelected == 9) {
+		if (optionSelected == 11) {
 			printf("\nPlease select a Flash Chip:\n"\
 					 "1. AM29F010B (Audio as WE)\n"\
 					 "2. AM29F010B (WR as WE)\n"\

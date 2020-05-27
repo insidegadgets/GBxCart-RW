@@ -1,9 +1,9 @@
 /*
 GBxCart RW - GUI Interface
-Version : 1.33
+Version : 1.34
 Author : Alex from insideGadgets(www.insidegadgets.com)
 Created : 7 / 11 / 2016
-Last Modified : 21 / 12 / 2019
+Last Modified : 27 / 05 / 2020
 
 GBxCart RW allows you to dump your Gameboy / Gameboy Colour / Gameboy Advance games ROM, save the RAM and write to the RAM.
 
@@ -1692,26 +1692,28 @@ __declspec(dllexport) void read_rom(uint8_t cartMode, uint32_t &progress, uint8_
 
 		// Read ROM
 		for (uint16_t bank = 1; bank < romBanks; bank++) {
-			if (cartridgeType >= 5) { // MBC2 and above
-				set_bank(0x2100, bank);
-				if (bank >= 256) {
-					set_bank(0x3000, 1); // High bit
-				}
-			}
-			else { // MBC1
-				if ((strncmp(gameTitle, "MOMOCOL", 7) == 0) || (strncmp(gameTitle, "BOMCOL", 6) == 0)) { // MBC1 Hudson
-					set_bank(0x4000, bank >> 4);
-					if (bank < 10) {
-						set_bank(0x2000, bank & 0x1F);
-					}
-					else {
-						set_bank(0x2000, 0x10 | (bank & 0x1F));
+			if (romBanks > 2) {
+				if (cartridgeType >= 5) { // MBC2 and above
+					set_bank(0x2100, bank);
+					if (bank >= 256) {
+						set_bank(0x3000, 1); // High bit
 					}
 				}
-				else { // Regular MBC1
-					set_bank(0x6000, 0); // Set ROM Mode 
-					set_bank(0x4000, bank >> 5); // Set bits 5 & 6 (01100000) of ROM bank
-					set_bank(0x2000, bank & 0x1F); // Set bits 0 & 4 (00011111) of ROM bank
+				else { // MBC1
+					if ((strncmp(gameTitle, "MOMOCOL", 7) == 0) || (strncmp(gameTitle, "BOMCOL", 6) == 0)) { // MBC1 Hudson
+						set_bank(0x4000, bank >> 4);
+						if (bank < 10) {
+							set_bank(0x2000, bank & 0x1F);
+						}
+						else {
+							set_bank(0x2000, 0x10 | (bank & 0x1F));
+						}
+					}
+					else { // Regular MBC1
+						set_bank(0x6000, 0); // Set ROM Mode 
+						set_bank(0x4000, bank >> 5); // Set bits 5 & 6 (01100000) of ROM bank
+						set_bank(0x2000, bank & 0x1F); // Set bits 0 & 4 (00011111) of ROM bank
+					}
 				}
 			}
 

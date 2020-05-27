@@ -508,6 +508,9 @@ namespace GBxCart_RW {
                 ramsizebox.Text = "None";
                 gbflashpcbbox.Text = "N/A";
                 gbflashwebox.Text = "Audio";
+
+                TopMostMessageBox.Show("We recommend you use the dedicated Flasher software instead of the GUI as the GUI is more likely to stall and it's quicker to use too.", "GBxCart RW Dedicated Flasher", MessageBoxButtons.OK);
+
             }
             else {
                 gbflashchiplabel.Visible = false;
