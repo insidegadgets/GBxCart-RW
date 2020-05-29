@@ -1478,7 +1478,7 @@ void wait_for_gba_flash_sector_ff(uint32_t address, uint8_t byteOne,  uint8_t by
 	// Wait for first 2 bytes to be 0xFF
 	readBuffer[0] = 0;
 	readBuffer[1] = 0;
-	while (readBuffer[0] != byteOne && readBuffer[1] != byteTwo) {
+	while (readBuffer[0] != byteOne && readBuffer[0] != byteTwo) {
 		set_number(address / 2, SET_START_ADDRESS);
 		delay_ms(5);
 		set_mode(GBA_READ_ROM);
@@ -1555,7 +1555,7 @@ void wait_for_flash_chip_erase_ff(uint8_t printProgress) {
 			delay_ms(500);
 			
 			timeout++;
-			if (timeout >= 100) {
+			if (timeout >= 240) {
 				printf("\n\n Waiting for chip erase has timed out. Please unplug GBxCart RW, re-seat the cartridge and try again.\n");
 				read_one_letter();
 				exit(1);

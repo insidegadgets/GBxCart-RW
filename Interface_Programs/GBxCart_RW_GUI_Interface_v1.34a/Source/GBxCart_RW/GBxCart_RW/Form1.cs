@@ -4,7 +4,7 @@ GBxCart RW - GUI  Interface
 Version : 1.34
 Author : Alex from insideGadgets(www.insidegadgets.com)
 Created : 7 / 11 / 2016
-Last Modified : 21 / 12 / 2019
+Last Modified : 29 / 05 / 2020
 
 GBxCart RW allows you to dump your Gameboy / Gameboy Colour / Gameboy Advance games ROM, save the RAM and write to the RAM.
 
@@ -660,13 +660,13 @@ namespace GBxCart_RW
                 progress = 0;
                 backgroundWorker1.ReportProgress(0);
 
-                if (headerTokens[4] == "Header Checksum: OK") {
-                    commandReceived = READROM;
-                    statuslabel.Text = "Reading ROM...";
-                }
-                else {
+                if (cartMode == GB_CART && headerTokens[4] != "Header Checksum: OK") {
                     System.Windows.Forms.MessageBox.Show("Header Checksum has failed. Can't proceed as corruption could occur.");
                 }
+                else {
+                    commandReceived = READROM;
+                    statuslabel.Text = "Reading ROM...";
+                }    
             }
         }
 
@@ -688,7 +688,10 @@ namespace GBxCart_RW
                 progress = 0;
                 backgroundWorker1.ReportProgress(0);
 
-                if (headerTokens[4] == "Header Checksum: OK") {
+                if (cartMode == GB_CART && headerTokens[4] != "Header Checksum: OK") {
+                    System.Windows.Forms.MessageBox.Show("Header Checksum has failed. Can't proceed as corruption could occur.");
+                }
+                else {
                     if (alwaysAddDateTimeToSave == 1) {
                         saveAsNewFile = true;
                         commandReceived = SAVERAM;
@@ -713,10 +716,7 @@ namespace GBxCart_RW
                             statuslabel.Text = "Backing up Save...";
                         }
                     }
-                }
-                else {
-                    System.Windows.Forms.MessageBox.Show("Header Checksum has failed. Can't proceed as corruption could occur.");
-                }
+                }              
             }
         }
 
@@ -726,7 +726,10 @@ namespace GBxCart_RW
                 progress = 0;
                 backgroundWorker1.ReportProgress(0);
 
-                if (headerTokens[4] == "Header Checksum: OK") {
+                if (cartMode == GB_CART && headerTokens[4] != "Header Checksum: OK") {
+                    System.Windows.Forms.MessageBox.Show("Header Checksum has failed. Can't proceed as corruption could occur.");
+                }
+                else {
                     bool promptToRestore = false;
                     if (promptForRestoreSaveFile == 1) { // Select a save file
                         openFileDialog2.InitialDirectory = this.directoryNameToolStripMenuItem.Text;
@@ -759,9 +762,6 @@ namespace GBxCart_RW
                             statuslabel.Text = "Restoring Save cancelled";
                         }
                     }
-                }
-                else {
-                    System.Windows.Forms.MessageBox.Show("Header Checksum has failed. Can't proceed as corruption could occur.");
                 }
             }
         }

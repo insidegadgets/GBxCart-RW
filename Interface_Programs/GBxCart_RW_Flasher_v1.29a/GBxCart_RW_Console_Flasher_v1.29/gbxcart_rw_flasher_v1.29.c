@@ -1922,8 +1922,8 @@ int main(int argc, char **argv) {
 					gba_flash_write_address_byte(currAddr, 0xD0);
 					delay_ms(50);
 					
-					// Wait for first 2 bytes to be 0x80, 0x00
-					wait_for_gba_flash_sector_ff(currAddr, 0x80, 0x00);
+					// Wait for first 2 bytes to be 0x80, 0xB0
+					wait_for_gba_flash_sector_ff(currAddr, 0x80, 0xB0);
 					
 					// Back to reading mode
 					gba_flash_write_address_byte(currAddr, 0xFF);
