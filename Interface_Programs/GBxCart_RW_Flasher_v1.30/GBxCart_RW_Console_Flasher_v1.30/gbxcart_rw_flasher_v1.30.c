@@ -1,9 +1,9 @@
 /*
  GBxCart RW - Console Interface Flasher
- Version: 1.29
+ Version: 1.30
  Author: Alex from insideGadgets (www.insidegadgets.com)
  Created: 26/08/2017
- Last Modified: 22/05/2020
+ Last Modified: 6/06/2020
  License: GPL
  
  This program allows you to write ROMs to Flash Carts that are supported.
@@ -26,7 +26,7 @@
 
 int main(int argc, char **argv) {
 	
-	printf("GBxCart RW Flasher v1.29 by insideGadgets\n");
+	printf("GBxCart RW Flasher v1.30 by insideGadgets\n");
 	printf("#########################################\n");
 	
 	// Check arguments
@@ -698,31 +698,58 @@ int main(int argc, char **argv) {
 		
 		else if (flashCartType == 12 || flashCartType == 2 || flashCartType == 3 || flashCartType == 34) {
 			if (flashCartType == 12) {
-				printf("2 MByte (AM29F016B) (WR as WE) Gameboy Flash Cart\n");
+				printf("2 MByte (AM29F016B) / 4 MByte (AM29F032B) (WR as WE) Gameboy Flash Cart\n");
+				printf("\nGoing to write to ROM (Flash cart) from %s\n", filenameOnly);
+				
+				// Check file size
+				if (fileSize > 0x400000) {
+					fclose(romFile);
+					printf("\n%s \nFile size is larger than the available Flash cart space of 4 MByte\n", argv[1]);
+					read_one_letter();
+					return 1;
+				}
 			}
 			else if (flashCartType == 34) {
-				printf("2 MByte (AM29F016B) (Audio as WE) Gameboy Flash Cart\n");
+				printf("2 MByte (AM29F016B) / 4 MByte (AM29F032B) (Audio as WE) Gameboy Flash Cart\n");
+				printf("\nGoing to write to ROM (Flash cart) from %s\n", filenameOnly);
+				
+				// Check file size
+				if (fileSize > 0x400000) {
+					fclose(romFile);
+					printf("\n%s \nFile size is larger than the available Flash cart space of 4 MByte\n", argv[1]);
+					read_one_letter();
+					return 1;
+				}
 			}
 			else if (flashCartType == 2) {
 				printf("insideGadgets 2 MByte 128KB SRAM Flash Cart\n");
+				printf("\nGoing to write to ROM (Flash cart) from %s\n", filenameOnly);
+				
+				// Check file size
+				if (fileSize > 0x200000) {
+					fclose(romFile);
+					printf("\n%s \nFile size is larger than the available Flash cart space of 2 MByte\n", argv[1]);
+					read_one_letter();
+					return 1;
+				}
 			}
 			else if (flashCartType == 3) {
 				printf("insideGadgets 2 MByte 32KB FRAM Flash Cart\n");
+				printf("\nGoing to write to ROM (Flash cart) from %s\n", filenameOnly);
+				
+				// Check file size
+				if (fileSize > 0x200000) {
+					fclose(romFile);
+					printf("\n%s \nFile size is larger than the available Flash cart space of 2 MByte\n", argv[1]);
+					read_one_letter();
+					return 1;
+				}
 			}
-			printf("\nGoing to write to ROM (Flash cart) from %s\n", filenameOnly);
 			
 			// PCB v1.3 - Set 5V
 			if (gbxcartPcbVersion == PCB_1_3 || gbxcartPcbVersion == GBXMAS) {
 				set_mode(VOLTAGE_5V);
 				delay_ms(500);
-			}
-			
-			// Check file size
-			if (fileSize > 0x200000) {
-				fclose(romFile);
-				printf("\n%s \nFile size is larger than the available Flash cart space of 2 MByte\n", argv[1]);
-				read_one_letter();
-				return 1;
 			}
 			
 			currAddr = 0x0000;
@@ -1097,7 +1124,7 @@ int main(int argc, char **argv) {
 				printf("32 MByte (4x 8MB Banks) (256M29) Gameboy Flash Cart\n");
 			}
 			else {
-				printf("32 MByte (4x 8MB Banks) (M29W256 / MX29GL256) Gameboy Flash Cart\n");
+				printf("32 MByte (4x 8MB Banks) (M29W256 / MX29GL256 / MSP55LV100) Gameboy Flash Cart\n");
 			}
 			printf("\nGoing to write to ROM (Flash cart) from %s\n", filenameOnly);
 			printf("\n*** After writing is complete, you will need to power cycle the device in order to write to the other 8MB banks ***\n\n");
@@ -2031,10 +2058,17 @@ int main(int argc, char **argv) {
 			com_read_stop(); // End read
 			
 			// Sector erase length
+			uint8_t flashIDType = 0;
 			int sectorEraseAddress = 0x10000;
+			
 			// 28F128W30 (0x8A, 0x0, 0x5x, 0x88)
 			if (readBuffer[0] == 0x8A && readBuffer[1] == 0 && (readBuffer[2] & 0xF8) == 0x50 && readBuffer[3] == 0x88) {
 				sectorEraseAddress = 0x2000; // 8K sectors at start
+			}
+			//  (0x8A, 0x0, 0x15, 0x88)
+			else if (readBuffer[0] == 0x8A && readBuffer[1] == 0 && readBuffer[2] == 0x15 && readBuffer[3] == 0x88) {
+				sectorEraseAddress = 0x2000; // 8K sectors at start
+				flashIDType = 1;
 			}
 			
 			// Back to reading mode
@@ -2050,7 +2084,10 @@ int main(int argc, char **argv) {
 			while (currAddr < endAddr) {
 				if (currAddr % sectorEraseAddress == 0) { // Erase next sector
 					// For chips with 8x 8K sectors, after 64K, change to 0x10000 sector size
-					if (currAddr >= 0x10000 && sectorEraseAddress == 0x2000) {
+					if (flashIDType == 0 && currAddr >= 0x10000 && sectorEraseAddress == 0x2000) {
+						sectorEraseAddress = 0x10000;
+					}
+					else if (flashIDType == 1 && currAddr >= 0x20000) {
 						sectorEraseAddress = 0x10000;
 					}
 					
@@ -2062,6 +2099,8 @@ int main(int argc, char **argv) {
 					gba_flash_write_address_byte(currAddr, 0x20);
 					gba_flash_write_address_byte(currAddr, 0xD0);
 					delay_ms(50);
+					
+					//printf("Sector at 0x%X\n", currAddr);
 					
 					// Wait for byte to be 0x80 or 0xB0
 					uint16_t timeout = 0;
@@ -2314,13 +2353,13 @@ int main(int argc, char **argv) {
 		printf("\nPress any key to see the next page...");
 		getchar();
 		
-		printf("\n18. 2 MByte (AM29F016B)\n"\
-					"19. 2 MByte (AM29F016B) (Audio as WE)\n"\
+		printf("\n18. 2 MByte (AM29F016B) / 4 MByte (AM29F032B)\n"\
+					"19. 2 MByte (AM29F016B) / 4 MByte (AM29F032B) (Audio as WE)\n"\
 					 "20. 2 MByte (GB Smart 16M)\n"\
 					 "21. 4 MByte (M29W640 / 29DL32BF / GL032A10BAIR4 / S29AL016M9)\n"\
 					 "22. 4 MByte MBC30 (AM29F032B / MBM29F033C)\n"\
 					 "23. 32 MByte (4x 8MB Banks) (256M29)\n"\
-					 "24. 32 MByte (4x 8MB Banks) (M29W256 / MX29GL256)\n\n"\
+					 "24. 32 MByte (4x 8MB Banks) (M29W256 / MX29GL256 / MSP55LV100)\n\n"\
 					 
 					 "--- Gameboy Advance ---\n"\
 					 "25. insideGadgets 32MB (512Kbit/1Mbit Flash Save) or (256Kbit FRAM) Flash Cart\n"\

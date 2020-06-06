@@ -1,9 +1,9 @@
 /*
  GBxCart RW - Console Interface Flasher
- Version: 1.29
+ Version: 1.30
  Author: Alex from insideGadgets (www.insidegadgets.com)
  Created: 26/08/2017
- Last Modified: 22/05/2020
+ Last Modified: 6/06/2020
  License: GPL
  
  */
@@ -1555,10 +1555,19 @@ void wait_for_flash_chip_erase_ff(uint8_t printProgress) {
 			delay_ms(500);
 			
 			timeout++;
-			if (timeout >= 240) {
-				printf("\n\n Waiting for chip erase has timed out. Please unplug GBxCart RW, re-seat the cartridge and try again.\n");
-				read_one_letter();
-				exit(1);
+			if (flashCartType == 16 || flashCartType == 17) {
+				if (timeout >= 600) {
+					printf("\n\n Waiting for chip erase has timed out. Please unplug GBxCart RW, re-seat the cartridge and try again.\n");
+					read_one_letter();
+					exit(1);
+				}
+			}
+			else {
+				if (timeout >= 240) {
+					printf("\n\n Waiting for chip erase has timed out. Please unplug GBxCart RW, re-seat the cartridge and try again.\n");
+					read_one_letter();
+					exit(1);
+				}
 			}
 		}
 	}
