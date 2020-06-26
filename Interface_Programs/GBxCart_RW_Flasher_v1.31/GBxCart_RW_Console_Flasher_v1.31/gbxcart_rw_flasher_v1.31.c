@@ -1,9 +1,9 @@
 /*
  GBxCart RW - Console Interface Flasher
- Version: 1.30
+ Version: 1.31
  Author: Alex from insideGadgets (www.insidegadgets.com)
  Created: 26/08/2017
- Last Modified: 6/06/2020
+ Last Modified: 26/06/2020
  License: GPL
  
  This program allows you to write ROMs to Flash Carts that are supported.
@@ -26,7 +26,7 @@
 
 int main(int argc, char **argv) {
 	
-	printf("GBxCart RW Flasher v1.30 by insideGadgets\n");
+	printf("GBxCart RW Flasher v1.31 by insideGadgets\n");
 	printf("#########################################\n");
 	
 	// Check arguments
@@ -1671,19 +1671,26 @@ int main(int argc, char **argv) {
 			gba_flash_write_address_byte(0x000, 0xF0);
 			
 			printf("\nFlash ID: 0x%X,0x%X,0x%X,0x%X\n", readBuffer[0], readBuffer[1], readBuffer[2], readBuffer[3]);
-			if (readBuffer[0] != 0x1 || readBuffer[1] != 0x0 || readBuffer[2] != 0x7E || readBuffer[3] != 0x22) { 
-				printf("\n\nChip ID doesn't match 0x1 0x0 0x7E 0x22. Please re-seat the cartridge or press enter to continue anyway.\n");
+			if ((readBuffer[0] != 0x1 && readBuffer[0] != 0x89) || readBuffer[1] != 0x0 || readBuffer[2] != 0x7E || readBuffer[3] != 0x22) { 
+				printf("\n\nChip ID doesn't match 0x1/0x89 0x0 0x7E 0x22. Please re-seat the cartridge or press enter to continue anyway.\n");
 				read_one_letter();
 			}
 			
-			// Check if file is more than 16MB, if so, do a chip erase instead of sector by sector erase
+			// Check if file is more than 16MB or using 32MB chip, if so, do a chip erase instead of sector by sector erase
 			// (sector by sector erase won't seem to work properly after 16MB because A24 is at GND)
-			if (fileSize > 0x1000000) {
+			uint8_t sectorEraseEnabled = 1;
+			if (fileSize > 0x1000000 || (readBuffer[0] == 0x89 || readBuffer[1] == 0x0 || readBuffer[2] == 0x7E || readBuffer[3] == 0x22)) {
+				sectorEraseEnabled = 0;
 				currAddr = 0x0000;	
 				set_number(currAddr, SET_START_ADDRESS);
 				delay_ms(5);
 				
-				printf("Chip erase as ROM file is more than 16MB, this can take 3-4 minutes");
+				if (fileSize > 0x1000000) {
+					printf("Chip erase as ROM file is more than 16MB, this can take 3-4 minutes");
+				}
+				else {
+					printf("Chip erase as ROM file is more than 8MB and using 32MB chip, this can take 1-2 minutes");
+				}
 				gba_flash_write_address_byte(0xAAA, 0xAA);
 				gba_flash_write_address_byte(0x555, 0x55);
 				gba_flash_write_address_byte(0xAAA, 0x80);
@@ -1696,7 +1703,7 @@ int main(int argc, char **argv) {
 				printf("\n");
 			}
 			
-			xmas_setup(endAddr / 28);
+			xmas_setup(endAddrAligned / 28);
 			
 			printf("\nWriting to ROM (Flash cart) from %s\n", filenameOnly);
 			printf("[             25%%             50%%             75%%            100%%]\n[");
@@ -1707,7 +1714,7 @@ int main(int argc, char **argv) {
 			delay_ms(5);
 			while (currAddr < endAddr) {
 				// Sector erase only performed for under 16MB files
-				if (fileSize <= 0x1000000 && currAddr % 0x10000 == 0) { // Erase next sector
+				if (sectorEraseEnabled == 1 && currAddr % 0x10000 == 0) { // Erase next sector
 					gba_flash_write_address_byte(0xAAA, 0xAA);
 					gba_flash_write_address_byte(0x555, 0x55);
 					gba_flash_write_address_byte(0xAAA, 0x80);
@@ -1730,6 +1737,122 @@ int main(int argc, char **argv) {
 				
 				print_progress_percent(readBytes, endAddr / 64);
 				led_progress_percent(readBytes, endAddr / 28);
+			}
+		}
+		else if (flashCartType == 27) {
+			printf("insideGadgets 32MB 4K/64K EEPROM Gameboy Advance Flash Cart\n");
+			printf("\nGoing to write to ROM (Flash cart) from %s\n", filenameOnly);
+			
+			// Check file size
+			if (fileSize > 0x2000000) {
+				fclose(romFile);
+				printf("\n%s \nFile size is larger than the available Flash cart space of 32 MBytes\n", argv[1]);
+				read_one_letter();
+				return 1;
+			}
+			
+			// Read rom a tiny bit before writing
+			currAddr = 0x0000;	
+			set_number(currAddr, SET_START_ADDRESS);
+			delay_ms(5);
+			set_mode(GBA_READ_ROM);
+			delay_ms(5);
+			com_read_bytes(READ_BUFFER, 64);
+			com_read_stop();
+			
+			// Set end address as file size
+			endAddr = fileSize;
+			uint32_t endAddrAligned = fileSize;
+			while ((endAddrAligned / 64)  % 64 != 0) { // Align to 64 for printing progress
+				endAddrAligned--;
+			}
+			
+			// Verify chip ID
+			gba_flash_write_address_byte(0xAAA, 0xAA);
+			gba_flash_write_address_byte(0x555, 0x55);
+			gba_flash_write_address_byte(0xAAA, 0x90);
+			
+			currAddr = 0x0000;	
+			set_number(currAddr, SET_START_ADDRESS);
+			delay_ms(5);
+			set_mode(GBA_READ_ROM);
+			delay_ms(5);
+			com_read_bytes(READ_BUFFER, 64);
+			com_read_stop();
+			gba_flash_write_address_byte(0x000, 0xF0);
+			
+			printf("\nFlash ID: 0x%X,0x%X,0x%X,0x%X\n", readBuffer[0], readBuffer[1], readBuffer[2], readBuffer[3]);
+			if ((readBuffer[0] != 0x1 && readBuffer[0] != 0x89) || readBuffer[1] != 0x0 || readBuffer[2] != 0x7E || readBuffer[3] != 0x22) { 
+				printf("\n\nChip ID doesn't match 0x1/0x89 0x0 0x7E 0x22. Please re-seat the cartridge or press enter to continue anyway.\n");
+				read_one_letter();
+			}
+			
+			// Check if file is more than 16MB or using 32MB chip, if so, do a chip erase instead of sector by sector erase
+			// (sector by sector erase won't seem to work properly after 16MB because A24 is at GND)
+			uint8_t sectorEraseEnabled = 1;
+			if (fileSize > 0x1000000 || (readBuffer[0] == 0x89 || readBuffer[1] == 0x0 || readBuffer[2] == 0x7E || readBuffer[3] == 0x22)) {
+				sectorEraseEnabled = 0;
+				currAddr = 0x0000;	
+				set_number(currAddr, SET_START_ADDRESS);
+				delay_ms(5);
+				
+				if (fileSize > 0x1000000) {
+					printf("Chip erase as ROM file is more than 16MB, this can take 3-4 minutes");
+				}
+				else {
+					printf("Chip erase as ROM file is more than 8MB and using 32MB chip, this can take 1-2 minutes");
+				}
+				gba_flash_write_address_byte(0xAAA, 0xAA);
+				gba_flash_write_address_byte(0x555, 0x55);
+				gba_flash_write_address_byte(0xAAA, 0x80);
+				gba_flash_write_address_byte(0xAAA, 0xAA);
+				gba_flash_write_address_byte(0x555, 0x55);
+				gba_flash_write_address_byte(0xAAA, 0x10);
+				
+				// Wait for first 2 bytes to be 0xFF
+				wait_for_gba_flash_erase_ff(currAddr);
+				printf("\n");
+			}
+			
+			xmas_setup(endAddrAligned / 28);
+			
+			printf("\nWriting to ROM (Flash cart) from %s\n", filenameOnly);
+			printf("[             25%%             50%%             75%%            100%%]\n[");
+			
+			// Write ROM
+			currAddr = 0x0000;	
+			set_number(currAddr, SET_START_ADDRESS);
+			delay_ms(5);
+			while (currAddr < endAddr) {
+				// Sector erase only performed for under 16MB files
+				if (sectorEraseEnabled == 1 && currAddr % 0x10000 == 0) { // Erase next sector
+					gba_flash_write_address_byte(0xAAA, 0xAA);
+					gba_flash_write_address_byte(0x555, 0x55);
+					gba_flash_write_address_byte(0xAAA, 0x80);
+					gba_flash_write_address_byte(0xAAA, 0xAA);
+					gba_flash_write_address_byte(0x555, 0x55);
+					gba_flash_write_address_byte((uint32_t) sector << 17, 0x30);
+					sector++;
+					
+					// Wait for first 2 bytes to be 0xFF
+					wait_for_gba_flash_sector_ff(currAddr, 0xFF, 0xFF);
+					
+					set_number(currAddr / 2, SET_START_ADDRESS); // Divide address by 2
+					delay_ms(5);
+				}
+				
+				com_write_bytes_from_file(GBA_FLASH_WRITE_256BYTE, romFile, 256);
+				com_wait_for_ack();
+				currAddr += 256;
+				readBytes += 256;
+				
+				print_progress_percent(readBytes, endAddr / 64);
+				led_progress_percent(readBytes, endAddrAligned / 28);
+				
+				// Break when reaching 0x1FFF00 as this is when the EEPROM is mapped to
+				if (currAddr == 0x1FFFF00) {
+					break;
+				}
 			}
 		}
 		else if (flashCartType == 21) {
@@ -2212,115 +2335,6 @@ int main(int argc, char **argv) {
 				led_progress_percent(readBytes, endAddrAligned / 28);
 			}
 		}
-		else if (flashCartType == 27) {
-			printf("insideGadgets 32MB 4K/64K EEPROM Gameboy Advance Flash Cart\n");
-			printf("\nGoing to write to ROM (Flash cart) from %s\n", filenameOnly);
-			
-			// Check file size
-			if (fileSize > 0x2000000) {
-				fclose(romFile);
-				printf("\n%s \nFile size is larger than the available Flash cart space of 32 MBytes\n", argv[1]);
-				read_one_letter();
-				return 1;
-			}
-			
-			// Read rom a tiny bit before writing
-			currAddr = 0x0000;	
-			set_number(currAddr, SET_START_ADDRESS);
-			delay_ms(5);
-			set_mode(GBA_READ_ROM);
-			delay_ms(5);
-			com_read_bytes(READ_BUFFER, 64);
-			com_read_stop();
-			
-			// Set end address as file size
-			endAddr = fileSize;
-			uint32_t endAddrAligned = fileSize;
-			while ((endAddrAligned / 64)  % 64 != 0) { // Align to 64 for printing progress
-				endAddrAligned--;
-			}
-			
-			// Verify chip ID
-			gba_flash_write_address_byte(0xAAA, 0xAA);
-			gba_flash_write_address_byte(0x555, 0x55);
-			gba_flash_write_address_byte(0xAAA, 0x90);
-			
-			currAddr = 0x0000;	
-			set_number(currAddr, SET_START_ADDRESS);
-			delay_ms(5);
-			set_mode(GBA_READ_ROM);
-			delay_ms(5);
-			com_read_bytes(READ_BUFFER, 64);
-			com_read_stop();
-			gba_flash_write_address_byte(0x000, 0xF0);
-			
-			printf("Flash ID: 0x%X,0x%X,0x%X,0x%X\n", readBuffer[0], readBuffer[1], readBuffer[2], readBuffer[3]);
-			if (readBuffer[0] != 0x1 || readBuffer[1] != 0x0 || readBuffer[2] != 0x7E || readBuffer[3] != 0x22) { 
-				printf("\nChip ID doesn't match 0x1 0x0 0x7E 0x22. Please re-seat the cartridge or press enter to continue anyway.\n");
-				read_one_letter();
-			}
-			
-			// Check if file is more than 16MB, if so, do a chip erase instead of sector by sector erase
-			// (sector by sector erase won't seem to work properly after 16MB because A24 is at GND)
-			if (fileSize > 0x1000000) {
-				currAddr = 0x0000;	
-				set_number(currAddr, SET_START_ADDRESS);
-				delay_ms(5);
-				
-				printf("Chip erase as ROM file is more than 16MB, this can take 3-4 minutes");
-				gba_flash_write_address_byte(0xAAA, 0xAA);
-				gba_flash_write_address_byte(0x555, 0x55);
-				gba_flash_write_address_byte(0xAAA, 0x80);
-				gba_flash_write_address_byte(0xAAA, 0xAA);
-				gba_flash_write_address_byte(0x555, 0x55);
-				gba_flash_write_address_byte(0xAAA, 0x10);
-				
-				// Wait for first 2 bytes to be 0xFF
-				wait_for_gba_flash_erase_ff(currAddr);
-				printf("\n");
-			}
-			
-			xmas_setup(endAddrAligned / 28);
-			
-			printf("\nWriting to ROM (Flash cart) from %s\n", filenameOnly);
-			printf("[             25%%             50%%             75%%            100%%]\n[");
-			
-			// Write ROM
-			currAddr = 0x0000;	
-			set_number(currAddr, SET_START_ADDRESS);
-			delay_ms(5);
-			while (currAddr < endAddr) {
-				// Sector erase only performed for under 16MB files
-				if (fileSize <= 0x1000000 && currAddr % 0x10000 == 0) { // Erase next sector
-					gba_flash_write_address_byte(0xAAA, 0xAA);
-					gba_flash_write_address_byte(0x555, 0x55);
-					gba_flash_write_address_byte(0xAAA, 0x80);
-					gba_flash_write_address_byte(0xAAA, 0xAA);
-					gba_flash_write_address_byte(0x555, 0x55);
-					gba_flash_write_address_byte((uint32_t) sector << 17, 0x30);
-					sector++;
-					
-					// Wait for first 2 bytes to be 0xFF
-					wait_for_gba_flash_sector_ff(currAddr, 0xFF, 0xFF);
-					
-					set_number(currAddr / 2, SET_START_ADDRESS); // Divide address by 2
-					delay_ms(5);
-				}
-				
-				com_write_bytes_from_file(GBA_FLASH_WRITE_256BYTE, romFile, 256);
-				com_wait_for_ack();
-				currAddr += 256;
-				readBytes += 256;
-				
-				print_progress_percent(readBytes, endAddr / 64);
-				led_progress_percent(readBytes, endAddrAligned / 28);
-				
-				// Break when reaching 0x1FFF00 as this is when the EEPROM is mapped to
-				if (currAddr == 0x1FFFF00) {
-					break;
-				}
-			}
-		}
 		else {
 			printf("No Flash Cart selected, please run this program by itself.");
 			read_one_letter();
@@ -2350,10 +2364,13 @@ int main(int argc, char **argv) {
 					 "16. 2 MByte (BV5)\n"\
 					 "17. 2 MByte (AM29LV160DB / 29LV160CTTC / 29LV160TE / S29AL016 / M29W160EB)\n");
 		
-		printf("\nPress any key to see the next page...");
-		getchar();
+		printf("\nPress any key to see the next page or enter in a selection here.\n>");
+		char optionString[5];
+		fgets(optionString, 5, stdin);
+		int optionSelected = atoi(optionString);
 		
-		printf("\n18. 2 MByte (AM29F016B) / 4 MByte (AM29F032B)\n"\
+		if (optionSelected == 0) {
+			printf("\n18. 2 MByte (AM29F016B) / 4 MByte (AM29F032B)\n"\
 					"19. 2 MByte (AM29F016B) / 4 MByte (AM29F032B) (Audio as WE)\n"\
 					 "20. 2 MByte (GB Smart 16M)\n"\
 					 "21. 4 MByte (M29W640 / 29DL32BF / GL032A10BAIR4 / S29AL016M9)\n"\
@@ -2371,11 +2388,10 @@ int main(int argc, char **argv) {
 					 "31. 16 MByte GE28F128W30\n"\
 					 "32. 4 MByte (MX29LV320)\n\n"\
 					 "x. Exit\n>");
+			fgets(optionString, 5, stdin);
+			optionSelected = atoi(optionString);
+		}
 		
-		char optionString[5];
-		fgets(optionString, 5, stdin);
-		
-		int optionSelected = atoi(optionString);
 		if (optionSelected == 11) {
 			printf("\nPlease select a Flash Chip:\n"\
 					 "1. AM29F010B (Audio as WE)\n"\
@@ -2391,9 +2407,14 @@ int main(int argc, char **argv) {
 			read_one_letter();
 			return 0;
 		}
-		else {
+		else if (optionSelected >= 1) {
 			write_flash_config(optionSelected); // Custom flash cart mapping occurs here, the selected number changes to a constant number
 			printf("\nPlease close this program. You can now drag and drop your ROM file to this exe file in Windows Explorer.\nYou can also use the following command: gbxcart_rw_flasher_v1.xx.exe <ROMFile>\nPress enter to exit.");
+			read_one_letter();
+			return 0;
+		}
+		else {
+			printf("\n*** No option was selected, please exit and try again ***\n");
 			read_one_letter();
 			return 0;
 		}

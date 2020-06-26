@@ -4,13 +4,13 @@ ifeq ($(OS),Windows_NT)
 else
 	EXE_EXT =
 endif
-CMDLINE = gbxcart_rw_flasher_v1.30$(EXE_EXT)
+CMDLINE = gbxcart_rw_flasher_v1.31$(EXE_EXT)
 
 # By default, build the firmware and command-line client
 all: $(CMDLINE)
 
 # One-liner to compile the command-line client
-$(CMDLINE): gbxcart_rw_flasher_v1.30.c setup.c rs232/rs232.c
+$(CMDLINE): gbxcart_rw_flasher_v1.31.c setup.c rs232/rs232.c
 	gcc -O -std=c99 -Wall -D_POSIX_C_SOURCE=199309L $^ -o $@
 	
 # Housekeeping if you want it
