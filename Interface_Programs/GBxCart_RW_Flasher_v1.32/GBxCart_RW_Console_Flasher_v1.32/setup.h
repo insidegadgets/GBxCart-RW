@@ -1,9 +1,9 @@
 /*
  GBxCart RW - Console Interface Flasher
- Version: 1.31
+ Version: 1.32
  Author: Alex from insideGadgets (www.insidegadgets.com)
  Created: 26/08/2017
- Last Modified: 26/06/2020
+ Last Modified: 3/07/2020
  License: GPL
  
  */
@@ -89,6 +89,8 @@ extern int bdrate;
 #define GB_FLASH_WRITE_BUFFERED_32BYTE 'Y'
 #define GB_FLASH_BANK_1_COMMAND_WRITES 'N'
 #define GB_FLASH_WRITE_64BYTE_PULSE_RESET 'J'
+#define GB_FLASH_WRITE_NP_128BYTE 'Z'
+#define GB_FLASH_WRITE_INTEL_BUFFERED_32BYTE 'y'
 
 #define GBA_FLASH_CART_WRITE_BYTE 'n'
 #define GBA_FLASH_WRITE_64BYTE_SWAPPED_D0D1 'q'
@@ -96,6 +98,8 @@ extern int bdrate;
 #define GBA_FLASH_WRITE_256BYTE 'f'
 #define GBA_FLASH_WRITE_INTEL_64BYTE 'l'
 #define GBA_FLASH_WRITE_INTEL_64BYTE_WORD 'u'
+#define GBA_FLASH_WRITE_INTEL_INTERLEAVED_256BYTE 'v'
+#define GBA_FLASH_WRITE_SHARP_64BYTE 'x'
 
 // General commands
 #define CART_MODE 'C'
@@ -121,6 +125,7 @@ extern int bdrate;
 #define PCB_1_1 2
 #define PCB_1_3 4
 #define GBXMAS 90
+#define MINI 100
 
 // Common vars
 #define READ_BUFFER 0

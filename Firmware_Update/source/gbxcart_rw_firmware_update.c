@@ -3,7 +3,7 @@
  Version: 1.2
  Author: Alex from insideGadgets (www.insidegadgets.com)
  Created: 2/11/2019
- Last Modified: 21/01/2020
+ Last Modified: 3/07/2020
  
  */
 
@@ -23,8 +23,8 @@
 #define EXE_SUFFIX ""
 #endif
 
-#define MINI_FIRMWARE 16
-#define STANDARD_FIRMWARE 17
+#define MINI_FIRMWARE 17
+#define STANDARD_FIRMWARE 18
 
 #include "setup.h" // See defines, variables, constants, functions here
 
@@ -67,6 +67,9 @@ int main(int argc, char **argv) {
 	else if (gbxcartPcbVersion == 4) {
 		printf("Detected GBxCart RW: v1.3 PCB version\n");
 	}
+	else if (gbxcartPcbVersion == 90) {
+		printf("Detected GBxMAS RW: v1.0 PCB version\n");
+	}
 	
 	printf("Detected Firmware: %i\n\n", gbxcartFirmwareVersion);
 	
@@ -83,7 +86,7 @@ int main(int argc, char **argv) {
 				system(tsbReset);
 				
 				char tsbFirmware[200];
-				sprintf(tsbFirmware, "tsb" DIR_SEPARATOR "tsb" EXE_SUFFIX " %s:57600 fw gbxcart_rw_mini_v1.0_pcb_r16.hex", portname);
+				sprintf(tsbFirmware, "tsb" DIR_SEPARATOR "tsb" EXE_SUFFIX " %s:57600 fw gbxcart_rw_mini_v1.0_pcb_r17.hex", portname);
 				system(tsbFirmware);
 			}
 			else {
@@ -92,10 +95,11 @@ int main(int argc, char **argv) {
 		}
 		else {
 			printf("You are on the latest firmware\n");
+			read_one_letter();
 		}
 	}
 	else if (gbxcartPcbVersion == 2 || gbxcartPcbVersion == 4) {
-		if (gbxcartFirmwareVersion <= STANDARD_FIRMWARE) {
+		if (gbxcartFirmwareVersion < STANDARD_FIRMWARE) {
 			printf("Firmware R%i is available. Would you like to update? (Y/[N])\n>", STANDARD_FIRMWARE);
 			
 			char modeSelected = read_one_letter();
@@ -107,7 +111,7 @@ int main(int argc, char **argv) {
 					system(tsbReset);
 					
 					char tsbFirmware[200];
-					sprintf(tsbFirmware, "tsb" DIR_SEPARATOR "tsb" EXE_SUFFIX " %s:57600 fw gbxcart_rw_v1.1-1.2_pcb_r17.hex", portname);
+					sprintf(tsbFirmware, "tsb" DIR_SEPARATOR "tsb" EXE_SUFFIX " %s:57600 fw gbxcart_rw_v1.1-1.2_pcb_r18.hex", portname);
 					system(tsbFirmware);
 					printf(tsbFirmware);
 				}
@@ -118,7 +122,7 @@ int main(int argc, char **argv) {
 					system(tsbReset);
 					
 					char tsbFirmware[200];
-					sprintf(tsbFirmware, "tsb" DIR_SEPARATOR "tsb" EXE_SUFFIX " %s:57600 fw gbxcart_rw_v1.3_pcb_r17.hex", portname);
+					sprintf(tsbFirmware, "tsb" DIR_SEPARATOR "tsb" EXE_SUFFIX " %s:57600 fw gbxcart_rw_v1.3_pcb_r18.hex", portname);
 					system(tsbFirmware);
 				}
 			}
@@ -128,6 +132,32 @@ int main(int argc, char **argv) {
 		}
 		else {
 			printf("You are on the latest firmware\n");
+			read_one_letter();
+		}
+	}
+	else if (gbxcartPcbVersion == 90) {
+		if (gbxcartFirmwareVersion < STANDARD_FIRMWARE) {
+			printf("Please note that it may take several attempts for the update to work.\n");
+			printf("Firmware R%i is available. Would you like to update? (Y/[N])\n>", STANDARD_FIRMWARE);
+			
+			char modeSelected = read_one_letter();
+			if (modeSelected == 'y') {
+				printf("\n\n");
+				char tsbReset[100];
+				sprintf(tsbReset, "tsb" DIR_SEPARATOR "gbxcart_rw_wdt_reset_v1.0" EXE_SUFFIX " %i", cport_nr+1);
+				system(tsbReset);
+				
+				char tsbFirmware[200];
+				sprintf(tsbFirmware, "tsb" DIR_SEPARATOR "tsb" EXE_SUFFIX " %s:57600 fw gbxmas_rw_v1.0_pcb_r18.hex", portname);
+				system(tsbFirmware);
+			}
+			else {
+				printf("Update cancelled\n");
+			}
+		}
+		else {
+			printf("You are on the latest firmware\n");
+			read_one_letter();
 		}
 	}
 	

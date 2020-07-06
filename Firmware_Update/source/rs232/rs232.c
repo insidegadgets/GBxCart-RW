@@ -858,13 +858,3 @@ int RS232_GetPortnr(const char *devname)
 
   return -1;  /* device not found */
 }
-
-const char *RS232_GetPortName(int comport_number)
-{
-  if((comport_number>=RS232_PORTNR)||(comport_number<0))
-  {
-    printf("illegal comport number\n");
-    return(NULL);
-  }
-  return comports[comport_number];
-}
