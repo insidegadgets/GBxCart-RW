@@ -3,7 +3,7 @@
  Version: 1.2
  Author: Alex from insideGadgets (www.insidegadgets.com)
  Created: 2/11/2019
- Last Modified: 3/07/2020
+ Last Modified: 9/07/2020
  
  */
 
@@ -79,7 +79,7 @@ int main(int argc, char **argv) {
 			printf("Firmware R%i is available. Would you like to update? (Y/[N])\n>", MINI_FIRMWARE);
 			
 			char modeSelected = read_one_letter();
-			if (modeSelected == 'y') {
+			if (modeSelected == 'y' || modeSelected == 'Y') {
 				printf("\n\n");
 				char tsbReset[100];
 				sprintf(tsbReset, "tsb" DIR_SEPARATOR "gbxcart_rw_wdt_reset_v1.0" EXE_SUFFIX " %i", cport_nr+1);
@@ -103,7 +103,7 @@ int main(int argc, char **argv) {
 			printf("Firmware R%i is available. Would you like to update? (Y/[N])\n>", STANDARD_FIRMWARE);
 			
 			char modeSelected = read_one_letter();
-			if (modeSelected == 'y') {
+			if (modeSelected == 'y' || modeSelected == 'Y') {
 				if (gbxcartPcbVersion == 2) { // v1.1-v1.2 PCB
 					printf("\n\n");
 					char tsbReset[100];
@@ -141,7 +141,7 @@ int main(int argc, char **argv) {
 			printf("Firmware R%i is available. Would you like to update? (Y/[N])\n>", STANDARD_FIRMWARE);
 			
 			char modeSelected = read_one_letter();
-			if (modeSelected == 'y') {
+			if (modeSelected == 'y' || modeSelected == 'Y') {
 				printf("\n\n");
 				char tsbReset[100];
 				sprintf(tsbReset, "tsb" DIR_SEPARATOR "gbxcart_rw_wdt_reset_v1.0" EXE_SUFFIX " %i", cport_nr+1);
