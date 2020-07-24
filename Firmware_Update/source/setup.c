@@ -1,6 +1,5 @@
 /*
  GBxCart RW - Firmware update
- Version: 1.2
  Author: Alex from insideGadgets (www.insidegadgets.com)
  Created: 2/11/2019
  Last Modified: 21/01/2020

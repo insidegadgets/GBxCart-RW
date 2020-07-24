@@ -1,9 +1,8 @@
 /*
  GBxCart RW - Firmware update
- Version: 1.2
  Author: Alex from insideGadgets (www.insidegadgets.com)
  Created: 2/11/2019
- Last Modified: 9/07/2020
+ Last Modified: 10/07/2020
  
  */
 
@@ -44,7 +43,7 @@ int main(int argc, char **argv) {
 #ifdef _WIN32
 	sprintf(portname, "com%i", cport_nr+1);
 #else
-	sprintf(portname, "%s", RS232_GetPortName(cport_nr));
+	sprintf(portname, "%i", cport_nr);
 #endif
 	printf("Connected on COM port: %s\n", portname);
 	
@@ -73,16 +72,25 @@ int main(int argc, char **argv) {
 	
 	printf("Detected Firmware: %i\n\n", gbxcartFirmwareVersion);
 	
+	
 	// Mini update
 	if (gbxcartPcbVersion == 100) {
 		if (gbxcartFirmwareVersion < MINI_FIRMWARE) {
+			printf("Specify delay time (in ms) or press enter for default (250ms): ");
+			char optionString[5];
+			fgets(optionString, 5, stdin);
+			int delayTime = atoi(optionString);
+			if (delayTime == 0) {
+				delayTime = 250;
+			}
+			
 			printf("Firmware R%i is available. Would you like to update? (Y/[N])\n>", MINI_FIRMWARE);
 			
 			char modeSelected = read_one_letter();
 			if (modeSelected == 'y' || modeSelected == 'Y') {
 				printf("\n\n");
 				char tsbReset[100];
-				sprintf(tsbReset, "tsb" DIR_SEPARATOR "gbxcart_rw_wdt_reset_v1.0" EXE_SUFFIX " %i", cport_nr+1);
+				sprintf(tsbReset, "tsb" DIR_SEPARATOR "gbxcart_rw_wdt_reset_v1.0" EXE_SUFFIX " %i %i", cport_nr+1, delayTime);
 				system(tsbReset);
 				
 				char tsbFirmware[200];
@@ -100,6 +108,14 @@ int main(int argc, char **argv) {
 	}
 	else if (gbxcartPcbVersion == 2 || gbxcartPcbVersion == 4) {
 		if (gbxcartFirmwareVersion < STANDARD_FIRMWARE) {
+			printf("Specify delay time (in ms) or press enter for default (250ms): ");
+			char optionString[5];
+			fgets(optionString, 5, stdin);
+			int delayTime = atoi(optionString);
+			if (delayTime == 0) {
+				delayTime = 250;
+			}
+			
 			printf("Firmware R%i is available. Would you like to update? (Y/[N])\n>", STANDARD_FIRMWARE);
 			
 			char modeSelected = read_one_letter();
@@ -107,7 +123,7 @@ int main(int argc, char **argv) {
 				if (gbxcartPcbVersion == 2) { // v1.1-v1.2 PCB
 					printf("\n\n");
 					char tsbReset[100];
-					sprintf(tsbReset, "tsb" DIR_SEPARATOR "gbxcart_rw_wdt_reset_v1.0" EXE_SUFFIX " %i", cport_nr+1);
+					sprintf(tsbReset, "tsb" DIR_SEPARATOR "gbxcart_rw_wdt_reset_v1.0" EXE_SUFFIX " %i %i", cport_nr+1, delayTime);
 					system(tsbReset);
 					
 					char tsbFirmware[200];
@@ -118,7 +134,7 @@ int main(int argc, char **argv) {
 				else if (gbxcartPcbVersion == 4) { // v1.3 PCB
 					printf("\n\n");
 					char tsbReset[100];
-					sprintf(tsbReset, "tsb" DIR_SEPARATOR "gbxcart_rw_wdt_reset_v1.0" EXE_SUFFIX " %i", cport_nr+1);
+					sprintf(tsbReset, "tsb" DIR_SEPARATOR "gbxcart_rw_wdt_reset_v1.0" EXE_SUFFIX " %i %i", cport_nr+1, delayTime);
 					system(tsbReset);
 					
 					char tsbFirmware[200];
@@ -138,13 +154,21 @@ int main(int argc, char **argv) {
 	else if (gbxcartPcbVersion == 90) {
 		if (gbxcartFirmwareVersion < STANDARD_FIRMWARE) {
 			printf("Please note that it may take several attempts for the update to work.\n");
+			printf("Specify delay time (in ms) or press enter for default (250ms): ");
+			char optionString[5];
+			fgets(optionString, 5, stdin);
+			int delayTime = atoi(optionString);
+			if (delayTime == 0) {
+				delayTime = 250;
+			}
+			
 			printf("Firmware R%i is available. Would you like to update? (Y/[N])\n>", STANDARD_FIRMWARE);
 			
 			char modeSelected = read_one_letter();
 			if (modeSelected == 'y' || modeSelected == 'Y') {
 				printf("\n\n");
 				char tsbReset[100];
-				sprintf(tsbReset, "tsb" DIR_SEPARATOR "gbxcart_rw_wdt_reset_v1.0" EXE_SUFFIX " %i", cport_nr+1);
+				sprintf(tsbReset, "tsb" DIR_SEPARATOR "gbxcart_rw_wdt_reset_v1.0" EXE_SUFFIX " %i %i", cport_nr+1, delayTime);
 				system(tsbReset);
 				
 				char tsbFirmware[200];
