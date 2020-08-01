@@ -4,20 +4,23 @@ ifeq ($(OS),Windows_NT)
 else
 	EXE_EXT =
 endif
-CMDLINE = gbxcart_rw_flasher_v1.33$(EXE_EXT)
+CMDLINE = gbxcart_rw_flasher_v1.34$(EXE_EXT)
 
 # Timestamp fix for Linux
-ifeq ($(OS),Linux)
-	TIMESTAMP_FIX = -D_POSIX_C_SOURCE=199309L
+ifeq ($(OS),Windows_NT)
+	TIMESTAMP_FIX = 
 else
-	TIMESTAMP_FIX =
+	UNAME_S := $(shell uname -s)
+   ifeq ($(UNAME_S),Linux)
+		TIMESTAMP_FIX = -D_POSIX_C_SOURCE=199309L
+   endif
 endif
 
 # By default, build the firmware and command-line client
 all: $(CMDLINE)
 
 # One-liner to compile the command-line client
-$(CMDLINE): gbxcart_rw_flasher_v1.33.c setup.c rs232/rs232.c
+$(CMDLINE): gbxcart_rw_flasher_v1.34.c setup.c rs232/rs232.c
 	gcc -O -std=c99 -Wall $(TIMESTAMP_FIX) $^ -o $@
 	
 # Housekeeping if you want it
