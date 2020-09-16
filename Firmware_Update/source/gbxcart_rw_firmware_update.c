@@ -2,7 +2,7 @@
  GBxCart RW - Firmware update
  Author: Alex from insideGadgets (www.insidegadgets.com)
  Created: 2/11/2019
- Last Modified: 10/07/2020
+ Last Modified: 8/09/2020
  
  */
 
@@ -22,8 +22,8 @@
 #define EXE_SUFFIX ""
 #endif
 
-#define MINI_FIRMWARE 17
-#define STANDARD_FIRMWARE 18
+#define MINI_FIRMWARE 18
+#define STANDARD_FIRMWARE 19
 
 #include "setup.h" // See defines, variables, constants, functions here
 
@@ -94,8 +94,9 @@ int main(int argc, char **argv) {
 				system(tsbReset);
 				
 				char tsbFirmware[200];
-				sprintf(tsbFirmware, "tsb" DIR_SEPARATOR "tsb" EXE_SUFFIX " %s:57600 fw gbxcart_rw_mini_v1.0_pcb_r17.hex", portname);
+				sprintf(tsbFirmware, "tsb" DIR_SEPARATOR "tsb" EXE_SUFFIX " %s:57600 fw gbxcart_rw_mini_v1.0_pcb_r18.hex", portname);
 				system(tsbFirmware);
+				printf("Finished\n");
 			}
 			else {
 				printf("Update cancelled\n");
@@ -103,7 +104,6 @@ int main(int argc, char **argv) {
 		}
 		else {
 			printf("You are on the latest firmware\n");
-			read_one_letter();
 		}
 	}
 	else if (gbxcartPcbVersion == 2 || gbxcartPcbVersion == 4) {
@@ -127,9 +127,9 @@ int main(int argc, char **argv) {
 					system(tsbReset);
 					
 					char tsbFirmware[200];
-					sprintf(tsbFirmware, "tsb" DIR_SEPARATOR "tsb" EXE_SUFFIX " %s:57600 fw gbxcart_rw_v1.1-1.2_pcb_r18.hex", portname);
+					sprintf(tsbFirmware, "tsb" DIR_SEPARATOR "tsb" EXE_SUFFIX " %s:57600 fw gbxcart_rw_v1.1-1.2_pcb_r19.hex", portname);
 					system(tsbFirmware);
-					printf(tsbFirmware);
+					printf("Finished\n");
 				}
 				else if (gbxcartPcbVersion == 4) { // v1.3 PCB
 					printf("\n\n");
@@ -138,8 +138,9 @@ int main(int argc, char **argv) {
 					system(tsbReset);
 					
 					char tsbFirmware[200];
-					sprintf(tsbFirmware, "tsb" DIR_SEPARATOR "tsb" EXE_SUFFIX " %s:57600 fw gbxcart_rw_v1.3_pcb_r18.hex", portname);
+					sprintf(tsbFirmware, "tsb" DIR_SEPARATOR "tsb" EXE_SUFFIX " %s:57600 fw gbxcart_rw_v1.3_pcb_r19.hex", portname);
 					system(tsbFirmware);
+					printf("Finished\n");
 				}
 			}
 			else {
@@ -148,7 +149,6 @@ int main(int argc, char **argv) {
 		}
 		else {
 			printf("You are on the latest firmware\n");
-			read_one_letter();
 		}
 	}
 	else if (gbxcartPcbVersion == 90) {
@@ -174,6 +174,7 @@ int main(int argc, char **argv) {
 				char tsbFirmware[200];
 				sprintf(tsbFirmware, "tsb" DIR_SEPARATOR "tsb" EXE_SUFFIX " %s:57600 fw gbxmas_rw_v1.0_pcb_r18.hex", portname);
 				system(tsbFirmware);
+				printf("Finished\n");
 			}
 			else {
 				printf("Update cancelled\n");
@@ -181,9 +182,10 @@ int main(int argc, char **argv) {
 		}
 		else {
 			printf("You are on the latest firmware\n");
-			read_one_letter();
 		}
 	}
+	
+	read_one_letter();
 	
 	return 0;
 }

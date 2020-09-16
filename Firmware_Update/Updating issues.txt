@@ -1,0 +1,3 @@
+If you have issues updating the firmware, please try the tsb/tsbloader_adv.exe file like this:
+
+tsbloader_adv.exe -port=COM16 -fop=w -ffile=gbxcart_rw_v1.3_pcb_r19.hex
