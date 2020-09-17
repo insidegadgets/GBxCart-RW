@@ -1,9 +1,9 @@
 /*
  GBxCart RW - Console Interface Flasher
- Version: 1.34
+ Version: 1.34c
  Author: Alex from insideGadgets (www.insidegadgets.com)
  Created: 26/08/2017
- Last Modified: 16/09/2020
+ Last Modified: 17/09/2020
  License: GPL
  
  This program allows you to write ROMs to Flash Carts that are supported.
@@ -26,7 +26,7 @@
 
 int main(int argc, char **argv) {
 	
-	printf("GBxCart RW Flasher v1.34b by insideGadgets\n");
+	printf("GBxCart RW Flasher v1.34c by insideGadgets\n");
 	printf("##########################################\n");
 	
 	// Check arguments
@@ -3216,7 +3216,7 @@ int main(int argc, char **argv) {
 			}
 		}
 		
-		if (optionSelected == 11) {
+		if (optionSelected == 12) {
 			printf("\nPlease select a Flash Chip:\n"\
 					 "1. AM29F010B (Audio as WE)\n"\
 					 "2. AM29F010B (WR as WE)\n"\
@@ -3263,8 +3263,9 @@ int main(int argc, char **argv) {
 						optionSelected = 48;
 					}
 				}
-				write_flash_config(optionSelected); // Custom flash cart mapping occurs here, the selected number changes to a constant number
 			}
+			write_flash_config(optionSelected); // Custom flash cart mapping occurs here, the selected number changes to a constant number
+			
 			printf("\nPlease close this program. You can now drag and drop your ROM file to this exe file in Windows Explorer.\nYou can also use the following command: gbxcart_rw_flasher_v1.xx.exe <ROMFile>\nPress enter to exit.");
 			read_one_letter();
 			return 0;
