@@ -22,8 +22,8 @@
 #define EXE_SUFFIX ""
 #endif
 
-#define MINI_FIRMWARE 18
-#define STANDARD_FIRMWARE 19
+uint8_t miniFirmware = 18;
+uint8_t standardFirmware = 19;
 
 #include "setup.h" // See defines, variables, constants, functions here
 
@@ -75,7 +75,7 @@ int main(int argc, char **argv) {
 	
 	// Mini update
 	if (gbxcartPcbVersion == 100) {
-		if (gbxcartFirmwareVersion < MINI_FIRMWARE) {
+		if (gbxcartFirmwareVersion < miniFirmware) {
 			printf("Specify delay time (in ms) or press enter for default (250ms): ");
 			char optionString[5];
 			fgets(optionString, 5, stdin);
@@ -84,7 +84,7 @@ int main(int argc, char **argv) {
 				delayTime = 250;
 			}
 			
-			printf("Firmware R%i is available. Would you like to update? (Y/[N])\n>", MINI_FIRMWARE);
+			printf("Firmware R%i is available. Would you like to update? (Y/[N])\n>", miniFirmware);
 			
 			char modeSelected = read_one_letter();
 			if (modeSelected == 'y' || modeSelected == 'Y') {
@@ -94,7 +94,11 @@ int main(int argc, char **argv) {
 				system(tsbReset);
 				
 				char tsbFirmware[200];
-				sprintf(tsbFirmware, "tsb" DIR_SEPARATOR "tsb" EXE_SUFFIX " %s:57600 fw gbxcart_rw_mini_v1.0_pcb_r18.hex", portname);
+				#ifdef _WIN32
+					sprintf(tsbFirmware, "tsb" DIR_SEPARATOR "tsbloader_adv" EXE_SUFFIX " -port=%s -fop=w -ffile=gbxcart_rw_mini_v1.0_pcb_r%i.hex", portname, standardFirmware);
+				#else
+					sprintf(tsbFirmware, "tsb" DIR_SEPARATOR "tsb" EXE_SUFFIX " %s:57600 fw gbxcart_rw_mini_v1.0_pcb_r%i.hex", portname, miniFirmware);
+				#endif
 				system(tsbFirmware);
 				printf("Finished\n");
 			}
@@ -107,7 +111,7 @@ int main(int argc, char **argv) {
 		}
 	}
 	else if (gbxcartPcbVersion == 2 || gbxcartPcbVersion == 4) {
-		if (gbxcartFirmwareVersion < STANDARD_FIRMWARE) {
+		if (gbxcartFirmwareVersion < standardFirmware) {
 			printf("Specify delay time (in ms) or press enter for default (250ms): ");
 			char optionString[5];
 			fgets(optionString, 5, stdin);
@@ -116,7 +120,7 @@ int main(int argc, char **argv) {
 				delayTime = 250;
 			}
 			
-			printf("Firmware R%i is available. Would you like to update? (Y/[N])\n>", STANDARD_FIRMWARE);
+			printf("Firmware R%i is available. Would you like to update? (Y/[N])\n>", standardFirmware);
 			
 			char modeSelected = read_one_letter();
 			if (modeSelected == 'y' || modeSelected == 'Y') {
@@ -127,7 +131,11 @@ int main(int argc, char **argv) {
 					system(tsbReset);
 					
 					char tsbFirmware[200];
-					sprintf(tsbFirmware, "tsb" DIR_SEPARATOR "tsb" EXE_SUFFIX " %s:57600 fw gbxcart_rw_v1.1-1.2_pcb_r19.hex", portname);
+					#ifdef _WIN32
+						sprintf(tsbFirmware, "tsb" DIR_SEPARATOR "tsbloader_adv" EXE_SUFFIX " -port=%s -fop=w -ffile=gbxcart_rw_v1.1-1.2_pcb_r%i.hex", portname, standardFirmware);
+					#else
+						sprintf(tsbFirmware, "tsb" DIR_SEPARATOR "tsb" EXE_SUFFIX " %s:57600 fw gbxcart_rw_v1.1-1.2_pcb_r%i.hex", portname, standardFirmware);
+					#endif
 					system(tsbFirmware);
 					printf("Finished\n");
 				}
@@ -138,7 +146,11 @@ int main(int argc, char **argv) {
 					system(tsbReset);
 					
 					char tsbFirmware[200];
-					sprintf(tsbFirmware, "tsb" DIR_SEPARATOR "tsb" EXE_SUFFIX " %s:57600 fw gbxcart_rw_v1.3_pcb_r19.hex", portname);
+					#ifdef _WIN32
+						sprintf(tsbFirmware, "tsb" DIR_SEPARATOR "tsbloader_adv" EXE_SUFFIX " -port=%s -fop=w -ffile=gbxcart_rw_v1.3_pcb_r%i.hex", portname, standardFirmware);
+					#else
+						sprintf(tsbFirmware, "tsb" DIR_SEPARATOR "tsb" EXE_SUFFIX " %s:57600 fw gbxcart_rw_v1.3_pcb_r%i.hex", portname, standardFirmware);
+					#endif
 					system(tsbFirmware);
 					printf("Finished\n");
 				}
@@ -152,7 +164,7 @@ int main(int argc, char **argv) {
 		}
 	}
 	else if (gbxcartPcbVersion == 90) {
-		if (gbxcartFirmwareVersion < STANDARD_FIRMWARE) {
+		if (gbxcartFirmwareVersion < standardFirmware) {
 			printf("Please note that it may take several attempts for the update to work.\n");
 			printf("Specify delay time (in ms) or press enter for default (250ms): ");
 			char optionString[5];
@@ -162,7 +174,7 @@ int main(int argc, char **argv) {
 				delayTime = 250;
 			}
 			
-			printf("Firmware R%i is available. Would you like to update? (Y/[N])\n>", STANDARD_FIRMWARE);
+			printf("Firmware R%i is available. Would you like to update? (Y/[N])\n>", standardFirmware);
 			
 			char modeSelected = read_one_letter();
 			if (modeSelected == 'y' || modeSelected == 'Y') {
@@ -172,7 +184,11 @@ int main(int argc, char **argv) {
 				system(tsbReset);
 				
 				char tsbFirmware[200];
-				sprintf(tsbFirmware, "tsb" DIR_SEPARATOR "tsb" EXE_SUFFIX " %s:57600 fw gbxmas_rw_v1.0_pcb_r18.hex", portname);
+				#ifdef _WIN32
+					sprintf(tsbFirmware, "tsb" DIR_SEPARATOR "tsbloader_adv" EXE_SUFFIX " -port=%s -fop=w -ffile=gbxmas_rw_v1.0_pcb_r%i.hex", portname, standardFirmware);
+				#else
+					sprintf(tsbFirmware, "tsb" DIR_SEPARATOR "tsb" EXE_SUFFIX " %s:57600 fw gbxmas_rw_v1.0_pcb_r%i.hex", portname, standardFirmware);
+				#endif
 				system(tsbFirmware);
 				printf("Finished\n");
 			}

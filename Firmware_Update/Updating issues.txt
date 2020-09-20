@@ -1,3 +1,5 @@
-If you have issues updating the firmware, please try the tsb/tsbloader_adv.exe file like this:
+If you had issues updating the firmware and no lights show up, it may be stuck on the bootloader.
+
+Please try the tsbloader_adv.exe file like this:
 
 tsbloader_adv.exe -port=COM16 -fop=w -ffile=gbxcart_rw_v1.3_pcb_r19.hex
