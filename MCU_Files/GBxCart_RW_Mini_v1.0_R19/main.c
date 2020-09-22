@@ -1,10 +1,10 @@
 /*
  GBxCart RW Mini
  PCB version: 1.0
- Firmware version: R18
+ Firmware version: R19
  Author: Alex from insideGadgets (www.insidegadgets.com)
  Created: 7/11/2016
- Last Modified: 20/08/2020
+ Last Modified: 22/09/2020
  
  GBxCart RW Mini allows you to dump your Gameboy/Gameboy Colour games ROM, save the RAM, write to the RAM and 
  write to certain Gameboy flash carts. GBA carts are not supported, please check out the non-Mini version of GBxCart RW.
@@ -37,7 +37,7 @@
 
 #define F_CPU 16000000 // 16 MHz
 #define PCB_VERSION 100 // Mini v1.0
-#define FIRMWARE_VERSION 18
+#define FIRMWARE_VERSION 19
 
 #include <avr/io.h>
 #include <avr/wdt.h>
@@ -557,6 +557,14 @@ int main(void) {
 			USART_Transmit(FIRMWARE_VERSION);
 		}
 		
+		// Send back 32KB for a speed test
+		else if (receivedChar == FAST_READ_CHECK) {
+			for (uint16_t x = 0; x < 0x4000; x++) {
+				USART_Transmit('1');
+				USART_Transmit('0');
+			}
+		}
+		
 		// Reset the AVR if it matches the number
 		else if (receivedChar == RESET_AVR) {
 			usart_read_chars();
@@ -576,4 +584,10 @@ int main(void) {
 			}
 		}
 	}
+}
+
+// Timeout after ~500ms which also blinks the LED
+ISR(TIMER1_OVF_vect) {
+	PORTD ^= (1<<ACTIVITY_LED);
+	writingTimedout = 1;
 }

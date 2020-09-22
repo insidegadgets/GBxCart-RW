@@ -624,7 +624,7 @@ tsbbootloader:
 
 # Upload new firmware via TSB
 tsbprogram: $(TARGET).hex
-	#$(TSB_WATCHDOGRESET)
+	$(TSB_WATCHDOGRESET)
 	$(TSB) $(TSB_PROGRAM) $(TARGET).hex
 
 

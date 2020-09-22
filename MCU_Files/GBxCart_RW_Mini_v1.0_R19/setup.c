@@ -1,10 +1,10 @@
 /*
  GBxCart RW Mini
  PCB version: 1.0
- Firmware version: R18
+ Firmware version: R19
  Author: Alex from insideGadgets (www.insidegadgets.com)
  Created: 7/11/2016
- Last Modified: 20/08/2020
+ Last Modified: 22/09/2020
  
  */
  
@@ -106,6 +106,7 @@
 #define RESET_COMMON_LINES 'M'
 #define READ_FIRMWARE_VERSION 'V'
 #define READ_PCB_VERSION 'h'
+#define FAST_READ_CHECK '+'
 
 #define RESET_AVR '*'
 #define RESET_VALUE 0x7E5E1
