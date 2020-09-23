@@ -1,9 +1,9 @@
 /*
  GBxCart RW - Console Interface
- Version: 1.28
+ Version: 1.30
  Author: Alex from insideGadgets (www.insidegadgets.com)
  Created: 7/11/2016
- Last Modified: 21/12/2019
+ Last Modified: 23/09/2020
  
  */
 
@@ -33,6 +33,7 @@ extern int bdrate;
 // GB/GBC defines/commands
 #define SET_START_ADDRESS 'A'
 #define READ_ROM_RAM 'R'
+#define READ_ROM_4000H 'Q'
 #define WRITE_RAM 'W'
 #define SET_BANK 'B'
 #define GB_CART_MODE 'G'
@@ -54,6 +55,7 @@ extern int bdrate;
 #define FLASH_FOUND_INTEL 4
 
 #define GBA_READ_ROM 'r'
+#define GBA_READ_ROM_8000H 'Z'
 #define GBA_READ_ROM_256BYTE 'j'
 #define GBA_READ_SRAM 'm'
 #define GBA_WRITE_SRAM 'w'
@@ -105,6 +107,7 @@ extern int bdrate;
 #define RESET_COMMON_LINES 'M'
 #define READ_FIRMWARE_VERSION 'V'
 #define READ_PCB_VERSION 'h'
+#define FAST_READ_CHECK '+'
 
 #define VOLTAGE_3_3V '3'
 #define VOLTAGE_5V '5'
@@ -146,6 +149,9 @@ extern uint8_t cartridgeMode;
 extern uint32_t bytesReadPrevious;
 extern uint8_t ledBlinking;
 extern uint8_t ledProgress;
+extern uint8_t headerCheckSumOk;
+extern uint8_t fastReadEnabled;
+extern uint32_t lastAddrHash;
 
 // Read the config.ini file for the COM port to use and baud rate
 void read_config(void);
@@ -185,6 +191,9 @@ void com_read_cont(void);
 
 // Test opening the COM port,if can't be open, try autodetecting device on other COM ports
 uint8_t com_test_port(void);
+
+// Check if OS can support the faster reading
+void fast_reading_check(void);
 
 
 // Read 1 to 64 bytes from the COM port and write it to the global read buffer or to a file if specified. 

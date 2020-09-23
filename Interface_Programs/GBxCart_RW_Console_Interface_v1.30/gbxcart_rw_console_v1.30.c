@@ -1,9 +1,9 @@
 /*
  GBxCart RW - Console Interface
- Version: 1.28
+ Version: 1.30
  Author: Alex from insideGadgets (www.insidegadgets.com)
  Created: 7/11/2016
- Last Modified: 21/12/2019
+ Last Modified: 23/09/2020
  
  GBxCart RW allows you to dump your Gameboy/Gameboy Colour/Gameboy Advance games ROM, save the RAM and write to the RAM.
  
@@ -25,8 +25,8 @@
 
 int main(int argc, char **argv) {
 	
-	printf("GBxCart RW v1.27 by insideGadgets\n");
-	printf("################################\n");
+	printf("GBxCart RW v1.30 by insideGadgets\n");
+	printf("#################################\n");
 	
 	read_config();
 	
@@ -43,10 +43,19 @@ int main(int argc, char **argv) {
 	
 	// Get firmware version
 	gbxcartFirmwareVersion = request_value(READ_FIRMWARE_VERSION);
+	printf("Firmware version: %i\n", gbxcartFirmwareVersion);
 	
 	// Get PCB version
 	gbxcartPcbVersion = request_value(READ_PCB_VERSION);
 	xmas_wake_up();
+	
+	// Check if OS can support fast COM port reading
+	if (gbxcartFirmwareVersion >= 19) {
+		fast_reading_check();
+		if (fastReadEnabled == 1) {
+			printf("Fast reading enabled\n");
+		}
+	}
 	
 	// Prompt for GB or GBA mode
 	if (gbxcartPcbVersion == PCB_1_3 || gbxcartPcbVersion == GBXMAS) {
@@ -109,13 +118,19 @@ int main(int argc, char **argv) {
 			printf("\n--- Read ROM ---\n");
 			
 			char titleFilename[30];
-			strncpy(titleFilename, gameTitle, 20);
-			if (cartridgeMode == GB_MODE) {
-				strncat(titleFilename, ".gb", 3);
+			if (gameTitle[0] != '\0') {
+				strncpy(titleFilename, gameTitle, 20);
 			}
 			else {
-				strncat(titleFilename, ".gba", 4);
+				strncpy(titleFilename, "untitled", 9);
 			}
+			if (cartridgeMode == GB_MODE) {
+				strncat(titleFilename, ".gb", 4);
+			}
+			else {
+				strncat(titleFilename, ".gba", 5);
+			}
+			
 			printf("Reading ROM to %s\n", titleFilename);
 			printf("[             25%%             50%%             75%%            100%%]\n[");
 			
@@ -127,10 +142,10 @@ int main(int argc, char **argv) {
 				// Set start and end address
 				currAddr = 0x0000;
 				endAddr = 0x7FFF;
-				
 				xmas_setup((romBanks * 16384) / 28);
 				
 				// Read ROM
+				uint16_t timedoutCounter = 0;
 				for (uint16_t bank = 1; bank < romBanks; bank++) {				
 					if (cartridgeType >= 5) { // MBC2 and above
 						set_bank(0x2100, bank & 0xFF);
@@ -138,7 +153,7 @@ int main(int argc, char **argv) {
 							set_bank(0x3000, 1); // High bit
 						}
 					}
-					else { // MBC1
+					else if (cartridgeType >= 1) { // MBC1
 						if ((strncmp(gameTitle, "MOMOCOL", 7) == 0) || (strncmp(gameTitle, "BOMCOL", 6) == 0)) { // MBC1 Hudson
 							set_bank(0x4000, bank >> 4);
 							if (bank < 10) {
@@ -159,33 +174,64 @@ int main(int argc, char **argv) {
 					
 					// Set start address and rom reading mode
 					set_number(currAddr, SET_START_ADDRESS);
-					set_mode(READ_ROM_RAM);
+					if (fastReadEnabled == 1) {
+						set_mode(READ_ROM_4000H);
+					}
+					else {
+						set_mode(READ_ROM_RAM);
+					}
 					
 					// Read data
+					uint8_t localbuffer[257];
 					while (currAddr < endAddr) {
-						uint8_t comReadBytes = com_read_bytes(romFile, 64);
-						if (comReadBytes == 64) {
-							currAddr += 64;
-							readBytes += 64;
-							
-							// Request 64 bytes more
-							if (currAddr < endAddr) {
-								com_read_cont();
+						if (fastReadEnabled == 1) {
+							uint8_t rxBytes = RS232_PollComport(cport_nr, localbuffer, 64);
+							if (rxBytes > 0) {
+								localbuffer[rxBytes] = 0;
+								fwrite(localbuffer, 1, rxBytes, romFile);
+								currAddr += rxBytes;
+								readBytes += rxBytes;
+								timedoutCounter = 0;
+							}
+							else {
+								timedoutCounter++;
+								if (timedoutCounter >= 10000) { // Timed out, restart transfer 1 bank before
+									timedoutCounter = 0;
+									bank--;
+									fseek(romFile, readBytes - (currAddr - 0x4000), SEEK_SET);
+									readBytes -= (currAddr - 0x4000);
+									break;			
+								}
+							}
+							if (bank == 1 && fastReadEnabled == 1 && currAddr == 0x4000) { // Ask for another 32KB (only happens once)
+								set_mode(READ_ROM_4000H);
 							}
 						}
-						else { // Didn't receive 64 bytes, usually this only happens for Apple MACs
-							fflush(romFile);
-							com_read_stop();
-							delay_ms(500);
-							printf("Retrying\n");
-							
-							// Flush buffer
-							RS232_PollComport(cport_nr, readBuffer, 64);											
-							
-							// Start off where we left off
-							fseek(romFile, readBytes, SEEK_SET);
-							set_number(currAddr, SET_START_ADDRESS);
-							set_mode(READ_ROM_RAM);				
+						else {
+							uint8_t comReadBytes = com_read_bytes(romFile, 64);
+							if (comReadBytes == 64) {
+								currAddr += 64;
+								readBytes += 64;
+								
+								// Request 64 bytes more
+								if (currAddr < endAddr) {
+									com_read_cont();
+								}
+							}
+							else { // Didn't receive 64 bytes, usually this only happens for Apple MACs
+								fflush(romFile);
+								com_read_stop();
+								delay_ms(500);
+								printf("Retrying\n");
+								
+								// Flush buffer
+								RS232_PollComport(cport_nr, readBuffer, 64);											
+								
+								// Start off where we left off
+								fseek(romFile, readBytes, SEEK_SET);
+								set_number(currAddr, SET_START_ADDRESS);
+								set_mode(READ_ROM_RAM);				
+							}
 						}
 						
 						// Print progress
@@ -202,41 +248,93 @@ int main(int argc, char **argv) {
 				endAddr = romEndAddr;
 				set_number(currAddr, SET_START_ADDRESS);
 				xmas_setup(endAddr / 28);
+				lastAddrHash = endAddr / 64;
 				
-				uint16_t readLength = 64;
-				set_mode(GBA_READ_ROM);
-				
-				// Read data
-				while (currAddr < endAddr) {
-					uint8_t comReadBytes = com_read_bytes(romFile, readLength);
-					if (comReadBytes == readLength) {
-						currAddr += readLength;
-						
-						// Request 64 bytes more
-						if (currAddr < endAddr) {
-							com_read_cont();
-						}
-					}
-					else { // Didn't receive 64 bytes
-						fflush(romFile);
-						com_read_stop();
-						delay_ms(500);
-						
-						// Flush buffer
-						RS232_PollComport(cport_nr, readBuffer, readLength);											
-						
-						// Start off where we left off
-						fseek(romFile, currAddr, SEEK_SET);
-						set_number(currAddr / 2, SET_START_ADDRESS);
-						set_mode(GBA_READ_ROM);				
-					}
+				// Fast reading
+				if (fastReadEnabled == 1) {
+					uint16_t timedoutCounter = 0;
+					set_mode(GBA_READ_ROM_8000H);
 					
-					// Print progress
-					print_progress_percent(currAddr, endAddr / 64);
-					led_progress_percent(currAddr, endAddr / 28);
+					uint8_t buffer[65];
+					while (currAddr < endAddr) {
+						uint8_t rxBytes = RS232_PollComport(cport_nr, buffer, 64);
+						if (rxBytes > 0) {
+							buffer[rxBytes] = 0;
+							fwrite(buffer, 1, rxBytes, romFile);
+							currAddr += rxBytes;
+							timedoutCounter = 0;
+						}
+						else {
+							timedoutCounter++;
+							if (timedoutCounter >= 10000) {
+								timedoutCounter = 0;
+								RS232_PollComport(cport_nr, readBuffer, 256); // Flush
+								
+								if (currAddr >= 0x20000) {
+									uint32_t hexCalc = ((currAddr / 0x10000) - 1);
+									uint32_t calculateRewind = 0x10000 * hexCalc;
+									fseek(romFile, calculateRewind, SEEK_SET);
+									currAddr = calculateRewind;
+									set_number(currAddr / 2, SET_START_ADDRESS);
+								}
+								else {
+									fseek(romFile, 0, SEEK_SET);
+									currAddr = 0;
+									set_mode('0');
+									delay_ms(5);
+									set_number(currAddr, SET_START_ADDRESS);
+									delay_ms(5);
+								}
+							}
+						}
+						
+						if (currAddr % 0x10000 == 0 && currAddr != endAddr) {
+							set_mode(GBA_READ_ROM_8000H);
+						}
+						
+						// Print progress
+						print_progress_percent(currAddr, endAddr / 64);
+						led_progress_percent(currAddr, endAddr / 28);
+					}
+					printf("]");
+					com_read_stop();
 				}
-				printf("]");
-				com_read_stop();
+				else {
+					uint16_t readLength = 64;
+					set_mode(GBA_READ_ROM);
+					
+					// Read data
+					while (currAddr < endAddr) {
+						uint8_t comReadBytes = com_read_bytes(romFile, readLength);
+						if (comReadBytes == readLength) {
+							currAddr += readLength;
+							
+							// Request 64 bytes more
+							if (currAddr < endAddr) {
+								com_read_cont();
+							}
+						}
+						else { // Didn't receive 64 bytes
+							fflush(romFile);
+							com_read_stop();
+							delay_ms(500);
+							
+							// Flush buffer
+							RS232_PollComport(cport_nr, readBuffer, readLength);											
+							
+							// Start off where we left off
+							fseek(romFile, currAddr, SEEK_SET);
+							set_number(currAddr / 2, SET_START_ADDRESS);
+							set_mode(GBA_READ_ROM);				
+						}
+						
+						// Print progress
+						print_progress_percent(currAddr, endAddr / 64);
+						led_progress_percent(currAddr, endAddr / 28);
+					}
+					printf("]");
+					com_read_stop();
+				}
 			}
 			
 			fclose(romFile);
@@ -250,9 +348,14 @@ int main(int argc, char **argv) {
 			
 			if (cartridgeMode == GB_MODE) {
 				// Does cartridge have RAM
-				if (ramEndAddress > 0) {
+				if (ramEndAddress > 0 && headerCheckSumOk == 1) {
 					char titleFilename[30];
-					strncpy(titleFilename, gameTitle, 20);
+					if (gameTitle[0] != '\0') {
+						strncpy(titleFilename, gameTitle, 20);
+					}
+					else {
+						strncpy(titleFilename, "untitled", 9);
+					}
 					strncat(titleFilename, ".sav", 4);
 					
 					// Check if file exists
@@ -440,7 +543,12 @@ int main(int argc, char **argv) {
 				// Does cartridge have RAM
 				if (ramEndAddress > 0 || eepromEndAddress > 0) {
 					char titleFilename[30];
-					strncpy(titleFilename, gameTitle, 20);
+					if (gameTitle[0] != '\0') {
+						strncpy(titleFilename, gameTitle, 20);
+					}
+					else {
+						strncpy(titleFilename, "untitled", 9);
+					}
 					strncat(titleFilename, ".sav", 4);
 					
 					// Check if file exists
@@ -581,9 +689,14 @@ int main(int argc, char **argv) {
 			
 			if (cartridgeMode == GB_MODE) {
 				// Does cartridge have RAM
-				if (ramEndAddress > 0) {
+				if (ramEndAddress > 0 && headerCheckSumOk == 1) {
 					char titleFilename[30];
-					strncpy(titleFilename, gameTitle, 20);
+					if (gameTitle[0] != '\0') {
+						strncpy(titleFilename, gameTitle, 20);
+					}
+					else {
+						strncpy(titleFilename, "untitled", 9);
+					}
 					strncat(titleFilename, ".sav", 4);
 					
 					// Open file
@@ -664,7 +777,12 @@ int main(int argc, char **argv) {
 				// Does cartridge have RAM
 				if (ramEndAddress > 0 || eepromEndAddress > 0) {
 					char titleFilename[30];
-					strncpy(titleFilename, gameTitle, 20);
+					if (gameTitle[0] != '\0') {
+						strncpy(titleFilename, gameTitle, 20);
+					}
+					else {
+						strncpy(titleFilename, "untitled", 9);
+					}
 					strncat(titleFilename, ".sav", 4);
 					
 					// Open file
@@ -873,7 +991,7 @@ int main(int argc, char **argv) {
 					printf("\n[             25%%             50%%             75%%            100%%]\n[");
 					
 					// Does cartridge have RAM
-					if (ramEndAddress > 0) {
+					if (ramEndAddress > 0 && headerCheckSumOk == 1) {
 						mbc2_fix();
 						if (cartridgeType <= 4) { // MBC1
 							set_bank(0x6000, 1); // Set RAM Mode

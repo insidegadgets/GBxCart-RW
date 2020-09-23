@@ -1,14 +1,15 @@
 /*
  GBxCart RW - Console Interface
- Version: 1.28
+ Version: 1.30
  Author: Alex from insideGadgets (www.insidegadgets.com)
  Created: 7/11/2016
- Last Modified: 21/12/2019
+ Last Modified: 23/09/2020
  
  */
 
 #ifdef _WIN32
 #include <Windows.h>
+#include <time.h>
 #else
 #define _XOPEN_SOURCE 600
 #include <time.h>
@@ -56,6 +57,9 @@ uint32_t ledCountRight = 0;
 uint8_t ledSegment = 0;
 uint8_t ledProgress = 0;
 uint8_t ledBlinking = 0;
+uint8_t headerCheckSumOk = 0;
+uint8_t fastReadEnabled = 0;
+uint32_t lastAddrHash = 0;
 
 static const uint8_t nintendoLogoGBA[] = {0x24, 0xFF, 0xAE, 0x51, 0x69, 0x9A, 0xA2, 0x21, 0x3D, 0x84, 0x82, 0x0A, 0x84, 0xE4, 0x09, 0xAD,
 										0x11, 0x24, 0x8B, 0x98, 0xC0, 0x81, 0x7F, 0x21, 0xA3, 0x52, 0xBE, 0x19, 0x93, 0x09, 0xCE, 0x20,
@@ -153,14 +157,23 @@ char read_one_letter (void) {
 
 // Print progress
 void print_progress_percent (uint32_t bytesRead, uint32_t hashNumber) {
-	if ((bytesRead % hashNumber == 0) && bytesRead != 0) {
-		if (hashNumber == 64) {
-			printf("########");
-			fflush(stdout);
-		}
-		else {
+	if (optionSelected == '1' && cartridgeMode == GBA_MODE && fastReadEnabled == 1) {
+		if (currAddr >= lastAddrHash) {
 			printf("#");
 			fflush(stdout);
+			lastAddrHash = currAddr + (endAddr / 64); 
+		}
+	}
+	else {
+		if ((bytesRead % hashNumber == 0) && bytesRead != 0) {
+			if (hashNumber == 64) {
+				printf("########");
+				fflush(stdout);
+			}
+			else {
+				printf("#");
+				fflush(stdout);
+			}
 		}
 	}
 }
@@ -383,6 +396,30 @@ void com_write_bytes_from_file(uint8_t command, FILE *file, int count) {
 	
 	RS232_SendBuf(cport_nr, buffer, (count + 1)); // command + 1-128 bytes
 	RS232_drain(cport_nr);
+}
+
+// Check if OS can support fast COM port reading
+void fast_reading_check(void) {
+	set_mode(FAST_READ_CHECK);
+   
+	uint16_t timeOutCounter = 0;
+	uint16_t readCounter = 0;
+	fastReadEnabled = 1;
+	uint8_t buffer[257];
+	
+	while (readCounter != 32768) {
+		uint8_t rxBytes = RS232_PollComport(cport_nr, buffer, 64);
+		if (rxBytes > 0) {
+			readCounter += rxBytes;
+		}
+		timeOutCounter++;
+		delay_ms(1);
+		
+		if (timeOutCounter >= 750) { // Taking too long, exit
+			fastReadEnabled = 0;
+			break;
+		}
+	}
 }
 
 // Send a single command byte
@@ -661,6 +698,7 @@ void read_gb_header (void) {
 		case 2: printf ("8 KBytes\n"); break;
 		case 3: printf ("32 KBytes (4 banks of 8Kbytes)\n"); break;
 		case 4: printf ("128 KBytes (16 banks of 8Kbytes)\n"); break;
+		case 5: printf ("64 KBytes (8 banks of 8Kbytes)\n"); break;
 		default: printf ("Not found\n");
 	}
 	
@@ -672,9 +710,11 @@ void read_gb_header (void) {
 	printf ("Header Checksum: ");
 	if (romCheckSum == startRomBuffer[0x14D]) {
 		printf ("OK\n");
+		headerCheckSumOk = 1;
 	}
 	else {
 		printf ("Failed\n");
+		headerCheckSumOk = 0;
 	}
 }
 
