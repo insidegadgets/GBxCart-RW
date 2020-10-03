@@ -152,6 +152,7 @@ extern uint8_t cartridgeMode;
 extern int flashCartType;
 extern uint8_t flashID[10];
 extern uint8_t mode5vOverride;
+extern uint8_t detectedFlashWritingMethod;
 
 extern uint32_t bytesReadPrevious;
 extern uint8_t ledBlinking;
@@ -292,6 +293,9 @@ void gb_flash_write_address_byte (uint16_t address, uint8_t byte);
 
 void gb_check_change_flash_id (uint8_t flashMethod);
 
+void gb_check_stable_cart_data (void);
+
+int8_t gb_check_flash_id(void);
 
 // ****** GBA Cart Flasher functions ******
 
@@ -302,4 +306,3 @@ void wait_for_gba_flash_erase_ff(uint32_t address);
 
 void wait_for_gba_flash_sector_ff(uint32_t address, uint8_t byteOne,  uint8_t byteTwo);
 
-void gb_check_stable_cart_data (void);

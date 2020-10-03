@@ -65,6 +65,7 @@ uint8_t ledSegment = 0;
 uint8_t ledProgress = 0;
 uint8_t ledBlinking = 0;
 uint8_t mode5vOverride = 0;
+uint8_t detectedFlashWritingMethod = 0;
 
 uint8_t nintendoLogo[] = {0xCE, 0xED, 0x66, 0x66, 0xCC, 0x0D, 0x00, 0x0B, 0x03, 0x73, 0x00, 0x83, 0x00, 0x0C, 0x00, 0x0D,
 									0x00, 0x08, 0x11, 0x1F, 0x88, 0x89, 0x00, 0x0E, 0xDC, 0xCC, 0x6E, 0xE6, 0xDD, 0xDD, 0xD9, 0x99,
@@ -80,7 +81,7 @@ uint8_t nintendoLogoGBA[] = {0x24, 0xFF, 0xAE, 0x51, 0x69, 0x9A, 0xA2, 0x21, 0x3
 										0x78, 0x00, 0x90, 0xCB, 0x88, 0x11, 0x3A, 0x94, 0x65, 0xC0, 0x7C, 0x63, 0x87, 0xF0, 0x3C, 0xAF, 
 										0xD6, 0x25, 0xE4, 0x8B, 0x38, 0x0A, 0xAC, 0x72, 0x21, 0xD4, 0xF8, 0x07};
 uint8_t flashCartList[] = { 1, 29, 30, 31, 2, 42, 3, 4, 35, 5, 6, // GB iG carts
-									  0, 8, 32, 9, 33, 10, 11, 12, 34, 13, 14, 15, 39, 40, 38, 16, 17,  // GB carts
+									  0, 52, 53, 8, 32, 9, 33, 10, 11, 12, 34, 13, 14, 15, 39, 40, 38, 16, 17,  // GB carts
 									  20, 27, 41, 43, 21, 22, 23, 24, 25, 26, 36, 37, // GBA carts
 									  44, 45, 46, 47, 48, 49, 50, 51}; // GB 3.3v carts override to 5V mode
 
@@ -1761,6 +1762,140 @@ void gb_check_change_flash_id (uint8_t flashMethod) {
 		printf("\n*** Flash chip doesn't appear to be responding. Please re-seat the cart and power cycle GBxCart ***\n");
 		read_one_letter();
 	}
+}
+
+int8_t gb_check_flash_id (void) {
+	uint8_t readROMResult[4];
+	
+	printf("          Read ROM: ");
+	set_number(0, SET_START_ADDRESS);
+	set_mode(READ_ROM_RAM);
+	com_read_bytes(READ_BUFFER, 64);
+	com_read_stop(); // End read
+	
+	for (uint8_t r = 0; r < 4; r++) {
+		readROMResult[r] = readBuffer[r];
+	}
+	for (uint8_t r = 0; r < 8; r++) {
+		printf("0x%X, ", readBuffer[r]);
+	}
+	printf("\n");
+	
+	set_mode(GB_CART_MODE); // Gameboy mode
+	gb_flash_pin_setup(WE_AS_WR_PIN); // WR pin
+	
+	
+	printf("Flash ID (555, AA): ");
+	gb_flash_write_address_byte(0x555, 0xAA);
+	gb_flash_write_address_byte(0x2AA, 0x55);
+	gb_flash_write_address_byte(0x555, 0x90);
+	delay_ms(50);
+	
+	set_number(0, SET_START_ADDRESS);
+	set_mode(READ_ROM_RAM);
+	com_read_bytes(READ_BUFFER, 64);
+	com_read_stop(); // End read
+	
+	for (uint8_t r = 0; r < 8; r++) {
+		printf("0x%X, ", readBuffer[r]);
+	}
+	printf("\n");
+	gb_flash_write_address_byte(0x000, 0xF0);
+	
+	uint8_t sameData = 1;
+	for (uint8_t r = 0; r < 4; r++) {
+		if (readROMResult[r] != readBuffer[r]) {
+			sameData = 0;
+		}
+	}
+	if (sameData == 0) {
+		return GB_FLASH_PROGRAM_555;
+	}
+	
+	
+	printf("Flash ID (555, A9): ");
+	gb_flash_write_address_byte(0x555, 0xA9);
+	gb_flash_write_address_byte(0x2AA, 0x56);
+	gb_flash_write_address_byte(0x555, 0x90);
+	delay_ms(50);
+	
+	set_number(0, SET_START_ADDRESS);
+	set_mode(READ_ROM_RAM);
+	com_read_bytes(READ_BUFFER, 64);
+	com_read_stop(); // End read
+	
+	for (uint8_t r = 0; r < 8; r++) {
+		printf("0x%X, ", readBuffer[r]);
+	}
+	printf("\n");
+	gb_flash_write_address_byte(0x000, 0xF0);
+	
+	sameData = 1;
+	for (uint8_t r = 0; r < 4; r++) {
+		if (readROMResult[r] != readBuffer[r]) {
+			sameData = 0;
+		}
+	}
+	if (sameData == 0) {
+		return GB_FLASH_PROGRAM_555_BIT01_SWAPPED;
+	}
+	
+	
+	printf("Flash ID (AAA, AA): ");
+	gb_flash_write_address_byte(0xAAA, 0xAA);
+	gb_flash_write_address_byte(0x555, 0x55);
+	gb_flash_write_address_byte(0xAAA, 0x90);
+	delay_ms(50);
+	
+	set_number(0, SET_START_ADDRESS);
+	set_mode(READ_ROM_RAM);
+	com_read_bytes(READ_BUFFER, 64);
+	com_read_stop(); // End read
+	
+	for (uint8_t r = 0; r < 8; r++) {
+		printf("0x%X, ", readBuffer[r]);
+	}
+	printf("\n");
+	gb_flash_write_address_byte(0x000, 0xF0);
+	
+	sameData = 1;
+	for (uint8_t r = 0; r < 4; r++) {
+		if (readROMResult[r] != readBuffer[r]) {
+			sameData = 0;
+		}
+	}
+	if (sameData == 0) {
+		return GB_FLASH_PROGRAM_AAA;
+	}
+	
+	printf("Flash ID (AAA, A9): ");
+	gb_flash_write_address_byte(0xAAA, 0xA9);
+	gb_flash_write_address_byte(0x555, 0x56);
+	gb_flash_write_address_byte(0xAAA, 0x90);
+	delay_ms(50);
+	
+	set_number(0, SET_START_ADDRESS);
+	set_mode(READ_ROM_RAM);
+	com_read_bytes(READ_BUFFER, 64);
+	com_read_stop(); // End read
+	
+	for (uint8_t r = 0; r < 8; r++) {
+		printf("0x%X, ", readBuffer[r]);
+	}
+	printf("\n");
+	gb_flash_write_address_byte(0x000, 0xF0);
+	
+	sameData = 1;
+	for (uint8_t r = 0; r < 4; r++) {
+		if (readROMResult[r] != readBuffer[r]) {
+			sameData = 0;
+		}
+	}
+	if (sameData == 0) {
+		return GB_FLASH_PROGRAM_AAA_BIT01_SWAPPED;
+	}
+	
+	return -1;
 }
 
 

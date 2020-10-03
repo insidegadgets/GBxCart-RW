@@ -1,6 +1,6 @@
 /*
  GBxCart RW - Console Interface Flasher
- Version: 1.35
+ Version: 1.36
  Author: Alex from insideGadgets (www.insidegadgets.com)
  Created: 26/08/2017
  Last Modified: 30/09/2020
@@ -26,7 +26,7 @@
 
 int main(int argc, char **argv) {
 	
-	printf("GBxCart RW Flasher v1.35 by insideGadgets\n");
+	printf("GBxCart RW Flasher v1.36 by insideGadgets\n");
 	printf("#########################################\n");
 	
 	// Check arguments
@@ -1951,6 +1951,133 @@ int main(int argc, char **argv) {
 			fclose(romFile);
 		}
 		
+		else if (flashCartType == 52 || flashCartType == 53) {
+			if (flashCartType == 52) {
+				printf("Generic 5v Flash Cart (Auto detect)\n");
+				
+				// PCB v1.3 - Set 5V
+				if (gbxcartPcbVersion == PCB_1_3 || gbxcartPcbVersion == GBXMAS) {
+					set_mode(VOLTAGE_5V);
+					delay_ms(500);
+				}
+			}
+			else {
+				printf("Generic 3.3v Flash Cart (Auto detect)\n");
+				
+				// PCB v1.1/1.2
+				if (gbxcartPcbVersion == PCB_1_1 && cartridgeMode == GB_MODE) {
+					printf("You must switch GBxCart RW to be powered by 3.3V.\n");
+					printf("Please unplug it, switch the voltage and re-connect.\n");
+					read_one_letter();
+					return 1;
+				}
+				else if (gbxcartPcbVersion == PCB_1_3 || gbxcartPcbVersion == GBXMAS) { // PCB v1.3, Set 3.3V
+					set_mode(VOLTAGE_3_3V);
+					delay_ms(500);
+				}
+			}
+			printf("\nGoing to write to ROM (Flash cart) from %s\n\n", filenameOnly);
+			
+			// Check file size
+			if (fileSize > 0x400000) {
+				fclose(romFile);
+				printf("\n%s \nFile size is larger than the available Flash cart space of 4 MByte\n", argv[1]);
+				read_one_letter();
+				return 1;
+			}
+			
+			currAddr = 0x0000;
+			endAddr = 0x7FFF;
+			
+			// Calculate banks needed from ROM file size
+			romBanks = fileSize / 16384;
+			
+			// Flash Setup
+			set_mode(GB_CART_MODE); // Gameboy mode
+			detectedFlashWritingMethod = gb_check_flash_id();
+			if (detectedFlashWritingMethod >= 0) {
+				gb_flash_program_setup(detectedFlashWritingMethod);
+				gb_check_change_flash_id(detectedFlashWritingMethod);
+				
+				// Chip erase
+				printf("\nErasing Flash");
+				xmas_chip_erase_animation();
+				if (detectedFlashWritingMethod == GB_FLASH_PROGRAM_555) {
+					gb_flash_write_address_byte(0x555, 0xAA);
+					gb_flash_write_address_byte(0xAAA, 0x55);
+					gb_flash_write_address_byte(0x555, 0x80);
+					gb_flash_write_address_byte(0x555, 0xAA);
+					gb_flash_write_address_byte(0xAAA, 0x55);
+					gb_flash_write_address_byte(0x555, 0x10);
+				}
+				else if (detectedFlashWritingMethod == GB_FLASH_PROGRAM_AAA) {
+					gb_flash_write_address_byte(0xAAA, 0xAA);
+					gb_flash_write_address_byte(0x555, 0x55);
+					gb_flash_write_address_byte(0xAAA, 0x80);
+					gb_flash_write_address_byte(0xAAA, 0xAA);
+					gb_flash_write_address_byte(0x555, 0x55);
+					gb_flash_write_address_byte(0xAAA, 0x10);
+				}
+				else if (detectedFlashWritingMethod == GB_FLASH_PROGRAM_555_BIT01_SWAPPED) {
+					gb_flash_write_address_byte(0x555, 0xA9);
+					gb_flash_write_address_byte(0x2AA, 0x56);
+					gb_flash_write_address_byte(0x555, 0x80);
+					gb_flash_write_address_byte(0x555, 0xA9);
+					gb_flash_write_address_byte(0x2AA, 0x56);
+					gb_flash_write_address_byte(0x555, 0x10);
+				}
+				else if (detectedFlashWritingMethod == GB_FLASH_PROGRAM_AAA_BIT01_SWAPPED) {
+					gb_flash_write_address_byte(0xAAA, 0xA9);
+					gb_flash_write_address_byte(0x555, 0x56);
+					gb_flash_write_address_byte(0xAAA, 0x80);
+					gb_flash_write_address_byte(0xAAA, 0xA9);
+					gb_flash_write_address_byte(0x555, 0x56);
+					gb_flash_write_address_byte(0xAAA, 0x10);
+				}
+				
+				// Wait for first byte to be 0xFF
+				wait_for_flash_chip_erase_ff(1);
+				xmas_setup((romBanks * 16384) / 28);
+				
+				printf("\n\nWriting to ROM (Flash cart) from %s\n", filenameOnly);
+				printf("[             25%%             50%%             75%%            100%%]\n[");
+				
+				// Write ROM
+				currAddr = 0x0000;
+				for (uint16_t bank = 1; bank < romBanks; bank++) {				
+					if (bank > 1) { currAddr = 0x4000; }
+					
+					// Set start address
+					set_number(currAddr, SET_START_ADDRESS);
+					delay_ms(5);
+					
+					// Read data
+					while (currAddr < endAddr) {
+						if (currAddr == 0x4000) { // Switch banks here just before the next bank, not any time sooner
+							set_bank(0x2100, bank);
+						}
+						
+						com_write_bytes_from_file(GB_FLASH_WRITE_64BYTE, romFile, 64);
+						com_wait_for_ack();
+						currAddr += 64;
+						readBytes += 64;
+						
+						// Print progress
+						print_progress_percent(readBytes, (romBanks * 16384) / 64);
+						led_progress_percent(readBytes, (romBanks * 16384) / 28);
+					}
+				}
+				
+				printf("]");
+				fclose(romFile);
+			}
+			else {
+				printf("\n*** Flash chip doesn't appear to be responding. Please re-seat the cart and power cycle GBxCart ***\n");
+				read_one_letter();
+			}
+		}
+		
+		
 		
 		
 		// ****** GBA Flash Carts ******
@@ -3167,9 +3294,8 @@ int main(int argc, char **argv) {
 					 
 					 "--- Gameboy ---\n"\
 					 "12. 32 KByte\n"\
-					 "13. 512 KByte (SST39SF040)\n"\
-					 "14. 512 KByte (AM29LV160 CPLD cart) (3.3v)\n"\
-					 "15. 1 MByte (ES29LV160) (3.3v)\n");
+					 "13. Generic 5v Flash Cart (Auto detect)\n"\
+					 "14. Generic 3.3v Flash Cart (Auto detect)\n");
 		
 		printf("\nPress any key to see the next page or enter in a selection here.\n>");
 		char optionString[5];
@@ -3177,39 +3303,42 @@ int main(int argc, char **argv) {
 		int optionSelected = atoi(optionString);
 		
 		if (optionSelected == 0) {
-			printf("\n16. 1 MByte (29LV320 CPLD cart) (3.3v)\n"\
-					 "17. 2 MByte (BV5)\n"\
-					 "18. 2 MByte (AM29LV160DB / 29LV160CTTC / 29LV160TE / S29AL016 / M29W160EB) (3.3v)\n"
-					 "19. 2 MByte (AM29F016B) / 4 MByte (AM29F032B)\n"\
-					 "20. 2 MByte (AM29F016B) / 4 MByte (AM29F032B) (Audio as WE)\n"\
-					 "21. 2 MByte (GB Smart 16M)\n"\
-					 "22. 4 MByte (M29W640 / 29DL32BF / GL032A10BAIR4 / S29AL016M9) (3.3v)\n"\
-					 "23. 4 MByte MBC30 (AM29F032B / MBM29F033C)\n"\
-					 "24. 4 MByte (S29GL032 CPLD cart) (3.3v)\n"\
-					 "25. 4 MByte (GB Smart 32M)\n"\
-					 "26. 8 MByte (BUNG Doctor GB Card 64M) (28F640J5)\n"\
-					 "27. 32 MByte (4x 8MB Banks) (256M29) (3.3v)\n"\
-					 "28. 32 MByte (4x 8MB Banks) (M29W256 / MX29GL256 / MSP55LV100) (3.3v)\n\n"\
+			printf("\n15. 512 KByte (SST39SF040)\n"\
+					 "16. 512 KByte (AM29LV160 CPLD cart) (3.3v)\n"\
+					 "17. 1 MByte (ES29LV160) (3.3v)\n"\
+					 "18. 1 MByte (29LV320 CPLD cart) (3.3v)\n"\
+					 "19. 2 MByte (BV5)\n"\
+					 "20. 2 MByte (AM29LV160DB / 29LV160CTTC / 29LV160TE / S29AL016 / M29W160EB) (3.3v)\n"
+					 "21. 2 MByte (AM29F016B) / 4 MByte (AM29F032B)\n"\
+					 "22. 2 MByte (AM29F016B) / 4 MByte (AM29F032B) (Audio as WE)\n"\
+					 "23. 2 MByte (GB Smart 16M)\n"\
+					 "24. 4 MByte (M29W640 / 29DL32BF / GL032A10BAIR4 / S29AL016M9) (3.3v)\n"\
+					 "25. 4 MByte MBC30 (AM29F032B / MBM29F033C)\n"\
+					 "26. 4 MByte (S29GL032 CPLD cart) (3.3v)\n"\
+					 "27. 4 MByte (GB Smart 32M)\n"\
+					 "28. 8 MByte (BUNG Doctor GB Card 64M) (28F640J5)\n"\
+					 "29. 32 MByte (4x 8MB Banks) (256M29) (3.3v)\n"\
+					 "30. 32 MByte (4x 8MB Banks) (M29W256 / MX29GL256 / MSP55LV100) (3.3v)\n\n"\
 					 
 					 "--- Gameboy Advance ---\n"\
-					 "29. insideGadgets 32MB (512Kbit/1Mbit Flash Save) or (256Kbit FRAM) Flash Cart\n"\
-					 "30. insideGadgets 32MB 4K/64K EEPROM Save Flash Cart\n"\
-					 "31. insideGadgets 32MB RTC 1Mbit Flash Save Flash Cart\n"\
-					 "32. insideGadgets 16MB 64K EEPROM Solar+RTC Flash Cart\n"\
-					 "33. 16 MByte (MSP55LV128 / 29LV128DTMC)\n"\
-					 "34. 16 MByte (MSP55LV128M / 29GL128EHMC / MX29GL128ELT / M29W128 / S29GL128) / 32MB (256M29EWH)\n");
+					 "31. insideGadgets 32MB (512Kbit/1Mbit Flash Save) or (256Kbit FRAM) Flash Cart\n"\
+					 "32. insideGadgets 32MB 4K/64K EEPROM Save Flash Cart\n"\
+					 "33. insideGadgets 32MB RTC 1Mbit Flash Save Flash Cart\n");
 			
 			printf("\nPress any key to see the next page or enter in a selection here.\n>");
 			fgets(optionString, 5, stdin);
 			optionSelected = atoi(optionString);
 			
 			if (optionSelected == 0) {
-				printf("\n35. 16 MByte M36L0R706 / 32 MByte 256L30B / 4455LLZBQO / 4000L0YBQ0\n"\
-					"36. 16 MByte M36L0R706 (2) / 32 MByte 256L30B (2) / 4455LLZBQO (2) / 4000L0YBQ0 (2)\n"\
-					 "37. 16 MByte GE28F128W30\n"\
-					 "38. 4 MByte (MX29LV320)\n"\
-					 "39. 32 MByte (Flash2Advance 256M)\n"\
-					 "40. 16 MByte (Nintendo AGB Cartridge 128M Flash S, E201850)\n"\
+				printf("\n34. insideGadgets 16MB 64K EEPROM Solar+RTC Flash Cart\n"\
+					 "35. 16 MByte (MSP55LV128 / 29LV128DTMC)\n"\
+					 "36. 16 MByte (MSP55LV128M / 29GL128EHMC / MX29GL128ELT / M29W128 / S29GL128) / 32MB (256M29EWH)\n"
+					 "37. 16 MByte M36L0R706 / 32 MByte 256L30B / 4455LLZBQO / 4000L0YBQ0\n"\
+					 "38. 16 MByte M36L0R706 (2) / 32 MByte 256L30B (2) / 4455LLZBQO (2) / 4000L0YBQ0 (2)\n"\
+					 "39. 16 MByte GE28F128W30\n"\
+					 "40. 4 MByte (MX29LV320)\n"\
+					 "41. 32 MByte (Flash2Advance 256M)\n"\
+					 "42. 16 MByte (Nintendo AGB Cartridge 128M Flash S, E201850)\n"\
 					 "x. Exit\n>");
 				
 				fgets(optionString, 5, stdin);
@@ -3233,34 +3362,34 @@ int main(int argc, char **argv) {
 			return 0;
 		}
 		else if (optionSelected >= 1) {
-			if (optionSelected == 14 || optionSelected == 15 || optionSelected == 16 || optionSelected == 18 || optionSelected == 22 || optionSelected == 24 || optionSelected == 27 || optionSelected == 28) {
+			if (optionSelected == 16 || optionSelected == 17 || optionSelected == 18 || optionSelected == 20 || optionSelected == 24 || optionSelected == 26 || optionSelected == 29 || optionSelected == 30) {
 				printf("\nUse 5V mode instead of 3.3V mode? (y/n)\n");
 				printf("Usually not required, use at your own risk. Press enter for the defeault.\n");
 				printf(">");
 				char modeSelected = read_one_letter();
 				if (modeSelected == 'y' || modeSelected == 'Y') {
-					if (optionSelected == 14) {
+					if (optionSelected == 16) {
 						optionSelected = 41;
 					}
-					else if (optionSelected == 15) {
+					else if (optionSelected == 17) {
 						optionSelected = 42;
 					}
-					else if (optionSelected == 16) {
+					else if (optionSelected == 18) {
 						optionSelected = 43;
 					}
-					else if (optionSelected == 18) {
+					else if (optionSelected == 20) {
 						optionSelected = 44;
 					}
-					else if (optionSelected == 22) {
+					else if (optionSelected == 24) {
 						optionSelected = 45;
 					}
-					else if (optionSelected == 24) {
+					else if (optionSelected == 26) {
 						optionSelected = 46;
 					}
-					else if (optionSelected == 27) {
+					else if (optionSelected == 29) {
 						optionSelected = 47;
 					}
-					else if (optionSelected == 28) {
+					else if (optionSelected == 30) {
 						optionSelected = 48;
 					}
 				}
