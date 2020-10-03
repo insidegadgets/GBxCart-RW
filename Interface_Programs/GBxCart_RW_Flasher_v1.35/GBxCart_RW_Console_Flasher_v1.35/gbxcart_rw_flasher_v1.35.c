@@ -1,9 +1,9 @@
 /*
  GBxCart RW - Console Interface Flasher
- Version: 1.34c
+ Version: 1.35
  Author: Alex from insideGadgets (www.insidegadgets.com)
  Created: 26/08/2017
- Last Modified: 17/09/2020
+ Last Modified: 30/09/2020
  License: GPL
  
  This program allows you to write ROMs to Flash Carts that are supported.
@@ -26,8 +26,8 @@
 
 int main(int argc, char **argv) {
 	
-	printf("GBxCart RW Flasher v1.34c by insideGadgets\n");
-	printf("##########################################\n");
+	printf("GBxCart RW Flasher v1.35 by insideGadgets\n");
+	printf("#########################################\n");
 	
 	// Check arguments
 	if (argc >= 2) {
@@ -3168,8 +3168,8 @@ int main(int argc, char **argv) {
 					 "--- Gameboy ---\n"\
 					 "12. 32 KByte\n"\
 					 "13. 512 KByte (SST39SF040)\n"\
-					 "14. 512 KByte (AM29LV160 CPLD cart)\n"\
-					 "15. 1 MByte (ES29LV160)\n");
+					 "14. 512 KByte (AM29LV160 CPLD cart) (3.3v)\n"\
+					 "15. 1 MByte (ES29LV160) (3.3v)\n");
 		
 		printf("\nPress any key to see the next page or enter in a selection here.\n>");
 		char optionString[5];
@@ -3177,18 +3177,19 @@ int main(int argc, char **argv) {
 		int optionSelected = atoi(optionString);
 		
 		if (optionSelected == 0) {
-			printf("\n16. 1 MByte (29LV320 CPLD cart)\n"\
+			printf("\n16. 1 MByte (29LV320 CPLD cart) (3.3v)\n"\
 					 "17. 2 MByte (BV5)\n"\
-					 "18. 2 MByte (AM29LV160DB / 29LV160CTTC / 29LV160TE / S29AL016 / M29W160EB)\n19. 2 MByte (AM29F016B) / 4 MByte (AM29F032B)\n"\
+					 "18. 2 MByte (AM29LV160DB / 29LV160CTTC / 29LV160TE / S29AL016 / M29W160EB) (3.3v)\n"
+					 "19. 2 MByte (AM29F016B) / 4 MByte (AM29F032B)\n"\
 					 "20. 2 MByte (AM29F016B) / 4 MByte (AM29F032B) (Audio as WE)\n"\
 					 "21. 2 MByte (GB Smart 16M)\n"\
-					 "22. 4 MByte (M29W640 / 29DL32BF / GL032A10BAIR4 / S29AL016M9)\n"\
+					 "22. 4 MByte (M29W640 / 29DL32BF / GL032A10BAIR4 / S29AL016M9) (3.3v)\n"\
 					 "23. 4 MByte MBC30 (AM29F032B / MBM29F033C)\n"\
-					 "24. 4 MByte (S29GL032 CPLD cart)\n"\
+					 "24. 4 MByte (S29GL032 CPLD cart) (3.3v)\n"\
 					 "25. 4 MByte (GB Smart 32M)\n"\
 					 "26. 8 MByte (BUNG Doctor GB Card 64M) (28F640J5)\n"\
-					 "27. 32 MByte (4x 8MB Banks) (256M29)\n"\
-					 "28. 32 MByte (4x 8MB Banks) (M29W256 / MX29GL256 / MSP55LV100)\n\n"\
+					 "27. 32 MByte (4x 8MB Banks) (256M29) (3.3v)\n"\
+					 "28. 32 MByte (4x 8MB Banks) (M29W256 / MX29GL256 / MSP55LV100) (3.3v)\n\n"\
 					 
 					 "--- Gameboy Advance ---\n"\
 					 "29. insideGadgets 32MB (512Kbit/1Mbit Flash Save) or (256Kbit FRAM) Flash Cart\n"\
