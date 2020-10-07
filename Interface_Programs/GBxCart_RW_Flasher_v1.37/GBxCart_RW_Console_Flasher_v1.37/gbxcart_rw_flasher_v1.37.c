@@ -1,10 +1,10 @@
 /*
  GBxCart RW - Console Interface Flasher
- Version: 1.36
+ Version: 1.37
  Author: Alex from insideGadgets (www.insidegadgets.com)
  Created: 26/08/2017
- Last Modified: 30/09/2020
- License: GPL
+ Last Modified: 7/10/2020
+ License: CC-BY-NC
  
  This program allows you to write ROMs to Flash Carts that are supported.
  
@@ -26,7 +26,7 @@
 
 int main(int argc, char **argv) {
 	
-	printf("GBxCart RW Flasher v1.36 by insideGadgets\n");
+	printf("GBxCart RW Flasher v1.37 by insideGadgets\n");
 	printf("#########################################\n");
 	
 	// Check arguments
@@ -3176,7 +3176,6 @@ int main(int argc, char **argv) {
 			printf("]");
 			fclose(romFile);
 		}
-		
 		else if (flashCartType == 37) { // Thanks to lesserkuma for adding support
 			printf("16 MByte (Nintendo Development AGB Cartridge 128M Flash S, E201850)\n");
 			printf("\nGoing to write to ROM (Flash cart) from %s\n", filenameOnly);
@@ -3271,6 +3270,100 @@ int main(int argc, char **argv) {
 			printf("]");
 			fclose(romFile);
 		}
+		else if (flashCartType == 54) { 
+			printf("Generic GBA Flash Cart (Auto detect)\n");
+			printf("\nGoing to write to ROM (Flash cart) from %s\n", filenameOnly);
+			
+			// Check file size
+			if (fileSize > 0x2000000) {
+				fclose(romFile);
+				printf("\n%s \nFile size is larger than the available Flash cart space of 32 MBytes\n", argv[1]);
+				read_one_letter();
+				return 1;
+			}
+			
+			// Read rom a tiny bit before writing
+			currAddr = 0x0000;	
+			set_number(currAddr, SET_START_ADDRESS);
+			delay_ms(5);
+			set_mode(GBA_READ_ROM);
+			delay_ms(5);
+			com_read_bytes(READ_BUFFER, 64);
+			com_read_stop();
+			
+			// Set end address as file size
+			endAddr = fileSize;
+			uint32_t endAddrAligned = fileSize;
+			while ((endAddrAligned / 64)  % 64 != 0) { // Align to 64 for printing progress
+				endAddrAligned--;
+			}
+			xmas_setup(endAddrAligned / 28);
+			
+			
+			// Check Flash ID
+			detectedFlashWritingMethod = gba_check_flash_id();
+			if (detectedFlashWritingMethod >= 0) {
+				currAddr = 0x0000;	
+				set_number(currAddr, SET_START_ADDRESS);
+				delay_ms(5);
+				set_mode(GBA_READ_ROM);
+				delay_ms(5);
+				com_read_bytes(READ_BUFFER, 64);
+				com_read_stop();
+				gba_flash_write_address_byte(0x000, 0xF0);
+				
+				
+				// Chip erase
+				currAddr = 0x0000;	
+				set_number(currAddr, SET_START_ADDRESS);
+				delay_ms(5);
+				
+				printf("\nChip erase, this can take 3-4 minutes");
+				if (detectedFlashWritingMethod == GBA_FLASH_PROGRAM_AAA) {
+					gba_flash_write_address_byte(0xAAA, 0xAA);
+					gba_flash_write_address_byte(0x555, 0x55);
+					gba_flash_write_address_byte(0xAAA, 0x80);
+					gba_flash_write_address_byte(0xAAA, 0xAA);
+					gba_flash_write_address_byte(0x555, 0x55);
+					gba_flash_write_address_byte(0xAAA, 0x10);
+				}
+				else {
+					gba_flash_write_address_byte(0xAAA, 0xA9);
+					gba_flash_write_address_byte(0x555, 0x56);
+					gba_flash_write_address_byte(0xAAA, 0x80);
+					gba_flash_write_address_byte(0xAAA, 0xA9);
+					gba_flash_write_address_byte(0x555, 0x56);
+					gba_flash_write_address_byte(0xAAA, 0x10);
+				}
+				
+				// Wait for first 2 bytes to be 0xFF
+				wait_for_gba_flash_erase_ff(currAddr);
+				printf("\n");
+				
+				printf("\nWriting to ROM (Flash cart) from %s\n", filenameOnly);
+				printf("[             25%%             50%%             75%%            100%%]\n[");
+				
+				// Write ROM
+				currAddr = 0x0000;	
+				set_number(currAddr, SET_START_ADDRESS);
+				delay_ms(5);
+				while (currAddr < endAddr) {
+					if (detectedFlashWritingMethod == GBA_FLASH_PROGRAM_AAA) {
+						com_write_bytes_from_file(GBA_FLASH_WRITE_256BYTE, romFile, 256);
+					}
+					else {
+						com_write_bytes_from_file(GBA_FLASH_WRITE_256BYTE_SWAPPED_D0D1, romFile, 256);
+					}
+					com_wait_for_ack();
+					currAddr += 256;
+					readBytes += 256;
+					
+					print_progress_percent(readBytes, endAddr / 64);
+					led_progress_percent(readBytes, endAddr / 28);
+				}
+			}
+		}
+		
 		else {
 			printf("No Flash Cart selected, please run this program by itself.");
 			read_one_letter();
@@ -3339,6 +3432,7 @@ int main(int argc, char **argv) {
 					 "40. 4 MByte (MX29LV320)\n"\
 					 "41. 32 MByte (Flash2Advance 256M)\n"\
 					 "42. 16 MByte (Nintendo AGB Cartridge 128M Flash S, E201850)\n"\
+					 "43. Generic Flash Cart (Auto detect)\n"\
 					 "x. Exit\n>");
 				
 				fgets(optionString, 5, stdin);
@@ -3369,28 +3463,28 @@ int main(int argc, char **argv) {
 				char modeSelected = read_one_letter();
 				if (modeSelected == 'y' || modeSelected == 'Y') {
 					if (optionSelected == 16) {
-						optionSelected = 41;
+						optionSelected = 78;
 					}
 					else if (optionSelected == 17) {
-						optionSelected = 42;
+						optionSelected = 79;
 					}
 					else if (optionSelected == 18) {
-						optionSelected = 43;
+						optionSelected = 80;
 					}
 					else if (optionSelected == 20) {
-						optionSelected = 44;
+						optionSelected = 81;
 					}
 					else if (optionSelected == 24) {
-						optionSelected = 45;
+						optionSelected = 82;
 					}
 					else if (optionSelected == 26) {
-						optionSelected = 46;
+						optionSelected = 83;
 					}
 					else if (optionSelected == 29) {
-						optionSelected = 47;
+						optionSelected = 84;
 					}
 					else if (optionSelected == 30) {
-						optionSelected = 48;
+						optionSelected = 85;
 					}
 				}
 			}

@@ -1,10 +1,10 @@
 /*
  GBxCart RW - Console Interface Flasher
- Version: 1.35
+ Version: 1.37
  Author: Alex from insideGadgets (www.insidegadgets.com)
  Created: 26/08/2017
- Last Modified: 30/09/2020
- License: GPL
+ Last Modified: 7/10/2020
+ License: CC-BY-NC
  
  */
 
@@ -101,6 +101,9 @@ extern int bdrate;
 #define GBA_FLASH_WRITE_INTEL_INTERLEAVED_256BYTE 'v'
 #define GBA_FLASH_WRITE_SHARP_64BYTE 'x'
 
+#define GBA_FLASH_PROGRAM_AAA '0'
+#define GBA_FLASH_PROGRAM_AAA_BIT01_SWAPPED '1'
+
 // General commands
 #define CART_MODE 'C'
 #define SET_INPUT 'I'
@@ -152,7 +155,7 @@ extern uint8_t cartridgeMode;
 extern int flashCartType;
 extern uint8_t flashID[10];
 extern uint8_t mode5vOverride;
-extern uint8_t detectedFlashWritingMethod;
+extern int8_t detectedFlashWritingMethod;
 
 extern uint32_t bytesReadPrevious;
 extern uint8_t ledBlinking;
@@ -306,3 +309,4 @@ void wait_for_gba_flash_erase_ff(uint32_t address);
 
 void wait_for_gba_flash_sector_ff(uint32_t address, uint8_t byteOne,  uint8_t byteTwo);
 
+int8_t gba_check_flash_id(void);

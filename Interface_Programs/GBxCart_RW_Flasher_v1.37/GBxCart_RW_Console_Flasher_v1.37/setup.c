@@ -1,10 +1,10 @@
 /*
  GBxCart RW - Console Interface Flasher
- Version: 1.35
+ Version: 1.37
  Author: Alex from insideGadgets (www.insidegadgets.com)
  Created: 26/08/2017
- Last Modified: 30/09/2020
- License: GPL
+ Last Modified: 7/10/2020
+ License: CC-BY-NC
  
  */
 
@@ -65,7 +65,7 @@ uint8_t ledSegment = 0;
 uint8_t ledProgress = 0;
 uint8_t ledBlinking = 0;
 uint8_t mode5vOverride = 0;
-uint8_t detectedFlashWritingMethod = 0;
+int8_t detectedFlashWritingMethod = 0;
 
 uint8_t nintendoLogo[] = {0xCE, 0xED, 0x66, 0x66, 0xCC, 0x0D, 0x00, 0x0B, 0x03, 0x73, 0x00, 0x83, 0x00, 0x0C, 0x00, 0x0D,
 									0x00, 0x08, 0x11, 0x1F, 0x88, 0x89, 0x00, 0x0E, 0xDC, 0xCC, 0x6E, 0xE6, 0xDD, 0xDD, 0xD9, 0x99,
@@ -82,8 +82,10 @@ uint8_t nintendoLogoGBA[] = {0x24, 0xFF, 0xAE, 0x51, 0x69, 0x9A, 0xA2, 0x21, 0x3
 										0xD6, 0x25, 0xE4, 0x8B, 0x38, 0x0A, 0xAC, 0x72, 0x21, 0xD4, 0xF8, 0x07};
 uint8_t flashCartList[] = { 1, 29, 30, 31, 2, 42, 3, 4, 35, 5, 6, // GB iG carts
 									  0, 52, 53, 8, 32, 9, 33, 10, 11, 12, 34, 13, 14, 15, 39, 40, 38, 16, 17,  // GB carts
-									  20, 27, 41, 43, 21, 22, 23, 24, 25, 26, 36, 37, // GBA carts
-									  44, 45, 46, 47, 48, 49, 50, 51}; // GB 3.3v carts override to 5V mode
+									  20, 27, 41, 43, 21, 22, 23, 24, 25, 26, 36, 37, 54, // GBA carts
+									  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+									  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+									  44, 45, 46, 47, 48, 49, 50, 51}; 
 
 // Read the config.ini file for the COM port to use and baud rate
 void read_config(void) {
@@ -1895,6 +1897,9 @@ int8_t gb_check_flash_id (void) {
 		return GB_FLASH_PROGRAM_AAA_BIT01_SWAPPED;
 	}
 	
+	printf("\n*** Flash chip doesn't appear to be responding. Please re-seat the cart and power cycle GBxCart ***\n");
+	read_one_letter();
+	
 	return -1;
 }
 
@@ -1922,4 +1927,86 @@ void gba_flash_write_address_byte (uint32_t address, uint16_t byte) {
 	delay_ms(5);
 	
 	com_wait_for_ack();
+}
+
+
+int8_t gba_check_flash_id (void) {
+	uint8_t readROMResult[4];
+	
+	printf("          Read ROM: ");
+	currAddr = 0x0000;	
+	set_number(currAddr, SET_START_ADDRESS);
+	set_mode(GBA_READ_ROM);
+	com_read_bytes(READ_BUFFER, 64);
+	com_read_stop();
+	
+	for (uint8_t r = 0; r < 4; r++) {
+		readROMResult[r] = readBuffer[r];
+	}
+	for (uint8_t r = 0; r < 8; r++) {
+		printf("0x%X, ", readBuffer[r]);
+	}
+	printf("\n");
+	gba_flash_write_address_byte(0x000, 0xF0);
+	
+	
+	printf("Flash ID (AAA, A9): ");
+	gba_flash_write_address_byte(0xAAA, 0xA9);
+	gba_flash_write_address_byte(0x555, 0x56);
+	gba_flash_write_address_byte(0xAAA, 0x90);
+	
+	currAddr = 0x0000;	
+	set_number(currAddr, SET_START_ADDRESS);
+	set_mode(GBA_READ_ROM);
+	com_read_bytes(READ_BUFFER, 64);
+	com_read_stop();
+	
+	for (uint8_t r = 0; r < 8; r++) {
+		printf("0x%X, ", readBuffer[r]);
+	}
+	printf("\n");
+	gba_flash_write_address_byte(0x000, 0xF0);
+	
+	uint8_t sameData = 1;
+	for (uint8_t r = 0; r < 4; r++) {
+		if (readROMResult[r] != readBuffer[r]) {
+			sameData = 0;
+		}
+	}
+	if (sameData == 0) {
+		return GBA_FLASH_PROGRAM_AAA_BIT01_SWAPPED;
+	}
+	
+	
+	printf("Flash ID (AAA, AA): ");
+	gba_flash_write_address_byte(0xAAA, 0xAA);
+	gba_flash_write_address_byte(0x555, 0x55);
+	gba_flash_write_address_byte(0xAAA, 0x90);
+	
+	currAddr = 0x0000;	
+	set_number(currAddr, SET_START_ADDRESS);
+	set_mode(GBA_READ_ROM);
+	com_read_bytes(READ_BUFFER, 64);
+	com_read_stop();
+	
+	for (uint8_t r = 0; r < 8; r++) {
+		printf("0x%X, ", readBuffer[r]);
+	}
+	printf("\n");
+	gba_flash_write_address_byte(0x000, 0xF0);
+	
+	sameData = 1;
+	for (uint8_t r = 0; r < 4; r++) {
+		if (readROMResult[r] != readBuffer[r]) {
+			sameData = 0;
+		}
+	}
+	if (sameData == 0) {
+		return GBA_FLASH_PROGRAM_AAA;
+	}
+	
+	printf("\n*** Flash chip doesn't appear to be responding. Please re-seat the cart and power cycle GBxCart ***\n");
+	read_one_letter();
+	
+	return -1;
 }
