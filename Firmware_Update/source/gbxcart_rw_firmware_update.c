@@ -13,7 +13,7 @@
 #include <time.h>
 
 #ifdef _WIN32
-#include <Windows.h>
+#include <windows.h>
 #define DIR_SEPARATOR "\\"
 #define EXE_SUFFIX ".exe"
 #else

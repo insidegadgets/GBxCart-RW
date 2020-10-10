@@ -8,7 +8,7 @@
  */
 
 #ifdef _WIN32
-#include <Windows.h>
+#include <windows.h>
 #include <time.h>
 #else
 #define _XOPEN_SOURCE 600

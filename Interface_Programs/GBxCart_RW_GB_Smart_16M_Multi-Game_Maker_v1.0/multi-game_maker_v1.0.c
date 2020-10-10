@@ -20,7 +20,7 @@
 #include <libgen.h>
 
 #ifdef _WIN32
-#include <Windows.h>
+#include <windows.h>
 #include <direct.h>
 #define GetCurrentDir _getcwd
 #else
