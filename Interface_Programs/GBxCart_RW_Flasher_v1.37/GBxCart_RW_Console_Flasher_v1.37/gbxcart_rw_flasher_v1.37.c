@@ -72,11 +72,20 @@ int main(int argc, char **argv) {
 		char filename[254];
 		strncpy(filename, argv[1], 253);
 		
+#ifdef _WIN32
 		char *token = strtok(filename, "\\");
 		while (token != NULL) {
 			strncpy(filenameOnly, token, 99);
 			token = strtok(NULL, "\\");
 		}
+#else
+		char *token = strtok(filename, "/");
+		while (token != NULL) {
+			strncpy(filenameOnly, token, 99);
+			token = strtok(NULL, "/");
+		}
+#endif
+	
 		
 		printf("\n--- Write ROM to Flash Cart ---\n");
 		printf("Cart selected: ");
