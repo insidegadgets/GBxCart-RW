@@ -1,10 +1,10 @@
 /*
  GBxCart RW - Console Interface Flasher
- Version: 1.37
+ Version: 1.38
  Author: Alex from insideGadgets (www.insidegadgets.com)
  Created: 26/08/2017
- Last Modified: 7/10/2020
- License: CC-BY-NC
+ Last Modified: 17/10/2020
+ License: CC-BY-NC-SA
  
  */
 
@@ -87,6 +87,7 @@ extern int bdrate;
 #define GB_FLASH_WRITE_64BYTE 'T'
 #define GB_FLASH_WRITE_256BYTE 'X'
 #define GB_FLASH_WRITE_BUFFERED_32BYTE 'Y'
+#define GB_FLASH_WRITE_BUFFERED_256BYTE 'U'
 #define GB_FLASH_BANK_1_COMMAND_WRITES 'N'
 #define GB_FLASH_WRITE_64BYTE_PULSE_RESET 'J'
 #define GB_FLASH_WRITE_NP_128BYTE 'Z'
@@ -96,6 +97,7 @@ extern int bdrate;
 #define GBA_FLASH_WRITE_64BYTE_SWAPPED_D0D1 'q'
 #define GBA_FLASH_WRITE_256BYTE_SWAPPED_D0D1 't'
 #define GBA_FLASH_WRITE_256BYTE 'f'
+#define GBA_FLASH_WRITE_BUFFERED_256BYTE 'c'
 #define GBA_FLASH_WRITE_INTEL_64BYTE 'l'
 #define GBA_FLASH_WRITE_INTEL_64BYTE_WORD 'u'
 #define GBA_FLASH_WRITE_INTEL_INTERLEAVED_256BYTE 'v'
@@ -156,6 +158,7 @@ extern int flashCartType;
 extern uint8_t flashID[10];
 extern uint8_t mode5vOverride;
 extern int8_t detectedFlashWritingMethod;
+extern uint32_t lastAddrHash;
 
 extern uint32_t bytesReadPrevious;
 extern uint8_t ledBlinking;
@@ -180,6 +183,7 @@ char read_one_letter(void);
 
 // Print progress
 void print_progress_percent(uint32_t bytesRead, uint32_t hashNumber);
+void print_progress_percent_addr (uint32_t bytesRead, uint32_t hashNumber);
 
 void led_progress_percent (uint32_t bytesRead, uint32_t hashNumber);
 void xmas_set_leds (uint32_t value);
@@ -210,6 +214,7 @@ uint8_t com_read_bytes(FILE *file, int count);
 
 // Read 1-128 bytes from the file (or buffer) and write it the COM port with the command given
 void com_write_bytes_from_file(uint8_t command, FILE *file, int count);
+uint8_t com_write_bytes_from_file_skip_FFs(uint8_t command, FILE *file, int count);
 
 // Send a single command byte
 void set_mode (char command);

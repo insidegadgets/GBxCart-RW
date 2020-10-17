@@ -2,12 +2,12 @@
  GBxCart RW - Firmware update
  Author: Alex from insideGadgets (www.insidegadgets.com)
  Created: 2/11/2019
- Last Modified: 2/11/2019
+ Last Modified: 17/10/2020
  
  */
 
 #ifdef _WIN32
-#include <windows.h>
+#include <Windows.h>
 #else
 #include <unistd.h>
 #endif

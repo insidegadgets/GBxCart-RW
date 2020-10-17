@@ -2,7 +2,7 @@
  GBxCart RW - Firmware update
  Author: Alex from insideGadgets (www.insidegadgets.com)
  Created: 2/11/2019
- Last Modified: 8/09/2020
+ Last Modified: 17/10/2020
  
  */
 
@@ -13,7 +13,7 @@
 #include <time.h>
 
 #ifdef _WIN32
-#include <windows.h>
+#include <Windows.h>
 #define DIR_SEPARATOR "\\"
 #define EXE_SUFFIX ".exe"
 #else
@@ -22,8 +22,8 @@
 #define EXE_SUFFIX ""
 #endif
 
-uint8_t miniFirmware = 19;
-uint8_t standardFirmware = 19;
+uint8_t miniFirmware = 20;
+uint8_t standardFirmware = 20;
 
 #include "setup.h" // See defines, variables, constants, functions here
 

@@ -1,10 +1,10 @@
 /*
  GBxCart RW - Console Interface Flasher
- Version: 1.37
+ Version: 1.38
  Author: Alex from insideGadgets (www.insidegadgets.com)
  Created: 26/08/2017
- Last Modified: 7/10/2020
- License: CC-BY-NC
+ Last Modified: 17/10/2020
+ License: CC-BY-NC-SA
  
  */
 
@@ -66,6 +66,7 @@ uint8_t ledProgress = 0;
 uint8_t ledBlinking = 0;
 uint8_t mode5vOverride = 0;
 int8_t detectedFlashWritingMethod = 0;
+uint32_t lastAddrHash = 0;
 
 uint8_t nintendoLogo[] = {0xCE, 0xED, 0x66, 0x66, 0xCC, 0x0D, 0x00, 0x0B, 0x03, 0x73, 0x00, 0x83, 0x00, 0x0C, 0x00, 0x0D,
 									0x00, 0x08, 0x11, 0x1F, 0x88, 0x89, 0x00, 0x0E, 0xDC, 0xCC, 0x6E, 0xE6, 0xDD, 0xDD, 0xD9, 0x99,
@@ -200,6 +201,15 @@ void print_progress_percent (uint32_t bytesRead, uint32_t hashNumber) {
 			printf("#");
 			fflush(stdout);
 		}
+	}
+}
+
+// Print progress
+void print_progress_percent_addr (uint32_t bytesRead, uint32_t hashNumber) {
+	if (currAddr >= lastAddrHash) {
+		printf("#");
+		fflush(stdout);
+		lastAddrHash = currAddr + (endAddr / 64); 
 	}
 }
 
@@ -473,6 +483,37 @@ void com_write_bytes_from_file(uint8_t command, FILE *file, int count) {
 	
 	RS232_SendBuf(cport_nr, buffer, (count + 1)); // command + 1-256 bytes
 	RS232_drain(cport_nr);
+}
+
+// Read 1-256 bytes from the file (or buffer) and write it the COM port with the command given if the data isn't all 0xFF
+uint8_t com_write_bytes_from_file_skip_FFs(uint8_t command, FILE *file, int count) {
+	uint8_t buffer[257];
+	buffer[0] = command;
+
+	if (file == NULL) {
+		memcpy(&buffer[1], writeBuffer, count);
+	}
+	else {
+		fread(&buffer[1], 1, count, file);
+	}
+	
+	// 0xFF check
+	uint8_t allFF = 1;
+	for (int16_t x = 1; x <= count; x++) {
+		if (buffer[x] != 0xFF) {
+			allFF = 0;
+			break;
+		}
+	}
+	
+	if (allFF == 0) {
+		RS232_SendBuf(cport_nr, buffer, (count + 1)); // command + 1-256 bytes
+		RS232_drain(cport_nr);
+		
+		return 1;
+	}
+	
+	return 0;
 }
 
 // Send a single command byte
