@@ -15,6 +15,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <time.h>
+#include <math.h>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -343,7 +344,7 @@ int main(int argc, char **argv) {
 			endAddr = 0x7FFF;
 			
 			// Calculate banks needed from ROM file size
-			romBanks = fileSize / 16384;
+			romBanks = ceil((double) fileSize / (double) 16384);
 			
 			// Flash Setup
 			set_mode(GB_CART_MODE); // Gameboy mode
@@ -462,7 +463,7 @@ int main(int argc, char **argv) {
 			endAddr = 0x7FFF;
 			
 			// Calculate banks needed from ROM file size
-			romBanks = fileSize / 16384;
+			romBanks = ceil((double) fileSize / (double) 16384);
 			
 			// Flash Setup
 			set_mode(GB_CART_MODE); // Gameboy mode
@@ -558,7 +559,7 @@ int main(int argc, char **argv) {
 			}
 			
 			// Calculate banks needed from ROM file size
-			romBanks = fileSize / 16384;
+			romBanks = ceil((double) fileSize / (double) 16384);
 			
 			// Flash Setup
 			set_mode(GB_CART_MODE); // Gameboy mode
@@ -635,7 +636,7 @@ int main(int argc, char **argv) {
 			endAddr = 0x7FFF;
 			
 			// Calculate banks needed from ROM file size
-			romBanks = fileSize / 16384;
+			romBanks = ceil((double) fileSize / (double) 16384);
 			
 			// Flash Setup
 			set_mode(GB_CART_MODE); // Gameboy mode
@@ -730,7 +731,7 @@ int main(int argc, char **argv) {
 			}
 			
 			// Calculate banks needed from ROM file size
-			romBanks = fileSize / 16384;
+			romBanks = ceil((double) fileSize / (double) 16384);
 			
 			// Flash Setup
 			set_mode(GB_CART_MODE); // Gameboy mode
@@ -845,7 +846,7 @@ int main(int argc, char **argv) {
 			endAddr = 0x7FFF;
 			
 			// Calculate banks needed from ROM file size
-			romBanks = fileSize / 16384;
+			romBanks = ceil((double) fileSize / (double) 16384);
 			
 			// Flash Setup
 			set_mode(GB_CART_MODE); // Gameboy mode
@@ -937,7 +938,7 @@ int main(int argc, char **argv) {
 			endAddr = 0x7FFF;
 			
 			// Calculate banks needed from ROM file size
-			romBanks = fileSize / 16384;
+			romBanks = ceil((double) fileSize / (double) 16384);
 			
 			// Flash Setup
 			set_mode(GB_CART_MODE); // Gameboy mode
@@ -1083,7 +1084,7 @@ int main(int argc, char **argv) {
 			endAddr = 0x7FFF;
 			
 			// Calculate banks needed from ROM file size
-			romBanks = fileSize / 16384;
+			romBanks = ceil((double) fileSize / (double) 16384);
 			
 			// Flash Setup
 			set_mode(GB_CART_MODE); // Gameboy mode
@@ -1165,7 +1166,7 @@ int main(int argc, char **argv) {
 			endAddr = 0x7FFF;
 			
 			// Calculate banks needed from ROM file size
-			romBanks = fileSize / 16384;
+			romBanks = ceil((double) fileSize / (double) 16384);
 			
 			// Flash Setup
 			set_mode(GB_CART_MODE); // Gameboy mode
@@ -1258,7 +1259,7 @@ int main(int argc, char **argv) {
 			endAddr = 0x7FFF;
 			
 			// Calculate banks needed from ROM file size
-			romBanks = fileSize / 16384;
+			romBanks = ceil((double) fileSize / (double) 16384);
 			
 			// Flash Setup
 			set_mode(GB_CART_MODE); // Gameboy mode
@@ -1509,7 +1510,7 @@ int main(int argc, char **argv) {
 			endAddr = 0x7FFF;
 			
 			// Calculate banks needed from ROM file size
-			romBanks = fileSize / 16384;
+			romBanks = ceil((double) fileSize / (double) 16384);
 			
 			// Flash Setup
 			set_mode(GB_CART_MODE); // Gameboy mode
@@ -1636,7 +1637,7 @@ int main(int argc, char **argv) {
 			endAddr = 0x7FFF;
 			
 			// Calculate banks/8MB blocks needed from ROM file size
-			romBanks = fileSize / 16384;
+			romBanks = ceil((double) fileSize / (double) 16384);
 			uint8_t romBlocks = (romBanks / 512) + 1;
 			uint16_t romBanksCalc = fileSize / 16384;
 			uint16_t romBanksTotal = romBanksCalc;
@@ -1817,7 +1818,7 @@ int main(int argc, char **argv) {
 			}
 			
 			// Calculate banks needed from ROM file size
-			romBanks = fileSize / 16384;
+			romBanks = ceil((double) fileSize / (double) 16384);
 			
 			// Flash Setup
 			set_mode(GB_CART_MODE); // Gameboy mode
@@ -1932,7 +1933,7 @@ int main(int argc, char **argv) {
 			endAddr = 0x7FFF;
 			
 			// Calculate banks needed from ROM file size
-			romBanks = fileSize / 16384;
+			romBanks = ceil((double) fileSize / (double) 16384);
 			
 			// Flash Setup
 			set_mode(GB_CART_MODE); // Gameboy mode
@@ -2036,7 +2037,7 @@ int main(int argc, char **argv) {
 			endAddr = 0x7FFF;
 			
 			// Calculate banks needed from ROM file size
-			romBanks = fileSize / 16384;
+			romBanks = ceil((double) fileSize / (double) 16384);
 			
 			// Flash Setup
 			set_mode(GB_CART_MODE); // Gameboy mode
