@@ -22,8 +22,8 @@
 #define EXE_SUFFIX ""
 #endif
 
-uint8_t miniFirmware = 20;
-uint8_t standardFirmware = 20;
+uint8_t miniFirmware = 22;
+uint8_t standardFirmware = 22;
 
 #include "setup.h" // See defines, variables, constants, functions here
 
