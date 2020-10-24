@@ -1,0 +1,4246 @@
+   1               		.file	"main.c"
+   2               	__SP_H__ = 0x3e
+   3               	__SP_L__ = 0x3d
+   4               	__SREG__ = 0x3f
+   5               	__tmp_reg__ = 0
+   6               	__zero_reg__ = 1
+   7               		.text
+   8               	.Ltext0:
+   9               		.cfi_sections	.debug_frame
+  10               	.global	USART_Receive
+  12               	USART_Receive:
+  13               	.LFB12:
+  14               		.file 1 "setup.c"
+   1:setup.c       **** /*
+   2:setup.c       ****  GBxCart RW Mini
+   3:setup.c       ****  PCB version: 1.0
+   4:setup.c       ****  Firmware version: R22
+   5:setup.c       ****  Author: Alex from insideGadgets (www.insidegadgets.com)
+   6:setup.c       ****  Created: 7/11/2016
+   7:setup.c       ****  Last Modified: 24/10/2020
+   8:setup.c       ****  
+   9:setup.c       ****  */
+  10:setup.c       ****  
+  11:setup.c       **** #ifndef cbi
+  12:setup.c       **** #define cbi(sfr, bit) (_SFR_BYTE(sfr) &= ~_BV(bit))
+  13:setup.c       **** #endif
+  14:setup.c       **** #ifndef sbi
+  15:setup.c       **** #define sbi(sfr, bit) (_SFR_BYTE(sfr) |= _BV(bit))
+  16:setup.c       **** #endif
+  17:setup.c       **** 
+  18:setup.c       **** #ifndef NULL
+  19:setup.c       **** #define NULL ((void *)0)
+  20:setup.c       **** #endif
+  21:setup.c       **** 
+  22:setup.c       **** #define LOW 0
+  23:setup.c       **** #define HIGH 1
+  24:setup.c       **** #define false 0
+  25:setup.c       **** #define true 1
+  26:setup.c       **** 
+  27:setup.c       **** #define ACTIVITY_LED PD3
+  28:setup.c       **** 
+  29:setup.c       **** #define WR_PIN PD6
+  30:setup.c       **** #define RD_PIN PD5
+  31:setup.c       **** #define CS_MREQ_PIN PD4
+  32:setup.c       **** #define CS2_PIN PE2
+  33:setup.c       **** #define AUDIO_PIN PE1
+  34:setup.c       **** 
+  35:setup.c       **** #define wrPin_high	PORTD |= (1<<WR_PIN);
+  36:setup.c       **** #define wrPin_low		PORTD &= ~(1<<WR_PIN);
+  37:setup.c       **** #define rdPin_high	PORTD |= (1<<RD_PIN);
+  38:setup.c       **** #define rdPin_low		PORTD &= ~(1<<RD_PIN);
+  39:setup.c       **** #define cs_mreqPin_high		PORTD |= (1<<CS_MREQ_PIN);
+  40:setup.c       **** #define cs_mreqPin_low		PORTD &= ~(1<<CS_MREQ_PIN);
+  41:setup.c       **** #define cs2Pin_high		PORTE |= (1<<CS2_PIN);
+  42:setup.c       **** #define cs2Pin_low		PORTE &= ~(1<<CS2_PIN);
+  43:setup.c       **** #define audioPin_high	PORTE |= (1<<AUDIO_PIN);
+  44:setup.c       **** #define audioPin_low		PORTE &= ~(1<<AUDIO_PIN);
+  45:setup.c       **** 
+  46:setup.c       **** #define GB_MODE 1
+  47:setup.c       **** 
+  48:setup.c       **** // GB/GBC
+  49:setup.c       **** #define PORT_ADDR7_0 PORTB
+  50:setup.c       **** #define PORT_ADDR15_8 PORTA
+  51:setup.c       **** #define PORT_DATA7_0 PORTC
+  52:setup.c       **** 
+  53:setup.c       **** #define DDR_ADDR7_0 DDRB
+  54:setup.c       **** #define DDR_ADDR15_8 DDRA
+  55:setup.c       **** #define DDR_DATA7_0 DDRC
+  56:setup.c       **** 
+  57:setup.c       **** #define PIN_ADDR7_0 PINB
+  58:setup.c       **** #define PIN_ADDR15_8 PINA
+  59:setup.c       **** #define PIN_DATA7_0 PINC
+  60:setup.c       **** 
+  61:setup.c       **** #define BANK_WRITE 0
+  62:setup.c       **** #define MEMORY_WRITE 1
+  63:setup.c       **** 
+  64:setup.c       **** 
+  65:setup.c       **** // GB/GBC commands
+  66:setup.c       **** #define SET_START_ADDRESS 'A'
+  67:setup.c       **** #define READ_ROM_RAM 'R'
+  68:setup.c       **** #define READ_ROM_4000H 'Q'
+  69:setup.c       **** #define WRITE_RAM 'W'
+  70:setup.c       **** #define SET_BANK 'B'
+  71:setup.c       **** #define GB_CART_MODE 'G'
+  72:setup.c       **** 
+  73:setup.c       **** // Flash Cart commands
+  74:setup.c       **** #define GB_FLASH_WE_PIN 'P'
+  75:setup.c       **** 	#define WE_AS_AUDIO_PIN 'A'
+  76:setup.c       **** 	#define WE_AS_WR_PIN 'W'
+  77:setup.c       **** 
+  78:setup.c       **** #define GB_FLASH_PROGRAM_METHOD 'E'
+  79:setup.c       **** 	#define GB_FLASH_PROGRAM_555 0
+  80:setup.c       **** 	#define GB_FLASH_PROGRAM_AAA 1
+  81:setup.c       **** 	#define GB_FLASH_PROGRAM_555_BIT01_SWAPPED 2
+  82:setup.c       **** 	#define GB_FLASH_PROGRAM_AAA_BIT01_SWAPPED 3
+  83:setup.c       **** 	#define GB_FLASH_PROGRAM_5555 4
+  84:setup.c       **** 
+  85:setup.c       **** #define GB_FLASH_WRITE_BYTE 'F'
+  86:setup.c       **** #define GB_FLASH_WRITE_BUFFERED_32BYTE 'Y'
+  87:setup.c       **** #define GB_FLASH_WRITE_BUFFERED_256BYTE 'U'
+  88:setup.c       **** #define GB_FLASH_WRITE_64BYTE 'T'
+  89:setup.c       **** #define GB_FLASH_WRITE_64BYTE_PULSE_RESET 'J'
+  90:setup.c       **** #define GB_FLASH_WRITE_256BYTE 'X'
+  91:setup.c       **** #define GB_FLASH_WRITE_NP_128BYTE 'z'
+  92:setup.c       **** #define GB_FLASH_WRITE_INTEL_BUFFERED_32BYTE 'y'
+  93:setup.c       **** 
+  94:setup.c       **** #define GB_FLASH_BANK_1_COMMAND_WRITES 'N'
+  95:setup.c       **** 
+  96:setup.c       **** #define D0D1_NOT_SWAPPED 0
+  97:setup.c       **** #define D0D1_SWAPPED 1
+  98:setup.c       **** 
+  99:setup.c       **** // General commands
+ 100:setup.c       **** #define SEND_ACK '1'
+ 101:setup.c       **** #define CART_MODE 'C'
+ 102:setup.c       **** #define SET_INPUT 'I'
+ 103:setup.c       **** #define SET_OUTPUT 'O'
+ 104:setup.c       **** #define SET_OUTPUT_LOW 'L'
+ 105:setup.c       **** #define SET_OUTPUT_HIGH 'H'
+ 106:setup.c       **** #define READ_INPUT 'D'
+ 107:setup.c       **** #define RESET_COMMON_LINES 'M'
+ 108:setup.c       **** #define READ_FIRMWARE_VERSION 'V'
+ 109:setup.c       **** #define READ_PCB_VERSION 'h'
+ 110:setup.c       **** #define FAST_READ_CHECK '+'
+ 111:setup.c       **** 
+ 112:setup.c       **** #define RESET_AVR '*'
+ 113:setup.c       **** #define RESET_VALUE 0x7E5E1
+ 114:setup.c       **** 
+ 115:setup.c       **** 
+ 116:setup.c       **** char receivedBuffer[256];
+ 117:setup.c       **** char receivedChar;
+ 118:setup.c       **** 
+ 119:setup.c       **** char flashWriteWePin;
+ 120:setup.c       **** uint16_t flashWriteCycle[3][2];
+ 121:setup.c       **** uint8_t flashBank1CommandWrites = 0;
+ 122:setup.c       **** uint8_t lastBankAccessed = 0;
+ 123:setup.c       **** volatile uint8_t writingTimedout = 0;
+ 124:setup.c       **** 
+ 125:setup.c       **** uint8_t cartMode = GB_MODE;
+ 126:setup.c       **** 
+ 127:setup.c       **** // Receive USART data
+ 128:setup.c       **** uint8_t USART_Receive(void) {
+  15               		.loc 1 128 0
+  16               		.cfi_startproc
+  17               	/* prologue: function */
+  18               	/* frame size = 0 */
+  19               	/* stack size = 0 */
+  20               	.L__stack_usage = 0
+  21               	.L2:
+ 129:setup.c       **** 	while ( !(UCSRA & (1<<RXC)) ); // Wait for data to be received
+  22               		.loc 1 129 0 discriminator 1
+  23 0000 5F9B      		sbis 0xb,7
+  24 0002 00C0      		rjmp .L2
+ 130:setup.c       **** 	return UDR; // Get and return received data from buffer
+  25               		.loc 1 130 0
+  26 0004 8CB1      		in r24,0xc
+ 131:setup.c       **** }
+  27               		.loc 1 131 0
+  28 0006 0895      		ret
+  29               		.cfi_endproc
+  30               	.LFE12:
+  32               	.global	USART_Transmit
+  34               	USART_Transmit:
+  35               	.LFB13:
+ 132:setup.c       **** 
+ 133:setup.c       **** // Transmit USART data
+ 134:setup.c       **** void USART_Transmit(unsigned char data) {
+  36               		.loc 1 134 0
+  37               		.cfi_startproc
+  38               	/* prologue: function */
+  39               	/* frame size = 0 */
+  40               	/* stack size = 0 */
+  41               	.L__stack_usage = 0
+  42               	.LVL0:
+  43               	.L6:
+ 135:setup.c       **** 	while ( !( UCSRA & (1<<UDRE)) ); // Wait for empty transmit buffer
+  44               		.loc 1 135 0 discriminator 1
+  45 0008 5D9B      		sbis 0xb,5
+  46 000a 00C0      		rjmp .L6
+ 136:setup.c       **** 	UDR = data;
+  47               		.loc 1 136 0
+  48 000c 8CB9      		out 0xc,r24
+  49 000e 0895      		ret
+  50               		.cfi_endproc
+  51               	.LFE13:
+  53               	.global	usart_read_bytes
+  55               	usart_read_bytes:
+  56               	.LFB14:
+ 137:setup.c       **** }
+ 138:setup.c       **** 
+ 139:setup.c       **** // Read 1-256 bytes from the USART 
+ 140:setup.c       **** void usart_read_bytes(int count) {
+  57               		.loc 1 140 0
+  58               		.cfi_startproc
+  59               	.LVL1:
+  60 0010 0F93      		push r16
+  61               	.LCFI0:
+  62               		.cfi_def_cfa_offset 3
+  63               		.cfi_offset 16, -2
+  64 0012 1F93      		push r17
+  65               	.LCFI1:
+  66               		.cfi_def_cfa_offset 4
+  67               		.cfi_offset 17, -3
+  68 0014 CF93      		push r28
+  69               	.LCFI2:
+  70               		.cfi_def_cfa_offset 5
+  71               		.cfi_offset 28, -4
+  72 0016 DF93      		push r29
+  73               	.LCFI3:
+  74               		.cfi_def_cfa_offset 6
+  75               		.cfi_offset 29, -5
+  76               	/* prologue: function */
+  77               	/* frame size = 0 */
+  78               	/* stack size = 4 */
+  79               	.L__stack_usage = 4
+  80 0018 8C01      		movw r16,r24
+  81               	.LVL2:
+  82               	.LBB96:
+ 141:setup.c       **** 	for (int x = 0; x < count; x++) {
+  83               		.loc 1 141 0
+  84 001a C0E0      		ldi r28,lo8(receivedBuffer)
+  85 001c D0E0      		ldi r29,hi8(receivedBuffer)
+  86               	.LVL3:
+  87               	.L10:
+  88               		.loc 1 141 0 is_stmt 0 discriminator 1
+  89 001e CE01      		movw r24,r28
+  90 0020 8050      		subi r24,lo8(receivedBuffer)
+  91 0022 9040      		sbci r25,hi8(receivedBuffer)
+  92               	.LVL4:
+  93 0024 8017      		cp r24,r16
+  94 0026 9107      		cpc r25,r17
+  95 0028 04F4      		brge .L12
+ 142:setup.c       **** 		receivedBuffer[x] = USART_Receive();
+  96               		.loc 1 142 0 is_stmt 1 discriminator 3
+  97 002a 00D0      		rcall USART_Receive
+  98               	.LVL5:
+  99 002c 8993      		st Y+,r24
+ 100               	.LVL6:
+ 101 002e 00C0      		rjmp .L10
+ 102               	.LVL7:
+ 103               	.L12:
+ 104               	/* epilogue start */
+ 105               	.LBE96:
+ 143:setup.c       **** 	}
+ 144:setup.c       **** }
+ 106               		.loc 1 144 0
+ 107 0030 DF91      		pop r29
+ 108 0032 CF91      		pop r28
+ 109 0034 1F91      		pop r17
+ 110 0036 0F91      		pop r16
+ 111               	.LVL8:
+ 112 0038 0895      		ret
+ 113               		.cfi_endproc
+ 114               	.LFE14:
+ 116               	.global	usart_read_chars
+ 118               	usart_read_chars:
+ 119               	.LFB15:
+ 145:setup.c       **** 
+ 146:setup.c       **** // Read the USART until a 0 (string terminator byte) is received
+ 147:setup.c       **** void usart_read_chars(void) {
+ 120               		.loc 1 147 0
+ 121               		.cfi_startproc
+ 122 003a CF93      		push r28
+ 123               	.LCFI4:
+ 124               		.cfi_def_cfa_offset 3
+ 125               		.cfi_offset 28, -2
+ 126 003c DF93      		push r29
+ 127               	.LCFI5:
+ 128               		.cfi_def_cfa_offset 4
+ 129               		.cfi_offset 29, -3
+ 130               	/* prologue: function */
+ 131               	/* frame size = 0 */
+ 132               	/* stack size = 2 */
+ 133               	.L__stack_usage = 2
+ 134               	.LVL9:
+ 135 003e C0E0      		ldi r28,lo8(receivedBuffer)
+ 136 0040 D0E0      		ldi r29,hi8(receivedBuffer)
+ 137               	.LVL10:
+ 138               	.L14:
+ 148:setup.c       **** 	int x = 0;
+ 149:setup.c       **** 	while (1) {
+ 150:setup.c       **** 		receivedBuffer[x] = USART_Receive();
+ 139               		.loc 1 150 0
+ 140 0042 00D0      		rcall USART_Receive
+ 141               	.LVL11:
+ 142 0044 8993      		st Y+,r24
+ 143               	.LVL12:
+ 151:setup.c       **** 		if (receivedBuffer[x] == 0) {
+ 144               		.loc 1 151 0
+ 145 0046 8111      		cpse r24,__zero_reg__
+ 146 0048 00C0      		rjmp .L14
+ 147               	/* epilogue start */
+ 152:setup.c       **** 			break;
+ 153:setup.c       **** 		}
+ 154:setup.c       **** 		x++;
+ 155:setup.c       **** 	}
+ 156:setup.c       **** }
+ 148               		.loc 1 156 0
+ 149 004a DF91      		pop r29
+ 150 004c CF91      		pop r28
+ 151               	.LVL13:
+ 152 004e 0895      		ret
+ 153               		.cfi_endproc
+ 154               	.LFE15:
+ 156               	.global	rd_wr_csmreq_cs2_reset
+ 158               	rd_wr_csmreq_cs2_reset:
+ 159               	.LFB16:
+ 157:setup.c       **** 
+ 158:setup.c       **** // Turn RD, WR, CS/MREQ and CS2 to high so they are deselected (reset state)
+ 159:setup.c       **** void rd_wr_csmreq_cs2_reset(void) {
+ 160               		.loc 1 159 0
+ 161               		.cfi_startproc
+ 162               	/* prologue: function */
+ 163               	/* frame size = 0 */
+ 164               	/* stack size = 0 */
+ 165               	.L__stack_usage = 0
+ 160:setup.c       **** 	cs2Pin_high; // CS2 off
+ 166               		.loc 1 160 0
+ 167 0050 3A9A      		sbi 0x7,2
+ 161:setup.c       **** 	cs_mreqPin_high; // CS/MREQ off
+ 168               		.loc 1 161 0
+ 169 0052 949A      		sbi 0x12,4
+ 162:setup.c       **** 	rdPin_high; // RD off
+ 170               		.loc 1 162 0
+ 171 0054 959A      		sbi 0x12,5
+ 163:setup.c       **** 	wrPin_high; // WR off
+ 172               		.loc 1 163 0
+ 173 0056 969A      		sbi 0x12,6
+ 174 0058 0895      		ret
+ 175               		.cfi_endproc
+ 176               	.LFE16:
+ 178               	.global	gb_mode
+ 180               	gb_mode:
+ 181               	.LFB17:
+ 164:setup.c       **** }
+ 165:setup.c       **** 
+ 166:setup.c       **** 
+ 167:setup.c       **** 
+ 168:setup.c       **** // ****** Gameboy / Gameboy Colour functions ******
+ 169:setup.c       **** 
+ 170:setup.c       **** // Set Gameboy mode
+ 171:setup.c       **** void gb_mode(void) {
+ 182               		.loc 1 171 0
+ 183               		.cfi_startproc
+ 184               	/* prologue: function */
+ 185               	/* frame size = 0 */
+ 186               	/* stack size = 0 */
+ 187               	.L__stack_usage = 0
+ 172:setup.c       **** 	// Set inputs
+ 173:setup.c       **** 	PORT_DATA7_0 = 0;
+ 188               		.loc 1 173 0
+ 189 005a 15BA      		out 0x15,__zero_reg__
+ 174:setup.c       **** 	DDR_DATA7_0 = 0;
+ 190               		.loc 1 174 0
+ 191 005c 14BA      		out 0x14,__zero_reg__
+ 175:setup.c       **** 	
+ 176:setup.c       **** 	// Set outputs
+ 177:setup.c       **** 	PORT_ADDR7_0 = 0;
+ 192               		.loc 1 177 0
+ 193 005e 18BA      		out 0x18,__zero_reg__
+ 178:setup.c       **** 	PORT_ADDR15_8 = 0;
+ 194               		.loc 1 178 0
+ 195 0060 1BBA      		out 0x1b,__zero_reg__
+ 179:setup.c       **** 	DDR_ADDR7_0 = 0xFF;
+ 196               		.loc 1 179 0
+ 197 0062 8FEF      		ldi r24,lo8(-1)
+ 198 0064 87BB      		out 0x17,r24
+ 180:setup.c       **** 	DDR_ADDR15_8 = 0xFF;
+ 199               		.loc 1 180 0
+ 200 0066 8ABB      		out 0x1a,r24
+ 201 0068 0895      		ret
+ 202               		.cfi_endproc
+ 203               	.LFE17:
+ 205               	.global	set_16bit_address
+ 207               	set_16bit_address:
+ 208               	.LFB18:
+ 181:setup.c       **** }
+ 182:setup.c       **** 
+ 183:setup.c       **** // Set the 16 bit address on A15-0
+ 184:setup.c       **** void set_16bit_address(uint16_t address) {
+ 209               		.loc 1 184 0
+ 210               		.cfi_startproc
+ 211               	.LVL14:
+ 212               	/* prologue: function */
+ 213               	/* frame size = 0 */
+ 214               	/* stack size = 0 */
+ 215               	.L__stack_usage = 0
+ 185:setup.c       **** 	PORT_ADDR15_8 = (address >> 8);
+ 216               		.loc 1 185 0
+ 217 006a 9BBB      		out 0x1b,r25
+ 186:setup.c       **** 	PORT_ADDR7_0 = (address & 0xFF);
+ 218               		.loc 1 186 0
+ 219 006c 88BB      		out 0x18,r24
+ 220 006e 0895      		ret
+ 221               		.cfi_endproc
+ 222               	.LFE18:
+ 224               	.global	read_8bit_data
+ 226               	read_8bit_data:
+ 227               	.LFB19:
+ 187:setup.c       **** }
+ 188:setup.c       **** 
+ 189:setup.c       **** // Set the address and read a byte from the 8 bit data line
+ 190:setup.c       **** uint8_t read_8bit_data(uint16_t address) {
+ 228               		.loc 1 190 0
+ 229               		.cfi_startproc
+ 230               	.LVL15:
+ 231               	/* prologue: function */
+ 232               	/* frame size = 0 */
+ 233               	/* stack size = 0 */
+ 234               	.L__stack_usage = 0
+ 191:setup.c       **** 	set_16bit_address(address);
+ 235               		.loc 1 191 0
+ 236 0070 00D0      		rcall set_16bit_address
+ 237               	.LVL16:
+ 192:setup.c       **** 	
+ 193:setup.c       **** 	cs_mreqPin_low;
+ 238               		.loc 1 193 0
+ 239 0072 9498      		cbi 0x12,4
+ 194:setup.c       **** 	rdPin_low;
+ 240               		.loc 1 194 0
+ 241 0074 9598      		cbi 0x12,5
+ 195:setup.c       **** 	
+ 196:setup.c       **** 	asm volatile("nop"); // Delay a little (At 8MHz - minimum needed is 1 nops, 2 nops for GB camera)
+ 242               		.loc 1 196 0
+ 243               	/* #APP */
+ 244               	 ;  196 "setup.c" 1
+ 245 0076 0000      		nop
+ 246               	 ;  0 "" 2
+ 197:setup.c       **** 	asm volatile("nop");
+ 247               		.loc 1 197 0
+ 248               	 ;  197 "setup.c" 1
+ 249 0078 0000      		nop
+ 250               	 ;  0 "" 2
+ 198:setup.c       **** 	asm volatile("nop");
+ 251               		.loc 1 198 0
+ 252               	 ;  198 "setup.c" 1
+ 253 007a 0000      		nop
+ 254               	 ;  0 "" 2
+ 199:setup.c       **** 	asm volatile("nop");
+ 255               		.loc 1 199 0
+ 256               	 ;  199 "setup.c" 1
+ 257 007c 0000      		nop
+ 258               	 ;  0 "" 2
+ 200:setup.c       **** 	uint8_t data = PIN_DATA7_0; // Read data
+ 259               		.loc 1 200 0
+ 260               	/* #NOAPP */
+ 261 007e 83B3      		in r24,0x13
+ 262               	.LVL17:
+ 201:setup.c       **** 	
+ 202:setup.c       **** 	rdPin_high;
+ 263               		.loc 1 202 0
+ 264 0080 959A      		sbi 0x12,5
+ 203:setup.c       **** 	cs_mreqPin_high;
+ 265               		.loc 1 203 0
+ 266 0082 949A      		sbi 0x12,4
+ 204:setup.c       **** 	
+ 205:setup.c       **** 	return data;
+ 206:setup.c       **** }
+ 267               		.loc 1 206 0
+ 268 0084 0895      		ret
+ 269               		.cfi_endproc
+ 270               	.LFE19:
+ 272               	.global	write_8bit_data
+ 274               	write_8bit_data:
+ 275               	.LFB20:
+ 207:setup.c       **** 
+ 208:setup.c       **** // Set the address and write a byte to the 8 bit data line and pulse cs/mREQ if writing to RAM
+ 209:setup.c       **** void write_8bit_data(uint16_t address, uint8_t data, uint8_t type) {
+ 276               		.loc 1 209 0
+ 277               		.cfi_startproc
+ 278               	.LVL18:
+ 279 0086 CF93      		push r28
+ 280               	.LCFI6:
+ 281               		.cfi_def_cfa_offset 3
+ 282               		.cfi_offset 28, -2
+ 283 0088 DF93      		push r29
+ 284               	.LCFI7:
+ 285               		.cfi_def_cfa_offset 4
+ 286               		.cfi_offset 29, -3
+ 287               	/* prologue: function */
+ 288               	/* frame size = 0 */
+ 289               	/* stack size = 2 */
+ 290               	.L__stack_usage = 2
+ 291 008a D62F      		mov r29,r22
+ 292 008c C42F      		mov r28,r20
+ 210:setup.c       **** 	set_16bit_address(address);
+ 293               		.loc 1 210 0
+ 294 008e 00D0      		rcall set_16bit_address
+ 295               	.LVL19:
+ 211:setup.c       **** 	
+ 212:setup.c       **** 	DDR_DATA7_0 = 0xFF; // Set data pins as outputs
+ 296               		.loc 1 212 0
+ 297 0090 8FEF      		ldi r24,lo8(-1)
+ 298 0092 84BB      		out 0x14,r24
+ 213:setup.c       **** 	PORT_DATA7_0 = data; // Set data
+ 299               		.loc 1 213 0
+ 300 0094 D5BB      		out 0x15,r29
+ 214:setup.c       **** 	
+ 215:setup.c       **** 	// Pulse WR and mREQ if the type matches
+ 216:setup.c       **** 	wrPin_low;
+ 301               		.loc 1 216 0
+ 302 0096 9698      		cbi 0x12,6
+ 217:setup.c       **** 	if (type == MEMORY_WRITE) {
+ 303               		.loc 1 217 0
+ 304 0098 C130      		cpi r28,lo8(1)
+ 305 009a 01F4      		brne .L21
+ 218:setup.c       **** 		cs_mreqPin_low;
+ 306               		.loc 1 218 0
+ 307 009c 9498      		cbi 0x12,4
+ 308               	.L21:
+ 219:setup.c       **** 	}
+ 220:setup.c       **** 	
+ 221:setup.c       **** 	asm volatile("nop");
+ 309               		.loc 1 221 0
+ 310               	/* #APP */
+ 311               	 ;  221 "setup.c" 1
+ 312 009e 0000      		nop
+ 313               	 ;  0 "" 2
+ 222:setup.c       **** 	asm volatile("nop");
+ 314               		.loc 1 222 0
+ 315               	 ;  222 "setup.c" 1
+ 316 00a0 0000      		nop
+ 317               	 ;  0 "" 2
+ 223:setup.c       **** 	
+ 224:setup.c       **** 	if (type == MEMORY_WRITE) {
+ 318               		.loc 1 224 0
+ 319               	/* #NOAPP */
+ 320 00a2 C130      		cpi r28,lo8(1)
+ 321 00a4 01F4      		brne .L22
+ 225:setup.c       **** 		cs_mreqPin_high;
+ 322               		.loc 1 225 0
+ 323 00a6 949A      		sbi 0x12,4
+ 324               	.L22:
+ 226:setup.c       **** 	}
+ 227:setup.c       **** 	wrPin_high;
+ 325               		.loc 1 227 0
+ 326 00a8 969A      		sbi 0x12,6
+ 228:setup.c       **** 	
+ 229:setup.c       **** 	// Clear data outputs and set data pins as inputs
+ 230:setup.c       **** 	PORT_DATA7_0 = 0;
+ 327               		.loc 1 230 0
+ 328 00aa 15BA      		out 0x15,__zero_reg__
+ 231:setup.c       **** 	DDR_DATA7_0 = 0;
+ 329               		.loc 1 231 0
+ 330 00ac 14BA      		out 0x14,__zero_reg__
+ 331               	/* epilogue start */
+ 232:setup.c       **** }
+ 332               		.loc 1 232 0
+ 333 00ae DF91      		pop r29
+ 334               	.LVL20:
+ 335 00b0 CF91      		pop r28
+ 336               	.LVL21:
+ 337 00b2 0895      		ret
+ 338               		.cfi_endproc
+ 339               	.LFE20:
+ 341               	.global	gb_flash_read_byte
+ 343               	gb_flash_read_byte:
+ 344               	.LFB21:
+ 233:setup.c       **** 
+ 234:setup.c       **** 
+ 235:setup.c       **** 
+ 236:setup.c       **** // ---------- GB FLASH CARTS ----------
+ 237:setup.c       **** 
+ 238:setup.c       **** // Read a byte from the flash (No CS pin pulse)
+ 239:setup.c       **** uint8_t gb_flash_read_byte(uint16_t address) {
+ 345               		.loc 1 239 0
+ 346               		.cfi_startproc
+ 347               	.LVL22:
+ 348               	/* prologue: function */
+ 349               	/* frame size = 0 */
+ 350               	/* stack size = 0 */
+ 351               	.L__stack_usage = 0
+ 240:setup.c       **** 	PORT_DATA7_0 = 0;
+ 352               		.loc 1 240 0
+ 353 00b4 15BA      		out 0x15,__zero_reg__
+ 241:setup.c       **** 	DDR_DATA7_0 = 0;
+ 354               		.loc 1 241 0
+ 355 00b6 14BA      		out 0x14,__zero_reg__
+ 242:setup.c       **** 	
+ 243:setup.c       **** 	set_16bit_address(address);
+ 356               		.loc 1 243 0
+ 357 00b8 00D0      		rcall set_16bit_address
+ 358               	.LVL23:
+ 244:setup.c       **** 	
+ 245:setup.c       **** 	rdPin_low;
+ 359               		.loc 1 245 0
+ 360 00ba 9598      		cbi 0x12,5
+ 246:setup.c       **** 	asm volatile("nop"); // Delay a little
+ 361               		.loc 1 246 0
+ 362               	/* #APP */
+ 363               	 ;  246 "setup.c" 1
+ 364 00bc 0000      		nop
+ 365               	 ;  0 "" 2
+ 247:setup.c       **** 	asm volatile("nop");
+ 366               		.loc 1 247 0
+ 367               	 ;  247 "setup.c" 1
+ 368 00be 0000      		nop
+ 369               	 ;  0 "" 2
+ 248:setup.c       **** 	asm volatile("nop");
+ 370               		.loc 1 248 0
+ 371               	 ;  248 "setup.c" 1
+ 372 00c0 0000      		nop
+ 373               	 ;  0 "" 2
+ 249:setup.c       **** 	asm volatile("nop");
+ 374               		.loc 1 249 0
+ 375               	 ;  249 "setup.c" 1
+ 376 00c2 0000      		nop
+ 377               	 ;  0 "" 2
+ 250:setup.c       **** 	uint8_t data = PIN_DATA7_0; // Read data
+ 378               		.loc 1 250 0
+ 379               	/* #NOAPP */
+ 380 00c4 83B3      		in r24,0x13
+ 381               	.LVL24:
+ 251:setup.c       **** 	rdPin_high;
+ 382               		.loc 1 251 0
+ 383 00c6 959A      		sbi 0x12,5
+ 252:setup.c       **** 	
+ 253:setup.c       **** 	return data;
+ 254:setup.c       **** }
+ 384               		.loc 1 254 0
+ 385 00c8 0895      		ret
+ 386               		.cfi_endproc
+ 387               	.LFE21:
+ 389               	.global	gb_flash_write_bus_cycle
+ 391               	gb_flash_write_bus_cycle:
+ 392               	.LFB22:
+ 255:setup.c       **** 
+ 256:setup.c       **** // Set the address and data for the write byte cycle to the flash
+ 257:setup.c       **** void gb_flash_write_bus_cycle(uint16_t address, uint8_t data) {
+ 393               		.loc 1 257 0
+ 394               		.cfi_startproc
+ 395               	.LVL25:
+ 396 00ca CF93      		push r28
+ 397               	.LCFI8:
+ 398               		.cfi_def_cfa_offset 3
+ 399               		.cfi_offset 28, -2
+ 400               	/* prologue: function */
+ 401               	/* frame size = 0 */
+ 402               	/* stack size = 1 */
+ 403               	.L__stack_usage = 1
+ 404 00cc C62F      		mov r28,r22
+ 258:setup.c       **** 	DDR_DATA7_0 = 0xFF; // Set data pins as outputs
+ 405               		.loc 1 258 0
+ 406 00ce 2FEF      		ldi r18,lo8(-1)
+ 407 00d0 24BB      		out 0x14,r18
+ 259:setup.c       **** 	set_16bit_address(address);
+ 408               		.loc 1 259 0
+ 409 00d2 00D0      		rcall set_16bit_address
+ 410               	.LVL26:
+ 260:setup.c       **** 	PORT_DATA7_0 = data;
+ 411               		.loc 1 260 0
+ 412 00d4 C5BB      		out 0x15,r28
+ 261:setup.c       **** 	
+ 262:setup.c       **** 	if (flashWriteWePin == WE_AS_AUDIO_PIN) { // Audio pin
+ 413               		.loc 1 262 0
+ 414 00d6 8091 0000 		lds r24,flashWriteWePin
+ 415 00da 8134      		cpi r24,lo8(65)
+ 416 00dc 01F4      		brne .L25
+ 263:setup.c       **** 		audioPin_low; // WE low
+ 417               		.loc 1 263 0
+ 418 00de 3998      		cbi 0x7,1
+ 264:setup.c       **** 		asm volatile("nop");
+ 419               		.loc 1 264 0
+ 420               	/* #APP */
+ 421               	 ;  264 "setup.c" 1
+ 422 00e0 0000      		nop
+ 423               	 ;  0 "" 2
+ 265:setup.c       **** 		asm volatile("nop");
+ 424               		.loc 1 265 0
+ 425               	 ;  265 "setup.c" 1
+ 426 00e2 0000      		nop
+ 427               	 ;  0 "" 2
+ 266:setup.c       **** 		asm volatile("nop");
+ 428               		.loc 1 266 0
+ 429               	 ;  266 "setup.c" 1
+ 430 00e4 0000      		nop
+ 431               	 ;  0 "" 2
+ 267:setup.c       **** 		asm volatile("nop");
+ 432               		.loc 1 267 0
+ 433               	 ;  267 "setup.c" 1
+ 434 00e6 0000      		nop
+ 435               	 ;  0 "" 2
+ 268:setup.c       **** 		asm volatile("nop");
+ 436               		.loc 1 268 0
+ 437               	 ;  268 "setup.c" 1
+ 438 00e8 0000      		nop
+ 439               	 ;  0 "" 2
+ 269:setup.c       **** 		asm volatile("nop");
+ 440               		.loc 1 269 0
+ 441               	 ;  269 "setup.c" 1
+ 442 00ea 0000      		nop
+ 443               	 ;  0 "" 2
+ 270:setup.c       **** 		audioPin_high; // WE high
+ 444               		.loc 1 270 0
+ 445               	/* #NOAPP */
+ 446 00ec 399A      		sbi 0x7,1
+ 447 00ee 00C0      		rjmp .L26
+ 448               	.L25:
+ 271:setup.c       **** 	}
+ 272:setup.c       **** 	else { // WR pin
+ 273:setup.c       **** 		wrPin_low; // WE low
+ 449               		.loc 1 273 0
+ 450 00f0 9698      		cbi 0x12,6
+ 274:setup.c       **** 		asm volatile("nop");
+ 451               		.loc 1 274 0
+ 452               	/* #APP */
+ 453               	 ;  274 "setup.c" 1
+ 454 00f2 0000      		nop
+ 455               	 ;  0 "" 2
+ 275:setup.c       **** 		asm volatile("nop");
+ 456               		.loc 1 275 0
+ 457               	 ;  275 "setup.c" 1
+ 458 00f4 0000      		nop
+ 459               	 ;  0 "" 2
+ 276:setup.c       **** 		asm volatile("nop");
+ 460               		.loc 1 276 0
+ 461               	 ;  276 "setup.c" 1
+ 462 00f6 0000      		nop
+ 463               	 ;  0 "" 2
+ 277:setup.c       **** 		asm volatile("nop");
+ 464               		.loc 1 277 0
+ 465               	 ;  277 "setup.c" 1
+ 466 00f8 0000      		nop
+ 467               	 ;  0 "" 2
+ 278:setup.c       **** 		asm volatile("nop");
+ 468               		.loc 1 278 0
+ 469               	 ;  278 "setup.c" 1
+ 470 00fa 0000      		nop
+ 471               	 ;  0 "" 2
+ 279:setup.c       **** 		asm volatile("nop");
+ 472               		.loc 1 279 0
+ 473               	 ;  279 "setup.c" 1
+ 474 00fc 0000      		nop
+ 475               	 ;  0 "" 2
+ 280:setup.c       **** 		wrPin_high; // WE high
+ 476               		.loc 1 280 0
+ 477               	/* #NOAPP */
+ 478 00fe 969A      		sbi 0x12,6
+ 479               	.L26:
+ 281:setup.c       **** 	}
+ 282:setup.c       **** 	
+ 283:setup.c       **** 	// Clear data outputs and set data pins as inputs
+ 284:setup.c       **** 	PORT_DATA7_0 = 0;
+ 480               		.loc 1 284 0
+ 481 0100 15BA      		out 0x15,__zero_reg__
+ 285:setup.c       **** 	DDR_DATA7_0 = 0;
+ 482               		.loc 1 285 0
+ 483 0102 14BA      		out 0x14,__zero_reg__
+ 484               	/* epilogue start */
+ 286:setup.c       **** }
+ 485               		.loc 1 286 0
+ 486 0104 CF91      		pop r28
+ 487               	.LVL27:
+ 488 0106 0895      		ret
+ 489               		.cfi_endproc
+ 490               	.LFE22:
+ 492               	.global	gb_flash_write_byte
+ 494               	gb_flash_write_byte:
+ 495               	.LFB23:
+ 287:setup.c       **** 
+ 288:setup.c       **** // Write a single byte to the Flash address. Takes 10-50us to program each byte.
+ 289:setup.c       **** void gb_flash_write_byte(uint16_t address, uint8_t data) {
+ 496               		.loc 1 289 0
+ 497               		.cfi_startproc
+ 498               	.LVL28:
+ 499 0108 1F93      		push r17
+ 500               	.LCFI9:
+ 501               		.cfi_def_cfa_offset 3
+ 502               		.cfi_offset 17, -2
+ 503 010a CF93      		push r28
+ 504               	.LCFI10:
+ 505               		.cfi_def_cfa_offset 4
+ 506               		.cfi_offset 28, -3
+ 507 010c DF93      		push r29
+ 508               	.LCFI11:
+ 509               		.cfi_def_cfa_offset 5
+ 510               		.cfi_offset 29, -4
+ 511               	/* prologue: function */
+ 512               	/* frame size = 0 */
+ 513               	/* stack size = 3 */
+ 514               	.L__stack_usage = 3
+ 515 010e EC01      		movw r28,r24
+ 516 0110 162F      		mov r17,r22
+ 290:setup.c       **** 	gb_flash_write_bus_cycle(flashWriteCycle[0][0], flashWriteCycle[0][1]);
+ 517               		.loc 1 290 0
+ 518 0112 6091 0000 		lds r22,flashWriteCycle+2
+ 519               	.LVL29:
+ 520 0116 8091 0000 		lds r24,flashWriteCycle
+ 521 011a 9091 0000 		lds r25,flashWriteCycle+1
+ 522               	.LVL30:
+ 523 011e 00D0      		rcall gb_flash_write_bus_cycle
+ 524               	.LVL31:
+ 291:setup.c       **** 	gb_flash_write_bus_cycle(flashWriteCycle[1][0], flashWriteCycle[1][1]);
+ 525               		.loc 1 291 0
+ 526 0120 6091 0000 		lds r22,flashWriteCycle+6
+ 527 0124 8091 0000 		lds r24,flashWriteCycle+4
+ 528 0128 9091 0000 		lds r25,flashWriteCycle+4+1
+ 529 012c 00D0      		rcall gb_flash_write_bus_cycle
+ 530               	.LVL32:
+ 292:setup.c       **** 	gb_flash_write_bus_cycle(flashWriteCycle[2][0], flashWriteCycle[2][1]);
+ 531               		.loc 1 292 0
+ 532 012e 6091 0000 		lds r22,flashWriteCycle+10
+ 533 0132 8091 0000 		lds r24,flashWriteCycle+8
+ 534 0136 9091 0000 		lds r25,flashWriteCycle+8+1
+ 535 013a 00D0      		rcall gb_flash_write_bus_cycle
+ 536               	.LVL33:
+ 293:setup.c       **** 	gb_flash_write_bus_cycle(address, data);
+ 537               		.loc 1 293 0
+ 538 013c 612F      		mov r22,r17
+ 539 013e CE01      		movw r24,r28
+ 540 0140 00D0      		rcall gb_flash_write_bus_cycle
+ 541               	.LVL34:
+ 542               	.LBB97:
+ 543               	.LBB98:
+ 544               		.file 2 "c:\\winavr-20100110\\avr\\include\\util\\delay.h"
+   1:c:\winavr-20100110\avr\include\util\delay.h **** /* Copyright (c) 2002, Marek Michalkiewicz
+   2:c:\winavr-20100110\avr\include\util\delay.h ****    Copyright (c) 2004,2005,2007 Joerg Wunsch
+   3:c:\winavr-20100110\avr\include\util\delay.h ****    Copyright (c) 2007  Florin-Viorel Petrov
+   4:c:\winavr-20100110\avr\include\util\delay.h ****    All rights reserved.
+   5:c:\winavr-20100110\avr\include\util\delay.h **** 
+   6:c:\winavr-20100110\avr\include\util\delay.h ****    Redistribution and use in source and binary forms, with or without
+   7:c:\winavr-20100110\avr\include\util\delay.h ****    modification, are permitted provided that the following conditions are met:
+   8:c:\winavr-20100110\avr\include\util\delay.h **** 
+   9:c:\winavr-20100110\avr\include\util\delay.h ****    * Redistributions of source code must retain the above copyright
+  10:c:\winavr-20100110\avr\include\util\delay.h ****      notice, this list of conditions and the following disclaimer.
+  11:c:\winavr-20100110\avr\include\util\delay.h **** 
+  12:c:\winavr-20100110\avr\include\util\delay.h ****    * Redistributions in binary form must reproduce the above copyright
+  13:c:\winavr-20100110\avr\include\util\delay.h ****      notice, this list of conditions and the following disclaimer in
+  14:c:\winavr-20100110\avr\include\util\delay.h ****      the documentation and/or other materials provided with the
+  15:c:\winavr-20100110\avr\include\util\delay.h ****      distribution.
+  16:c:\winavr-20100110\avr\include\util\delay.h **** 
+  17:c:\winavr-20100110\avr\include\util\delay.h ****    * Neither the name of the copyright holders nor the names of
+  18:c:\winavr-20100110\avr\include\util\delay.h ****      contributors may be used to endorse or promote products derived
+  19:c:\winavr-20100110\avr\include\util\delay.h ****      from this software without specific prior written permission.
+  20:c:\winavr-20100110\avr\include\util\delay.h **** 
+  21:c:\winavr-20100110\avr\include\util\delay.h ****   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+  22:c:\winavr-20100110\avr\include\util\delay.h ****   AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+  23:c:\winavr-20100110\avr\include\util\delay.h ****   IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+  24:c:\winavr-20100110\avr\include\util\delay.h ****   ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+  25:c:\winavr-20100110\avr\include\util\delay.h ****   LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+  26:c:\winavr-20100110\avr\include\util\delay.h ****   CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+  27:c:\winavr-20100110\avr\include\util\delay.h ****   SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+  28:c:\winavr-20100110\avr\include\util\delay.h ****   INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+  29:c:\winavr-20100110\avr\include\util\delay.h ****   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+  30:c:\winavr-20100110\avr\include\util\delay.h ****   ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+  31:c:\winavr-20100110\avr\include\util\delay.h ****   POSSIBILITY OF SUCH DAMAGE. */
+  32:c:\winavr-20100110\avr\include\util\delay.h **** 
+  33:c:\winavr-20100110\avr\include\util\delay.h **** /* $Id$ */
+  34:c:\winavr-20100110\avr\include\util\delay.h **** 
+  35:c:\winavr-20100110\avr\include\util\delay.h **** #ifndef _UTIL_DELAY_H_
+  36:c:\winavr-20100110\avr\include\util\delay.h **** #define _UTIL_DELAY_H_ 1
+  37:c:\winavr-20100110\avr\include\util\delay.h **** 
+  38:c:\winavr-20100110\avr\include\util\delay.h **** #ifndef __DOXYGEN__
+  39:c:\winavr-20100110\avr\include\util\delay.h **** #  ifndef __HAS_DELAY_CYCLES
+  40:c:\winavr-20100110\avr\include\util\delay.h **** #    define __HAS_DELAY_CYCLES 1
+  41:c:\winavr-20100110\avr\include\util\delay.h **** #  endif
+  42:c:\winavr-20100110\avr\include\util\delay.h **** #endif  /* __DOXYGEN__ */
+  43:c:\winavr-20100110\avr\include\util\delay.h **** 
+  44:c:\winavr-20100110\avr\include\util\delay.h **** #include <inttypes.h>
+  45:c:\winavr-20100110\avr\include\util\delay.h **** #include <util/delay_basic.h>
+  46:c:\winavr-20100110\avr\include\util\delay.h **** #include <math.h>
+  47:c:\winavr-20100110\avr\include\util\delay.h **** 
+  48:c:\winavr-20100110\avr\include\util\delay.h **** /** \file */
+  49:c:\winavr-20100110\avr\include\util\delay.h **** /** \defgroup util_delay <util/delay.h>: Convenience functions for busy-wait delay loops
+  50:c:\winavr-20100110\avr\include\util\delay.h ****     \code
+  51:c:\winavr-20100110\avr\include\util\delay.h ****     #define F_CPU 1000000UL  // 1 MHz
+  52:c:\winavr-20100110\avr\include\util\delay.h ****     //#define F_CPU 14.7456E6
+  53:c:\winavr-20100110\avr\include\util\delay.h ****     #include <util/delay.h>
+  54:c:\winavr-20100110\avr\include\util\delay.h ****     \endcode
+  55:c:\winavr-20100110\avr\include\util\delay.h **** 
+  56:c:\winavr-20100110\avr\include\util\delay.h ****     \note As an alternative method, it is possible to pass the
+  57:c:\winavr-20100110\avr\include\util\delay.h ****     F_CPU macro down to the compiler from the Makefile.
+  58:c:\winavr-20100110\avr\include\util\delay.h ****     Obviously, in that case, no \c \#define statement should be
+  59:c:\winavr-20100110\avr\include\util\delay.h ****     used.
+  60:c:\winavr-20100110\avr\include\util\delay.h **** 
+  61:c:\winavr-20100110\avr\include\util\delay.h ****     The functions in this header file are wrappers around the basic
+  62:c:\winavr-20100110\avr\include\util\delay.h ****     busy-wait functions from <util/delay_basic.h>.  They are meant as
+  63:c:\winavr-20100110\avr\include\util\delay.h ****     convenience functions where actual time values can be specified
+  64:c:\winavr-20100110\avr\include\util\delay.h ****     rather than a number of cycles to wait for.  The idea behind is
+  65:c:\winavr-20100110\avr\include\util\delay.h ****     that compile-time constant expressions will be eliminated by
+  66:c:\winavr-20100110\avr\include\util\delay.h ****     compiler optimization so floating-point expressions can be used
+  67:c:\winavr-20100110\avr\include\util\delay.h ****     to calculate the number of delay cycles needed based on the CPU
+  68:c:\winavr-20100110\avr\include\util\delay.h ****     frequency passed by the macro F_CPU.
+  69:c:\winavr-20100110\avr\include\util\delay.h **** 
+  70:c:\winavr-20100110\avr\include\util\delay.h ****     \note In order for these functions to work as intended, compiler
+  71:c:\winavr-20100110\avr\include\util\delay.h ****     optimizations <em>must</em> be enabled, and the delay time
+  72:c:\winavr-20100110\avr\include\util\delay.h ****     <em>must</em> be an expression that is a known constant at
+  73:c:\winavr-20100110\avr\include\util\delay.h ****     compile-time.  If these requirements are not met, the resulting
+  74:c:\winavr-20100110\avr\include\util\delay.h ****     delay will be much longer (and basically unpredictable), and
+  75:c:\winavr-20100110\avr\include\util\delay.h ****     applications that otherwise do not use floating-point calculations
+  76:c:\winavr-20100110\avr\include\util\delay.h ****     will experience severe code bloat by the floating-point library
+  77:c:\winavr-20100110\avr\include\util\delay.h ****     routines linked into the application.
+  78:c:\winavr-20100110\avr\include\util\delay.h **** 
+  79:c:\winavr-20100110\avr\include\util\delay.h ****     The functions available allow the specification of microsecond, and
+  80:c:\winavr-20100110\avr\include\util\delay.h ****     millisecond delays directly, using the application-supplied macro
+  81:c:\winavr-20100110\avr\include\util\delay.h ****     F_CPU as the CPU clock frequency (in Hertz).
+  82:c:\winavr-20100110\avr\include\util\delay.h **** 
+  83:c:\winavr-20100110\avr\include\util\delay.h **** */
+  84:c:\winavr-20100110\avr\include\util\delay.h **** 
+  85:c:\winavr-20100110\avr\include\util\delay.h **** #if !defined(__DOXYGEN__)
+  86:c:\winavr-20100110\avr\include\util\delay.h **** static __inline__ void _delay_us(double __us) __attribute__((__always_inline__));
+  87:c:\winavr-20100110\avr\include\util\delay.h **** static __inline__ void _delay_ms(double __ms) __attribute__((__always_inline__));
+  88:c:\winavr-20100110\avr\include\util\delay.h **** #endif
+  89:c:\winavr-20100110\avr\include\util\delay.h **** 
+  90:c:\winavr-20100110\avr\include\util\delay.h **** #ifndef F_CPU
+  91:c:\winavr-20100110\avr\include\util\delay.h **** /* prevent compiler error by supplying a default */
+  92:c:\winavr-20100110\avr\include\util\delay.h **** # warning "F_CPU not defined for <util/delay.h>"
+  93:c:\winavr-20100110\avr\include\util\delay.h **** /** \ingroup util_delay
+  94:c:\winavr-20100110\avr\include\util\delay.h ****     \def F_CPU
+  95:c:\winavr-20100110\avr\include\util\delay.h ****     \brief CPU frequency in Hz
+  96:c:\winavr-20100110\avr\include\util\delay.h **** 
+  97:c:\winavr-20100110\avr\include\util\delay.h ****     The macro F_CPU specifies the CPU frequency to be considered by
+  98:c:\winavr-20100110\avr\include\util\delay.h ****     the delay macros.  This macro is normally supplied by the
+  99:c:\winavr-20100110\avr\include\util\delay.h ****     environment (e.g. from within a project header, or the project's
+ 100:c:\winavr-20100110\avr\include\util\delay.h ****     Makefile).  The value 1 MHz here is only provided as a "vanilla"
+ 101:c:\winavr-20100110\avr\include\util\delay.h ****     fallback if no such user-provided definition could be found.
+ 102:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 103:c:\winavr-20100110\avr\include\util\delay.h ****     In terms of the delay functions, the CPU frequency can be given as
+ 104:c:\winavr-20100110\avr\include\util\delay.h ****     a floating-point constant (e.g. 3.6864E6 for 3.6864 MHz).
+ 105:c:\winavr-20100110\avr\include\util\delay.h ****     However, the macros in <util/setbaud.h> require it to be an
+ 106:c:\winavr-20100110\avr\include\util\delay.h ****     integer value.
+ 107:c:\winavr-20100110\avr\include\util\delay.h ****  */
+ 108:c:\winavr-20100110\avr\include\util\delay.h **** # define F_CPU 1000000UL
+ 109:c:\winavr-20100110\avr\include\util\delay.h **** #endif
+ 110:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 111:c:\winavr-20100110\avr\include\util\delay.h **** #ifndef __OPTIMIZE__
+ 112:c:\winavr-20100110\avr\include\util\delay.h **** # warning "Compiler optimizations disabled; functions from <util/delay.h> won't work as designed"
+ 113:c:\winavr-20100110\avr\include\util\delay.h **** #endif
+ 114:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 115:c:\winavr-20100110\avr\include\util\delay.h **** #if __HAS_DELAY_CYCLES && defined(__OPTIMIZE__) && \
+ 116:c:\winavr-20100110\avr\include\util\delay.h ****   !defined(__DELAY_BACKWARD_COMPATIBLE__) &&	   \
+ 117:c:\winavr-20100110\avr\include\util\delay.h ****   __STDC_HOSTED__
+ 118:c:\winavr-20100110\avr\include\util\delay.h **** #  include <math.h>
+ 119:c:\winavr-20100110\avr\include\util\delay.h **** #endif
+ 120:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 121:c:\winavr-20100110\avr\include\util\delay.h **** /**
+ 122:c:\winavr-20100110\avr\include\util\delay.h ****    \ingroup util_delay
+ 123:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 124:c:\winavr-20100110\avr\include\util\delay.h ****    Perform a delay of \c __ms milliseconds, using _delay_loop_2().
+ 125:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 126:c:\winavr-20100110\avr\include\util\delay.h ****    The macro F_CPU is supposed to be defined to a
+ 127:c:\winavr-20100110\avr\include\util\delay.h ****    constant defining the CPU clock frequency (in Hertz).
+ 128:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 129:c:\winavr-20100110\avr\include\util\delay.h ****    The maximal possible delay is 262.14 ms / F_CPU in MHz.
+ 130:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 131:c:\winavr-20100110\avr\include\util\delay.h ****    When the user request delay which exceed the maximum possible one,
+ 132:c:\winavr-20100110\avr\include\util\delay.h ****    _delay_ms() provides a decreased resolution functionality. In this
+ 133:c:\winavr-20100110\avr\include\util\delay.h ****    mode _delay_ms() will work with a resolution of 1/10 ms, providing
+ 134:c:\winavr-20100110\avr\include\util\delay.h ****    delays up to 6.5535 seconds (independent from CPU frequency).  The
+ 135:c:\winavr-20100110\avr\include\util\delay.h ****    user will not be informed about decreased resolution.
+ 136:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 137:c:\winavr-20100110\avr\include\util\delay.h ****    If the avr-gcc toolchain has __builtin_avr_delay_cycles()
+ 138:c:\winavr-20100110\avr\include\util\delay.h ****    support, maximal possible delay is 4294967.295 ms/ F_CPU in MHz. For
+ 139:c:\winavr-20100110\avr\include\util\delay.h ****    values greater than the maximal possible delay, overflows results in
+ 140:c:\winavr-20100110\avr\include\util\delay.h ****    no delay i.e., 0ms.
+ 141:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 142:c:\winavr-20100110\avr\include\util\delay.h ****    Conversion of \c __ms into clock cycles may not always result in
+ 143:c:\winavr-20100110\avr\include\util\delay.h ****    integer.  By default, the clock cycles rounded up to next
+ 144:c:\winavr-20100110\avr\include\util\delay.h ****    integer. This ensures that the user gets at least \c __ms
+ 145:c:\winavr-20100110\avr\include\util\delay.h ****    microseconds of delay.
+ 146:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 147:c:\winavr-20100110\avr\include\util\delay.h ****    Alternatively, by defining the macro \c __DELAY_ROUND_DOWN__, or
+ 148:c:\winavr-20100110\avr\include\util\delay.h ****    \c __DELAY_ROUND_CLOSEST__, before including this header file, the
+ 149:c:\winavr-20100110\avr\include\util\delay.h ****    algorithm can be made to round down, or round to closest integer,
+ 150:c:\winavr-20100110\avr\include\util\delay.h ****    respectively.
+ 151:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 152:c:\winavr-20100110\avr\include\util\delay.h ****    \note
+ 153:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 154:c:\winavr-20100110\avr\include\util\delay.h ****    The implementation of _delay_ms() based on
+ 155:c:\winavr-20100110\avr\include\util\delay.h ****    __builtin_avr_delay_cycles() is not backward compatible with older
+ 156:c:\winavr-20100110\avr\include\util\delay.h ****    implementations.  In order to get functionality backward compatible
+ 157:c:\winavr-20100110\avr\include\util\delay.h ****    with previous versions, the macro \c "__DELAY_BACKWARD_COMPATIBLE__"
+ 158:c:\winavr-20100110\avr\include\util\delay.h ****    must be defined before including this header file. Also, the
+ 159:c:\winavr-20100110\avr\include\util\delay.h ****    backward compatible algorithm will be chosen if the code is
+ 160:c:\winavr-20100110\avr\include\util\delay.h ****    compiled in a <em>freestanding environment</em> (GCC option
+ 161:c:\winavr-20100110\avr\include\util\delay.h ****    \c -ffreestanding), as the math functions required for rounding are
+ 162:c:\winavr-20100110\avr\include\util\delay.h ****    not available to the compiler then.
+ 163:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 164:c:\winavr-20100110\avr\include\util\delay.h ****  */
+ 165:c:\winavr-20100110\avr\include\util\delay.h **** void
+ 166:c:\winavr-20100110\avr\include\util\delay.h **** _delay_ms(double __ms)
+ 167:c:\winavr-20100110\avr\include\util\delay.h **** {
+ 168:c:\winavr-20100110\avr\include\util\delay.h **** 	double __tmp ;
+ 169:c:\winavr-20100110\avr\include\util\delay.h **** #if __HAS_DELAY_CYCLES && defined(__OPTIMIZE__) && \
+ 170:c:\winavr-20100110\avr\include\util\delay.h ****   !defined(__DELAY_BACKWARD_COMPATIBLE__) &&	   \
+ 171:c:\winavr-20100110\avr\include\util\delay.h ****   __STDC_HOSTED__
+ 172:c:\winavr-20100110\avr\include\util\delay.h **** 	uint32_t __ticks_dc;
+ 173:c:\winavr-20100110\avr\include\util\delay.h **** 	extern void __builtin_avr_delay_cycles(unsigned long);
+ 174:c:\winavr-20100110\avr\include\util\delay.h **** 	__tmp = ((F_CPU) / 1e3) * __ms;
+ 175:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 176:c:\winavr-20100110\avr\include\util\delay.h **** 	#if defined(__DELAY_ROUND_DOWN__)
+ 177:c:\winavr-20100110\avr\include\util\delay.h **** 		__ticks_dc = (uint32_t)fabs(__tmp);
+ 178:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 179:c:\winavr-20100110\avr\include\util\delay.h **** 	#elif defined(__DELAY_ROUND_CLOSEST__)
+ 180:c:\winavr-20100110\avr\include\util\delay.h **** 		__ticks_dc = (uint32_t)(fabs(__tmp)+0.5);
+ 181:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 182:c:\winavr-20100110\avr\include\util\delay.h **** 	#else
+ 183:c:\winavr-20100110\avr\include\util\delay.h **** 		//round up by default
+ 184:c:\winavr-20100110\avr\include\util\delay.h **** 		__ticks_dc = (uint32_t)(ceil(fabs(__tmp)));
+ 185:c:\winavr-20100110\avr\include\util\delay.h **** 	#endif
+ 186:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 187:c:\winavr-20100110\avr\include\util\delay.h **** 	__builtin_avr_delay_cycles(__ticks_dc);
+ 188:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 189:c:\winavr-20100110\avr\include\util\delay.h **** #else
+ 190:c:\winavr-20100110\avr\include\util\delay.h **** 	uint16_t __ticks;
+ 191:c:\winavr-20100110\avr\include\util\delay.h **** 	__tmp = ((F_CPU) / 4e3) * __ms;
+ 192:c:\winavr-20100110\avr\include\util\delay.h **** 	if (__tmp < 1.0)
+ 193:c:\winavr-20100110\avr\include\util\delay.h **** 		__ticks = 1;
+ 194:c:\winavr-20100110\avr\include\util\delay.h **** 	else if (__tmp > 65535)
+ 195:c:\winavr-20100110\avr\include\util\delay.h **** 	{
+ 196:c:\winavr-20100110\avr\include\util\delay.h **** 		//	__ticks = requested delay in 1/10 ms
+ 197:c:\winavr-20100110\avr\include\util\delay.h **** 		__ticks = (uint16_t) (__ms * 10.0);
+ 198:c:\winavr-20100110\avr\include\util\delay.h **** 		while(__ticks)
+ 199:c:\winavr-20100110\avr\include\util\delay.h **** 		{
+ 200:c:\winavr-20100110\avr\include\util\delay.h **** 			// wait 1/10 ms
+ 201:c:\winavr-20100110\avr\include\util\delay.h **** 			_delay_loop_2(((F_CPU) / 4e3) / 10);
+ 202:c:\winavr-20100110\avr\include\util\delay.h **** 			__ticks --;
+ 203:c:\winavr-20100110\avr\include\util\delay.h **** 		}
+ 204:c:\winavr-20100110\avr\include\util\delay.h **** 		return;
+ 205:c:\winavr-20100110\avr\include\util\delay.h **** 	}
+ 206:c:\winavr-20100110\avr\include\util\delay.h **** 	else
+ 207:c:\winavr-20100110\avr\include\util\delay.h **** 		__ticks = (uint16_t)__tmp;
+ 208:c:\winavr-20100110\avr\include\util\delay.h **** 	_delay_loop_2(__ticks);
+ 209:c:\winavr-20100110\avr\include\util\delay.h **** #endif
+ 210:c:\winavr-20100110\avr\include\util\delay.h **** }
+ 211:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 212:c:\winavr-20100110\avr\include\util\delay.h **** /**
+ 213:c:\winavr-20100110\avr\include\util\delay.h ****    \ingroup util_delay
+ 214:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 215:c:\winavr-20100110\avr\include\util\delay.h ****    Perform a delay of \c __us microseconds, using _delay_loop_1().
+ 216:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 217:c:\winavr-20100110\avr\include\util\delay.h ****    The macro F_CPU is supposed to be defined to a
+ 218:c:\winavr-20100110\avr\include\util\delay.h ****    constant defining the CPU clock frequency (in Hertz).
+ 219:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 220:c:\winavr-20100110\avr\include\util\delay.h ****    The maximal possible delay is 768 us / F_CPU in MHz.
+ 221:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 222:c:\winavr-20100110\avr\include\util\delay.h ****    If the user requests a delay greater than the maximal possible one,
+ 223:c:\winavr-20100110\avr\include\util\delay.h ****    _delay_us() will automatically call _delay_ms() instead.  The user
+ 224:c:\winavr-20100110\avr\include\util\delay.h ****    will not be informed about this case.
+ 225:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 226:c:\winavr-20100110\avr\include\util\delay.h ****    If the avr-gcc toolchain has __builtin_avr_delay_cycles()
+ 227:c:\winavr-20100110\avr\include\util\delay.h ****    support, maximal possible delay is 4294967.295 us/ F_CPU in MHz. For
+ 228:c:\winavr-20100110\avr\include\util\delay.h ****    values greater than the maximal possible delay, overflow results in
+ 229:c:\winavr-20100110\avr\include\util\delay.h ****    no delay i.e., 0us.
+ 230:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 231:c:\winavr-20100110\avr\include\util\delay.h ****    Conversion of \c __us into clock cycles may not always result in
+ 232:c:\winavr-20100110\avr\include\util\delay.h ****    integer.  By default, the clock cycles rounded up to next
+ 233:c:\winavr-20100110\avr\include\util\delay.h ****    integer. This ensures that the user gets at least \c __us
+ 234:c:\winavr-20100110\avr\include\util\delay.h ****    microseconds of delay.
+ 235:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 236:c:\winavr-20100110\avr\include\util\delay.h ****    Alternatively, by defining the macro \c __DELAY_ROUND_DOWN__, or
+ 237:c:\winavr-20100110\avr\include\util\delay.h ****    \c __DELAY_ROUND_CLOSEST__, before including this header file, the
+ 238:c:\winavr-20100110\avr\include\util\delay.h ****    algorithm can be made to round down, or round to closest integer,
+ 239:c:\winavr-20100110\avr\include\util\delay.h ****    respectively.
+ 240:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 241:c:\winavr-20100110\avr\include\util\delay.h ****    \note
+ 242:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 243:c:\winavr-20100110\avr\include\util\delay.h ****    The implementation of _delay_ms() based on
+ 244:c:\winavr-20100110\avr\include\util\delay.h ****    __builtin_avr_delay_cycles() is not backward compatible with older
+ 245:c:\winavr-20100110\avr\include\util\delay.h ****    implementations.  In order to get functionality backward compatible
+ 246:c:\winavr-20100110\avr\include\util\delay.h ****    with previous versions, the macro \c __DELAY_BACKWARD_COMPATIBLE__
+ 247:c:\winavr-20100110\avr\include\util\delay.h ****    must be defined before including this header file. Also, the
+ 248:c:\winavr-20100110\avr\include\util\delay.h ****    backward compatible algorithm will be chosen if the code is
+ 249:c:\winavr-20100110\avr\include\util\delay.h ****    compiled in a <em>freestanding environment</em> (GCC option
+ 250:c:\winavr-20100110\avr\include\util\delay.h ****    \c -ffreestanding), as the math functions required for rounding are
+ 251:c:\winavr-20100110\avr\include\util\delay.h ****    not available to the compiler then.
+ 252:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 253:c:\winavr-20100110\avr\include\util\delay.h ****  */
+ 254:c:\winavr-20100110\avr\include\util\delay.h **** void
+ 255:c:\winavr-20100110\avr\include\util\delay.h **** _delay_us(double __us)
+ 256:c:\winavr-20100110\avr\include\util\delay.h **** {
+ 257:c:\winavr-20100110\avr\include\util\delay.h **** 	double __tmp ;
+ 258:c:\winavr-20100110\avr\include\util\delay.h **** #if __HAS_DELAY_CYCLES && defined(__OPTIMIZE__) && \
+ 259:c:\winavr-20100110\avr\include\util\delay.h ****   !defined(__DELAY_BACKWARD_COMPATIBLE__) &&	   \
+ 260:c:\winavr-20100110\avr\include\util\delay.h ****   __STDC_HOSTED__
+ 261:c:\winavr-20100110\avr\include\util\delay.h **** 	uint32_t __ticks_dc;
+ 262:c:\winavr-20100110\avr\include\util\delay.h **** 	extern void __builtin_avr_delay_cycles(unsigned long);
+ 263:c:\winavr-20100110\avr\include\util\delay.h **** 	__tmp = ((F_CPU) / 1e6) * __us;
+ 264:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 265:c:\winavr-20100110\avr\include\util\delay.h **** 	#if defined(__DELAY_ROUND_DOWN__)
+ 266:c:\winavr-20100110\avr\include\util\delay.h **** 		__ticks_dc = (uint32_t)fabs(__tmp);
+ 267:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 268:c:\winavr-20100110\avr\include\util\delay.h **** 	#elif defined(__DELAY_ROUND_CLOSEST__)
+ 269:c:\winavr-20100110\avr\include\util\delay.h **** 		__ticks_dc = (uint32_t)(fabs(__tmp)+0.5);
+ 270:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 271:c:\winavr-20100110\avr\include\util\delay.h **** 	#else
+ 272:c:\winavr-20100110\avr\include\util\delay.h **** 		//round up by default
+ 273:c:\winavr-20100110\avr\include\util\delay.h **** 		__ticks_dc = (uint32_t)(ceil(fabs(__tmp)));
+ 274:c:\winavr-20100110\avr\include\util\delay.h **** 	#endif
+ 275:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 276:c:\winavr-20100110\avr\include\util\delay.h **** 	__builtin_avr_delay_cycles(__ticks_dc);
+ 545               		.loc 2 276 0
+ 546 0142 85E3      		ldi r24,lo8(53)
+ 547 0144 8A95      	1:	dec r24
+ 548 0146 01F4      		brne 1b
+ 549 0148 0000      		nop
+ 550               	.LVL35:
+ 551               	.LBE98:
+ 552               	.LBE97:
+ 294:setup.c       **** 	_delay_us(10); // Wait byte program time
+ 295:setup.c       **** 	
+ 296:setup.c       **** 	// Set data pins inputs
+ 297:setup.c       **** 	PORT_DATA7_0 = 0;
+ 553               		.loc 1 297 0
+ 554 014a 15BA      		out 0x15,__zero_reg__
+ 298:setup.c       **** 	DDR_DATA7_0 = 0;
+ 555               		.loc 1 298 0
+ 556 014c 14BA      		out 0x14,__zero_reg__
+ 299:setup.c       **** 	
+ 300:setup.c       **** 	// Verify data
+ 301:setup.c       **** 	uint8_t dataVerify = gb_flash_read_byte(address);
+ 557               		.loc 1 301 0
+ 558 014e CE01      		movw r24,r28
+ 559 0150 00D0      		rcall gb_flash_read_byte
+ 560               	.LVL36:
+ 561               	.L28:
+ 302:setup.c       **** 	while (data != dataVerify) {
+ 562               		.loc 1 302 0
+ 563 0152 8117      		cp r24,r17
+ 564 0154 01F0      		breq .L27
+ 303:setup.c       **** 		dataVerify = gb_flash_read_byte(address);
+ 565               		.loc 1 303 0
+ 566 0156 CE01      		movw r24,r28
+ 567               	.LVL37:
+ 568 0158 00D0      		rcall gb_flash_read_byte
+ 569               	.LVL38:
+ 570               	.LBB99:
+ 571               	.LBB100:
+ 572               		.loc 2 276 0
+ 573 015a 9AE1      		ldi r25,lo8(26)
+ 574 015c 9A95      	1:	dec r25
+ 575 015e 01F4      		brne 1b
+ 576 0160 00C0      		rjmp .
+ 577               	.LVL39:
+ 578               	.LBE100:
+ 579               	.LBE99:
+ 304:setup.c       **** 		_delay_us(5);
+ 305:setup.c       **** 		if (writingTimedout == 1) {
+ 580               		.loc 1 305 0
+ 581 0162 9091 0000 		lds r25,writingTimedout
+ 582 0166 9130      		cpi r25,lo8(1)
+ 583 0168 01F4      		brne .L28
+ 584               	.L27:
+ 585               	/* epilogue start */
+ 306:setup.c       **** 			break;
+ 307:setup.c       **** 		}
+ 308:setup.c       **** 	}
+ 309:setup.c       **** }
+ 586               		.loc 1 309 0
+ 587 016a DF91      		pop r29
+ 588 016c CF91      		pop r28
+ 589               	.LVL40:
+ 590 016e 1F91      		pop r17
+ 591               	.LVL41:
+ 592 0170 0895      		ret
+ 593               		.cfi_endproc
+ 594               	.LFE23:
+ 596               	.global	gb_flash_write_byte_special
+ 598               	gb_flash_write_byte_special:
+ 599               	.LFB24:
+ 310:setup.c       **** 
+ 311:setup.c       **** // Set the bank, write a single byte to the Flash address and pulse the reset pin
+ 312:setup.c       **** void gb_flash_write_byte_special(uint16_t address, uint8_t data) {
+ 600               		.loc 1 312 0
+ 601               		.cfi_startproc
+ 602               	.LVL42:
+ 603 0172 1F93      		push r17
+ 604               	.LCFI12:
+ 605               		.cfi_def_cfa_offset 3
+ 606               		.cfi_offset 17, -2
+ 607 0174 CF93      		push r28
+ 608               	.LCFI13:
+ 609               		.cfi_def_cfa_offset 4
+ 610               		.cfi_offset 28, -3
+ 611 0176 DF93      		push r29
+ 612               	.LCFI14:
+ 613               		.cfi_def_cfa_offset 5
+ 614               		.cfi_offset 29, -4
+ 615               	/* prologue: function */
+ 616               	/* frame size = 0 */
+ 617               	/* stack size = 3 */
+ 618               	.L__stack_usage = 3
+ 619 0178 EC01      		movw r28,r24
+ 620 017a 162F      		mov r17,r22
+ 313:setup.c       **** 	// Set bank back
+ 314:setup.c       **** 	if (flashBank1CommandWrites == 1) {
+ 621               		.loc 1 314 0
+ 622 017c 8091 0000 		lds r24,flashBank1CommandWrites
+ 623               	.LVL43:
+ 624 0180 8130      		cpi r24,lo8(1)
+ 625 0182 01F4      		brne .L33
+ 315:setup.c       **** 		write_8bit_data(0x2100, lastBankAccessed, BANK_WRITE);
+ 626               		.loc 1 315 0
+ 627 0184 40E0      		ldi r20,0
+ 628 0186 6091 0000 		lds r22,lastBankAccessed
+ 629               	.LVL44:
+ 630 018a 80E0      		ldi r24,0
+ 631 018c 91E2      		ldi r25,lo8(33)
+ 632 018e 00D0      		rcall write_8bit_data
+ 633               	.LVL45:
+ 634               	.LBB101:
+ 635               	.LBB102:
+ 636               		.loc 2 276 0
+ 637 0190 87EC      		ldi r24,lo8(199)
+ 638 0192 90E0      		ldi r25,hi8(199)
+ 639 0194 0197      	1:	sbiw r24,1
+ 640 0196 01F4      		brne 1b
+ 641 0198 00C0      		rjmp .
+ 642 019a 0000      		nop
+ 643               	.LVL46:
+ 644               	.L33:
+ 645               	.LBE102:
+ 646               	.LBE101:
+ 316:setup.c       **** 		_delay_us(50);
+ 317:setup.c       **** 	}
+ 318:setup.c       **** 	
+ 319:setup.c       **** 	// Write
+ 320:setup.c       **** 	gb_flash_write_bus_cycle(flashWriteCycle[0][0], flashWriteCycle[0][1]);
+ 647               		.loc 1 320 0
+ 648 019c 6091 0000 		lds r22,flashWriteCycle+2
+ 649 01a0 8091 0000 		lds r24,flashWriteCycle
+ 650 01a4 9091 0000 		lds r25,flashWriteCycle+1
+ 651 01a8 00D0      		rcall gb_flash_write_bus_cycle
+ 652               	.LVL47:
+ 321:setup.c       **** 	gb_flash_write_bus_cycle(flashWriteCycle[1][0], flashWriteCycle[1][1]);
+ 653               		.loc 1 321 0
+ 654 01aa 6091 0000 		lds r22,flashWriteCycle+6
+ 655 01ae 8091 0000 		lds r24,flashWriteCycle+4
+ 656 01b2 9091 0000 		lds r25,flashWriteCycle+4+1
+ 657 01b6 00D0      		rcall gb_flash_write_bus_cycle
+ 658               	.LVL48:
+ 322:setup.c       **** 	gb_flash_write_bus_cycle(flashWriteCycle[2][0], flashWriteCycle[2][1]);
+ 659               		.loc 1 322 0
+ 660 01b8 6091 0000 		lds r22,flashWriteCycle+10
+ 661 01bc 8091 0000 		lds r24,flashWriteCycle+8
+ 662 01c0 9091 0000 		lds r25,flashWriteCycle+8+1
+ 663 01c4 00D0      		rcall gb_flash_write_bus_cycle
+ 664               	.LVL49:
+ 323:setup.c       **** 	gb_flash_write_bus_cycle(address, data);
+ 665               		.loc 1 323 0
+ 666 01c6 612F      		mov r22,r17
+ 667 01c8 CE01      		movw r24,r28
+ 668 01ca 00D0      		rcall gb_flash_write_bus_cycle
+ 669               	.LVL50:
+ 670               	.LBB103:
+ 671               	.LBB104:
+ 672               		.loc 2 276 0
+ 673 01cc 87EE      		ldi r24,lo8(999)
+ 674 01ce 93E0      		ldi r25,hi8(999)
+ 675 01d0 0197      	1:	sbiw r24,1
+ 676 01d2 01F4      		brne 1b
+ 677 01d4 00C0      		rjmp .
+ 678 01d6 0000      		nop
+ 679               	.LVL51:
+ 680               	.LBE104:
+ 681               	.LBE103:
+ 324:setup.c       **** 	_delay_us(250); // Wait byte program time
+ 325:setup.c       **** 	
+ 326:setup.c       **** 	// Set data pins inputs
+ 327:setup.c       **** 	PORT_DATA7_0 = 0;
+ 682               		.loc 1 327 0
+ 683 01d8 15BA      		out 0x15,__zero_reg__
+ 328:setup.c       **** 	DDR_DATA7_0 = 0;
+ 684               		.loc 1 328 0
+ 685 01da 14BA      		out 0x14,__zero_reg__
+ 329:setup.c       **** 	
+ 330:setup.c       **** 	// Pulse reset
+ 331:setup.c       **** 	PORTE &= ~(1<<CS2_PIN);
+ 686               		.loc 1 331 0
+ 687 01dc 3A98      		cbi 0x7,2
+ 688               	.LVL52:
+ 689               	.LBB105:
+ 690               	.LBB106:
+ 691               		.loc 2 276 0
+ 692 01de 87EC      		ldi r24,lo8(199)
+ 693 01e0 90E0      		ldi r25,hi8(199)
+ 694 01e2 0197      	1:	sbiw r24,1
+ 695 01e4 01F4      		brne 1b
+ 696 01e6 00C0      		rjmp .
+ 697 01e8 0000      		nop
+ 698               	.LVL53:
+ 699               	.LBE106:
+ 700               	.LBE105:
+ 332:setup.c       **** 	_delay_us(50);
+ 333:setup.c       **** 	PORTE |= (1<<CS2_PIN);
+ 701               		.loc 1 333 0
+ 702 01ea 3A9A      		sbi 0x7,2
+ 703               	.LVL54:
+ 704               	.LBB107:
+ 705               	.LBB108:
+ 706               		.loc 2 276 0
+ 707 01ec 87EC      		ldi r24,lo8(199)
+ 708 01ee 90E0      		ldi r25,hi8(199)
+ 709 01f0 0197      	1:	sbiw r24,1
+ 710 01f2 01F4      		brne 1b
+ 711 01f4 00C0      		rjmp .
+ 712 01f6 0000      		nop
+ 713               	.LVL55:
+ 714               	/* epilogue start */
+ 715               	.LBE108:
+ 716               	.LBE107:
+ 334:setup.c       **** 	_delay_us(50);
+ 335:setup.c       **** }
+ 717               		.loc 1 335 0
+ 718 01f8 DF91      		pop r29
+ 719 01fa CF91      		pop r28
+ 720               	.LVL56:
+ 721 01fc 1F91      		pop r17
+ 722               	.LVL57:
+ 723 01fe 0895      		ret
+ 724               		.cfi_endproc
+ 725               	.LFE24:
+ 727               	.global	gb_flash_write_byte_bank1_commands
+ 729               	gb_flash_write_byte_bank1_commands:
+ 730               	.LFB25:
+ 336:setup.c       **** 
+ 337:setup.c       **** // Write a single byte to the Flash address. Takes 10-50us to program each byte. 
+ 338:setup.c       **** // Switch to bank 1 to issue flash commands, then switch back to the bank we were at before
+ 339:setup.c       **** void gb_flash_write_byte_bank1_commands(uint16_t address, uint8_t data) {
+ 731               		.loc 1 339 0
+ 732               		.cfi_startproc
+ 733               	.LVL58:
+ 734 0200 FF92      		push r15
+ 735               	.LCFI15:
+ 736               		.cfi_def_cfa_offset 3
+ 737               		.cfi_offset 15, -2
+ 738 0202 0F93      		push r16
+ 739               	.LCFI16:
+ 740               		.cfi_def_cfa_offset 4
+ 741               		.cfi_offset 16, -3
+ 742 0204 1F93      		push r17
+ 743               	.LCFI17:
+ 744               		.cfi_def_cfa_offset 5
+ 745               		.cfi_offset 17, -4
+ 746 0206 CF93      		push r28
+ 747               	.LCFI18:
+ 748               		.cfi_def_cfa_offset 6
+ 749               		.cfi_offset 28, -5
+ 750 0208 DF93      		push r29
+ 751               	.LCFI19:
+ 752               		.cfi_def_cfa_offset 7
+ 753               		.cfi_offset 29, -6
+ 754               	/* prologue: function */
+ 755               	/* frame size = 0 */
+ 756               	/* stack size = 5 */
+ 757               	.L__stack_usage = 5
+ 758 020a EC01      		movw r28,r24
+ 759 020c 162F      		mov r17,r22
+ 340:setup.c       **** 	// Set bank 1
+ 341:setup.c       **** 	DDR_DATA7_0 = 0xFF;
+ 760               		.loc 1 341 0
+ 761 020e FF24      		clr r15
+ 762 0210 FA94      		dec r15
+ 763 0212 F4BA      		out 0x14,r15
+ 764               	.LVL59:
+ 765               	.LBB109:
+ 766               	.LBB110:
+ 185:setup.c       **** 	PORT_ADDR7_0 = (address & 0xFF);
+ 767               		.loc 1 185 0
+ 768 0214 01E2      		ldi r16,lo8(33)
+ 769 0216 0BBB      		out 0x1b,r16
+ 186:setup.c       **** }
+ 770               		.loc 1 186 0
+ 771 0218 18BA      		out 0x18,__zero_reg__
+ 772               	.LVL60:
+ 773               	.LBE110:
+ 774               	.LBE109:
+ 342:setup.c       **** 	set_16bit_address(0x2100);
+ 343:setup.c       **** 	PORT_DATA7_0 = 1;
+ 775               		.loc 1 343 0
+ 776 021a 81E0      		ldi r24,lo8(1)
+ 777               	.LVL61:
+ 778 021c 85BB      		out 0x15,r24
+ 344:setup.c       **** 	wrPin_low; // Pulse WR
+ 779               		.loc 1 344 0
+ 780 021e 9698      		cbi 0x12,6
+ 345:setup.c       **** 	asm volatile("nop");
+ 781               		.loc 1 345 0
+ 782               	/* #APP */
+ 783               	 ;  345 "setup.c" 1
+ 784 0220 0000      		nop
+ 785               	 ;  0 "" 2
+ 346:setup.c       **** 	asm volatile("nop");
+ 786               		.loc 1 346 0
+ 787               	 ;  346 "setup.c" 1
+ 788 0222 0000      		nop
+ 789               	 ;  0 "" 2
+ 347:setup.c       **** 	wrPin_high;
+ 790               		.loc 1 347 0
+ 791               	/* #NOAPP */
+ 792 0224 969A      		sbi 0x12,6
+ 348:setup.c       **** 	
+ 349:setup.c       **** 	gb_flash_write_bus_cycle(flashWriteCycle[0][0], flashWriteCycle[0][1]);
+ 793               		.loc 1 349 0
+ 794 0226 6091 0000 		lds r22,flashWriteCycle+2
+ 795               	.LVL62:
+ 796 022a 8091 0000 		lds r24,flashWriteCycle
+ 797 022e 9091 0000 		lds r25,flashWriteCycle+1
+ 798 0232 00D0      		rcall gb_flash_write_bus_cycle
+ 799               	.LVL63:
+ 350:setup.c       **** 	gb_flash_write_bus_cycle(flashWriteCycle[1][0], flashWriteCycle[1][1]);
+ 800               		.loc 1 350 0
+ 801 0234 6091 0000 		lds r22,flashWriteCycle+6
+ 802 0238 8091 0000 		lds r24,flashWriteCycle+4
+ 803 023c 9091 0000 		lds r25,flashWriteCycle+4+1
+ 804 0240 00D0      		rcall gb_flash_write_bus_cycle
+ 805               	.LVL64:
+ 351:setup.c       **** 	gb_flash_write_bus_cycle(flashWriteCycle[2][0], flashWriteCycle[2][1]);
+ 806               		.loc 1 351 0
+ 807 0242 6091 0000 		lds r22,flashWriteCycle+10
+ 808 0246 8091 0000 		lds r24,flashWriteCycle+8
+ 809 024a 9091 0000 		lds r25,flashWriteCycle+8+1
+ 810 024e 00D0      		rcall gb_flash_write_bus_cycle
+ 811               	.LVL65:
+ 352:setup.c       **** 	
+ 353:setup.c       **** 	
+ 354:setup.c       **** 	// Set bank back
+ 355:setup.c       **** 	DDR_DATA7_0 = 0xFF;
+ 812               		.loc 1 355 0
+ 813 0250 F4BA      		out 0x14,r15
+ 814               	.LVL66:
+ 815               	.LBB111:
+ 816               	.LBB112:
+ 185:setup.c       **** 	PORT_ADDR7_0 = (address & 0xFF);
+ 817               		.loc 1 185 0
+ 818 0252 0BBB      		out 0x1b,r16
+ 186:setup.c       **** }
+ 819               		.loc 1 186 0
+ 820 0254 18BA      		out 0x18,__zero_reg__
+ 821               	.LVL67:
+ 822               	.LBE112:
+ 823               	.LBE111:
+ 356:setup.c       **** 	set_16bit_address(0x2100);
+ 357:setup.c       **** 	PORT_DATA7_0 = lastBankAccessed;
+ 824               		.loc 1 357 0
+ 825 0256 8091 0000 		lds r24,lastBankAccessed
+ 826 025a 85BB      		out 0x15,r24
+ 358:setup.c       **** 	wrPin_low; // Pulse WR
+ 827               		.loc 1 358 0
+ 828 025c 9698      		cbi 0x12,6
+ 359:setup.c       **** 	asm volatile("nop");
+ 829               		.loc 1 359 0
+ 830               	/* #APP */
+ 831               	 ;  359 "setup.c" 1
+ 832 025e 0000      		nop
+ 833               	 ;  0 "" 2
+ 360:setup.c       **** 	asm volatile("nop");
+ 834               		.loc 1 360 0
+ 835               	 ;  360 "setup.c" 1
+ 836 0260 0000      		nop
+ 837               	 ;  0 "" 2
+ 361:setup.c       **** 	wrPin_high;
+ 838               		.loc 1 361 0
+ 839               	/* #NOAPP */
+ 840 0262 969A      		sbi 0x12,6
+ 362:setup.c       **** 	
+ 363:setup.c       **** 	gb_flash_write_bus_cycle(address, data);
+ 841               		.loc 1 363 0
+ 842 0264 612F      		mov r22,r17
+ 843 0266 CE01      		movw r24,r28
+ 844 0268 00D0      		rcall gb_flash_write_bus_cycle
+ 845               	.LVL68:
+ 846               	.LBB113:
+ 847               	.LBB114:
+ 848               		.loc 2 276 0
+ 849 026a 85E3      		ldi r24,lo8(53)
+ 850 026c 8A95      	1:	dec r24
+ 851 026e 01F4      		brne 1b
+ 852 0270 0000      		nop
+ 853               	.LVL69:
+ 854               	.LBE114:
+ 855               	.LBE113:
+ 364:setup.c       **** 	_delay_us(10); // Wait byte program time
+ 365:setup.c       **** 	
+ 366:setup.c       **** 	// Set data pins inputs
+ 367:setup.c       **** 	PORT_DATA7_0 = 0;
+ 856               		.loc 1 367 0
+ 857 0272 15BA      		out 0x15,__zero_reg__
+ 368:setup.c       **** 	DDR_DATA7_0 = 0;
+ 858               		.loc 1 368 0
+ 859 0274 14BA      		out 0x14,__zero_reg__
+ 369:setup.c       **** 	
+ 370:setup.c       **** 	// Verify data
+ 371:setup.c       **** 	uint8_t dataVerify = gb_flash_read_byte(address);
+ 860               		.loc 1 371 0
+ 861 0276 CE01      		movw r24,r28
+ 862 0278 00D0      		rcall gb_flash_read_byte
+ 863               	.LVL70:
+ 864               	.L35:
+ 372:setup.c       **** 	while (data != dataVerify) {
+ 865               		.loc 1 372 0
+ 866 027a 8117      		cp r24,r17
+ 867 027c 01F0      		breq .L34
+ 373:setup.c       **** 		dataVerify = gb_flash_read_byte(address);
+ 868               		.loc 1 373 0
+ 869 027e CE01      		movw r24,r28
+ 870               	.LVL71:
+ 871 0280 00D0      		rcall gb_flash_read_byte
+ 872               	.LVL72:
+ 873               	.LBB115:
+ 874               	.LBB116:
+ 875               		.loc 2 276 0
+ 876 0282 9AE1      		ldi r25,lo8(26)
+ 877 0284 9A95      	1:	dec r25
+ 878 0286 01F4      		brne 1b
+ 879 0288 00C0      		rjmp .
+ 880               	.LVL73:
+ 881               	.LBE116:
+ 882               	.LBE115:
+ 374:setup.c       **** 		_delay_us(5);
+ 375:setup.c       **** 		if (writingTimedout == 1) {
+ 883               		.loc 1 375 0
+ 884 028a 9091 0000 		lds r25,writingTimedout
+ 885 028e 9130      		cpi r25,lo8(1)
+ 886 0290 01F4      		brne .L35
+ 887               	.L34:
+ 888               	/* epilogue start */
+ 376:setup.c       **** 			break;
+ 377:setup.c       **** 		}
+ 378:setup.c       **** 	}
+ 379:setup.c       **** }
+ 889               		.loc 1 379 0
+ 890 0292 DF91      		pop r29
+ 891 0294 CF91      		pop r28
+ 892               	.LVL74:
+ 893 0296 1F91      		pop r17
+ 894               	.LVL75:
+ 895 0298 0F91      		pop r16
+ 896 029a FF90      		pop r15
+ 897 029c 0895      		ret
+ 898               		.cfi_endproc
+ 899               	.LFE25:
+ 901               	.global	start_timeout_timer
+ 903               	start_timeout_timer:
+ 904               	.LFB26:
+ 380:setup.c       **** 
+ 381:setup.c       **** // Timeout for ~500ms when flashing carts
+ 382:setup.c       **** void start_timeout_timer(void) {
+ 905               		.loc 1 382 0
+ 906               		.cfi_startproc
+ 907               	/* prologue: function */
+ 908               	/* frame size = 0 */
+ 909               	/* stack size = 0 */
+ 910               	.L__stack_usage = 0
+ 383:setup.c       **** 	writingTimedout = 0;
+ 911               		.loc 1 383 0
+ 912 029e 1092 0000 		sts writingTimedout,__zero_reg__
+ 384:setup.c       **** 	TCNT1 = 0;
+ 913               		.loc 1 384 0
+ 914 02a2 1DBC      		out 0x2c+1,__zero_reg__
+ 915 02a4 1CBC      		out 0x2c,__zero_reg__
+ 385:setup.c       **** 	TCCR1B |= (1<<CS11) | (1<<CS10);
+ 916               		.loc 1 385 0
+ 917 02a6 8EB5      		in r24,0x2e
+ 918 02a8 8360      		ori r24,lo8(3)
+ 919 02aa 8EBD      		out 0x2e,r24
+ 920 02ac 0895      		ret
+ 921               		.cfi_endproc
+ 922               	.LFE26:
+ 924               	.global	stop_timeout_timer
+ 926               	stop_timeout_timer:
+ 927               	.LFB27:
+ 386:setup.c       **** }
+ 387:setup.c       **** 
+ 388:setup.c       **** // Stop the flash timeout timer
+ 389:setup.c       **** void stop_timeout_timer(void) {
+ 928               		.loc 1 389 0
+ 929               		.cfi_startproc
+ 930               	/* prologue: function */
+ 931               	/* frame size = 0 */
+ 932               	/* stack size = 0 */
+ 933               	.L__stack_usage = 0
+ 390:setup.c       **** 	writingTimedout = 0;
+ 934               		.loc 1 390 0
+ 935 02ae 1092 0000 		sts writingTimedout,__zero_reg__
+ 391:setup.c       **** 	TCNT1 = 0;
+ 936               		.loc 1 391 0
+ 937 02b2 1DBC      		out 0x2c+1,__zero_reg__
+ 938 02b4 1CBC      		out 0x2c,__zero_reg__
+ 392:setup.c       **** 	TCCR1B = 0;
+ 939               		.loc 1 392 0
+ 940 02b6 1EBC      		out 0x2e,__zero_reg__
+ 393:setup.c       **** 	PORTD &= ~(1<<ACTIVITY_LED);
+ 941               		.loc 1 393 0
+ 942 02b8 9398      		cbi 0x12,3
+ 943 02ba 0895      		ret
+ 944               		.cfi_endproc
+ 945               	.LFE27:
+ 947               	.global	check_if_timed_out
+ 949               	check_if_timed_out:
+ 950               	.LFB28:
+ 394:setup.c       **** }
+ 395:setup.c       **** 
+ 396:setup.c       **** void check_if_timed_out(void) {
+ 951               		.loc 1 396 0
+ 952               		.cfi_startproc
+ 953               	/* prologue: function */
+ 954               	/* frame size = 0 */
+ 955               	/* stack size = 0 */
+ 956               	.L__stack_usage = 0
+ 397:setup.c       **** 	if (writingTimedout == 0) {
+ 957               		.loc 1 397 0
+ 958 02bc 8091 0000 		lds r24,writingTimedout
+ 959 02c0 8111      		cpse r24,__zero_reg__
+ 960 02c2 00C0      		rjmp .L41
+ 961               	.LBB119:
+ 962               	.LBB120:
+ 398:setup.c       **** 		stop_timeout_timer();		
+ 963               		.loc 1 398 0
+ 964 02c4 00D0      		rcall stop_timeout_timer
+ 965               	.LVL76:
+ 399:setup.c       **** 		USART_Transmit(SEND_ACK); // Send back acknowledgement
+ 966               		.loc 1 399 0
+ 967 02c6 81E3      		ldi r24,lo8(49)
+ 968 02c8 00D0      		rcall USART_Transmit
+ 969               	.LVL77:
+ 400:setup.c       **** 		PORTD &= ~(1<<ACTIVITY_LED);
+ 970               		.loc 1 400 0
+ 971 02ca 9398      		cbi 0x12,3
+ 972               	.L41:
+ 973 02cc 0895      		ret
+ 974               	.LBE120:
+ 975               	.LBE119:
+ 976               		.cfi_endproc
+ 977               	.LFE28:
+ 979               	.global	setup
+ 981               	setup:
+ 982               	.LFB29:
+ 401:setup.c       **** 	}
+ 402:setup.c       **** }
+ 403:setup.c       **** 
+ 404:setup.c       **** 
+ 405:setup.c       **** // Setup
+ 406:setup.c       **** void setup(void) {
+ 983               		.loc 1 406 0
+ 984               		.cfi_startproc
+ 985               	/* prologue: function */
+ 986               	/* frame size = 0 */
+ 987               	/* stack size = 0 */
+ 988               	.L__stack_usage = 0
+ 407:setup.c       **** 	// Turn off watchdog
+ 408:setup.c       **** 	MCUCSR &= ~(1<<WDRF);
+ 989               		.loc 1 408 0
+ 990 02ce 84B7      		in r24,0x34
+ 991 02d0 877F      		andi r24,lo8(-9)
+ 992 02d2 84BF      		out 0x34,r24
+ 409:setup.c       **** 	WDTCR = (1<<WDCE) | (1<<WDE);
+ 993               		.loc 1 409 0
+ 994 02d4 88E1      		ldi r24,lo8(24)
+ 995 02d6 81BD      		out 0x21,r24
+ 410:setup.c       **** 	WDTCR = 0;
+ 996               		.loc 1 410 0
+ 997 02d8 11BC      		out 0x21,__zero_reg__
+ 411:setup.c       **** 	
+ 412:setup.c       **** 	// Reset common lines
+ 413:setup.c       **** 	rd_wr_csmreq_cs2_reset();
+ 998               		.loc 1 413 0
+ 999 02da 00D0      		rcall rd_wr_csmreq_cs2_reset
+ 1000               	.LVL78:
+ 414:setup.c       **** 	
+ 415:setup.c       **** 	// Set outputs
+ 416:setup.c       **** 	DDRD |= (1<<ACTIVITY_LED) | (1<<WR_PIN) | (1<<RD_PIN) | (1<<CS_MREQ_PIN);
+ 1001               		.loc 1 416 0
+ 1002 02dc 81B3      		in r24,0x11
+ 1003 02de 8867      		ori r24,lo8(120)
+ 1004 02e0 81BB      		out 0x11,r24
+ 417:setup.c       **** 	DDRE |= (1<<CS2_PIN);
+ 1005               		.loc 1 417 0
+ 1006 02e2 329A      		sbi 0x6,2
+ 418:setup.c       **** 	
+ 419:setup.c       **** 	// Pull ups
+ 420:setup.c       **** 	PORTE |= (1<<PE0);
+ 1007               		.loc 1 420 0
+ 1008 02e4 389A      		sbi 0x7,0
+ 421:setup.c       **** 	PORTD |= (1<<PD7) | (1<<PD2);
+ 1009               		.loc 1 421 0
+ 1010 02e6 82B3      		in r24,0x12
+ 1011 02e8 8468      		ori r24,lo8(-124)
+ 1012 02ea 82BB      		out 0x12,r24
+ 422:setup.c       **** 	
+ 423:setup.c       **** 	// Set all pins as inputs
+ 424:setup.c       **** 	PORT_DATA7_0 = 0;
+ 1013               		.loc 1 424 0
+ 1014 02ec 15BA      		out 0x15,__zero_reg__
+ 425:setup.c       **** 	DDR_DATA7_0 = 0;
+ 1015               		.loc 1 425 0
+ 1016 02ee 14BA      		out 0x14,__zero_reg__
+ 426:setup.c       **** 	PORT_ADDR7_0 = 0;
+ 1017               		.loc 1 426 0
+ 1018 02f0 18BA      		out 0x18,__zero_reg__
+ 427:setup.c       **** 	DDR_ADDR7_0 = 0;
+ 1019               		.loc 1 427 0
+ 1020 02f2 17BA      		out 0x17,__zero_reg__
+ 428:setup.c       **** 	PORT_ADDR15_8 = 0;
+ 1021               		.loc 1 428 0
+ 1022 02f4 1BBA      		out 0x1b,__zero_reg__
+ 429:setup.c       **** 	DDR_ADDR15_8 = 0;
+ 1023               		.loc 1 429 0
+ 1024 02f6 1ABA      		out 0x1a,__zero_reg__
+ 430:setup.c       **** 	
+ 431:setup.c       **** 	// Set Reset low for 50ms to reset the cart (also for CPLD carts to initialise properly)
+ 432:setup.c       **** 	cs2Pin_low;
+ 1025               		.loc 1 432 0
+ 1026 02f8 3A98      		cbi 0x7,2
+ 1027               	.LVL79:
+ 1028               	.LBB121:
+ 1029               	.LBB122:
+ 187:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 1030               		.loc 2 187 0
+ 1031 02fa 2FEF      		ldi r18,lo8(159999)
+ 1032 02fc 80E7      		ldi r24,hi8(159999)
+ 1033 02fe 92E0      		ldi r25,hlo8(159999)
+ 1034 0300 2150      	1:	subi r18,1
+ 1035 0302 8040      		sbci r24,0
+ 1036 0304 9040      		sbci r25,0
+ 1037 0306 01F4      		brne 1b
+ 1038 0308 00C0      		rjmp .
+ 1039 030a 0000      		nop
+ 1040               	.LVL80:
+ 1041               	.LBE122:
+ 1042               	.LBE121:
+ 433:setup.c       **** 	_delay_ms(50);
+ 434:setup.c       **** 	cs2Pin_high;
+ 1043               		.loc 1 434 0
+ 1044 030c 3A9A      		sbi 0x7,2
+ 435:setup.c       **** 	
+ 436:setup.c       **** 	// Light LED
+ 437:setup.c       **** 	PORTD |= (1<<ACTIVITY_LED);
+ 1045               		.loc 1 437 0
+ 1046 030e 939A      		sbi 0x12,3
+ 1047               	.LVL81:
+ 1048               	.LBB123:
+ 1049               	.LBB124:
+ 187:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 1050               		.loc 2 187 0
+ 1051 0310 2FEF      		ldi r18,lo8(1599999)
+ 1052 0312 89E6      		ldi r24,hi8(1599999)
+ 1053 0314 98E1      		ldi r25,hlo8(1599999)
+ 1054 0316 2150      	1:	subi r18,1
+ 1055 0318 8040      		sbci r24,0
+ 1056 031a 9040      		sbci r25,0
+ 1057 031c 01F4      		brne 1b
+ 1058 031e 00C0      		rjmp .
+ 1059 0320 0000      		nop
+ 1060               	.LVL82:
+ 1061               	.LBE124:
+ 1062               	.LBE123:
+ 438:setup.c       **** 	_delay_ms(500);
+ 439:setup.c       **** 	PORTD &= ~(1<<ACTIVITY_LED);
+ 1063               		.loc 1 439 0
+ 1064 0322 9398      		cbi 0x12,3
+ 440:setup.c       **** 	
+ 441:setup.c       **** 	// Setup USART
+ 442:setup.c       **** 	UBRRL = 0; // 1Mbps Baud rate
+ 1065               		.loc 1 442 0
+ 1066 0324 19B8      		out 0x9,__zero_reg__
+ 443:setup.c       **** 	sbi(UCSRB, TXEN); // Transmitter enable
+ 1067               		.loc 1 443 0
+ 1068 0326 539A      		sbi 0xa,3
+ 444:setup.c       **** 	sbi(UCSRB, RXEN); // Receiver enable
+ 1069               		.loc 1 444 0
+ 1070 0328 549A      		sbi 0xa,4
+ 445:setup.c       **** 	
+ 446:setup.c       **** 	// Timer1 setup
+ 447:setup.c       **** 	TIMSK |= (1<<TOIE1);
+ 1071               		.loc 1 447 0
+ 1072 032a 89B7      		in r24,0x39
+ 1073 032c 8068      		ori r24,lo8(-128)
+ 1074 032e 89BF      		out 0x39,r24
+ 448:setup.c       **** 	TCNT1 = 0;
+ 1075               		.loc 1 448 0
+ 1076 0330 1DBC      		out 0x2c+1,__zero_reg__
+ 1077 0332 1CBC      		out 0x2c,__zero_reg__
+ 449:setup.c       **** 	
+ 450:setup.c       **** 	// Turn on interrupts
+ 451:setup.c       **** 	sei();
+ 1078               		.loc 1 451 0
+ 1079               	/* #APP */
+ 1080               	 ;  451 "setup.c" 1
+ 1081 0334 7894      		sei
+ 1082               	 ;  0 "" 2
+ 1083               	/* #NOAPP */
+ 1084 0336 0895      		ret
+ 1085               		.cfi_endproc
+ 1086               	.LFE29:
+ 1088               		.section	.text.startup,"ax",@progbits
+ 1089               	.global	main
+ 1091               	main:
+ 1092               	.LFB30:
+ 1093               		.file 3 "main.c"
+   1:main.c        **** /*
+   2:main.c        ****  GBxCart RW Mini
+   3:main.c        ****  PCB version: 1.0
+   4:main.c        ****  Firmware version: R22
+   5:main.c        ****  Author: Alex from insideGadgets (www.insidegadgets.com)
+   6:main.c        ****  Created: 7/11/2016
+   7:main.c        ****  Last Modified: 24/10/2020
+   8:main.c        ****  
+   9:main.c        ****  GBxCart RW Mini allows you to dump your Gameboy/Gameboy Colour games ROM, save the RAM, write to t
+  10:main.c        ****  write to certain Gameboy flash carts. GBA carts are not supported, please check out the non-Mini v
+  11:main.c        ****  
+  12:main.c        ****  The ATmega8515 talks to the cartridge and interfaces with the CH340G serial to USB converter with 
+  13:main.c        ****  
+  14:main.c        ****  
+  15:main.c        ****  Set fuse bits: External 16MHz crystal, divide clock by 8 is off, boot loader is on (512 bytes), BO
+  16:main.c        ****  avrdude -p atmega8515 -c usbasp -U lfuse:w:0xaf:m -U hfuse:w:0xda:m
+  17:main.c        ****  
+  18:main.c        ****  Program the TinySafeBoot boot loader (modified ASM code, watchdog reset will act as a hardware res
+  19:main.c        ****  avrdude -p atmega8515 -c usbasp -U flash:w:GBxCart_RW_v1.x_Rx\tsb\tsb_m8515_d0d1_resetwdt.hex
+  20:main.c        ****  
+  21:main.c        ****  Program GBxCart Mini RW through TinySafeBoot
+  22:main.c        ****  tsb com16:57600 fw main.hex
+  23:main.c        ****  
+  24:main.c        ****  Set TinySafeBoot delay time to 25 (T 25), gives ~0.5s in bootloader
+  25:main.c        ****  tsb com16:9600 T 25
+  26:main.c        ****  
+  27:main.c        ****  */
+  28:main.c        **** 
+  29:main.c        **** // ATmega8515L Pin Map
+  30:main.c        **** //
+  31:main.c        **** // VCC (5)			GND (6)			XTAL (7 ,8)		Activity LED PD3 (9)				Switch sense PD2 (8)
+  32:main.c        **** // SCK PB7 (3)		MOSI PB5 (1)	MISO PB6 (2)	RST (4)		RXD PD0 (5)			TXD PD1 (7)
+  33:main.c        **** // 
+  34:main.c        **** // Gameboy / Gameboy Colour
+  35:main.c        **** // A0-A7 PB0-7 (40-44, 1-3) 		A8-A15 PA0-7 (37-30)			D0-D7 PC0-7 (18-25)		Audio PE1 (27)
+  36:main.c        **** 
+  37:main.c        **** 
+  38:main.c        **** #define F_CPU 16000000 // 16 MHz
+  39:main.c        **** #define PCB_VERSION 100 // Mini v1.0
+  40:main.c        **** #define FIRMWARE_VERSION 22
+  41:main.c        **** 
+  42:main.c        **** #include <avr/io.h>
+  43:main.c        **** #include <avr/wdt.h>
+  44:main.c        **** #include <avr/eeprom.h>
+  45:main.c        **** #include <avr/interrupt.h>
+  46:main.c        **** #include <avr/sleep.h>
+  47:main.c        **** #include <util/delay.h>
+  48:main.c        **** #include <stdlib.h>
+  49:main.c        **** #include <string.h>
+  50:main.c        **** #include "setup.c" // See defines, variables, constants, functions here
+  51:main.c        **** 
+  52:main.c        **** 
+  53:main.c        **** int main(void) {
+ 1094               		.loc 3 53 0
+ 1095               		.cfi_startproc
+ 1096 0000 CF93      		push r28
+ 1097               	.LCFI20:
+ 1098               		.cfi_def_cfa_offset 3
+ 1099               		.cfi_offset 28, -2
+ 1100 0002 DF93      		push r29
+ 1101               	.LCFI21:
+ 1102               		.cfi_def_cfa_offset 4
+ 1103               		.cfi_offset 29, -3
+ 1104 0004 CDB7      		in r28,__SP_L__
+ 1105 0006 DEB7      		in r29,__SP_H__
+ 1106               	.LCFI22:
+ 1107               		.cfi_def_cfa_register 28
+ 1108 0008 A097      		sbiw r28,32
+ 1109               	.LCFI23:
+ 1110               		.cfi_def_cfa_offset 36
+ 1111 000a 0FB6      		in __tmp_reg__,__SREG__
+ 1112 000c F894      		cli
+ 1113 000e DEBF      		out __SP_H__,r29
+ 1114 0010 0FBE      		out __SREG__,__tmp_reg__
+ 1115 0012 CDBF      		out __SP_L__,r28
+ 1116               	/* prologue: function */
+ 1117               	/* frame size = 32 */
+ 1118               	/* stack size = 34 */
+ 1119               	.L__stack_usage = 34
+  54:main.c        **** 	setup();
+ 1120               		.loc 3 54 0
+ 1121 0014 00D0      		rcall setup
+ 1122               	.LVL83:
+  55:main.c        **** 	
+  56:main.c        **** 	uint32_t address = 0;
+  57:main.c        **** 	uint8_t resetCommonLines = 1;
+ 1123               		.loc 3 57 0
+ 1124 0016 8824      		clr r8
+ 1125 0018 8394      		inc r8
+  56:main.c        **** 	uint8_t resetCommonLines = 1;
+ 1126               		.loc 3 56 0
+ 1127 001a 412C      		mov r4,__zero_reg__
+ 1128 001c 512C      		mov r5,__zero_reg__
+ 1129 001e 3201      		movw r6,r4
+ 1130 0020 1E01      		movw r2,r28
+ 1131 0022 21E2      		ldi r18,33
+ 1132 0024 220E      		add r2,r18
+ 1133 0026 311C      		adc r3,__zero_reg__
+ 1134               	.LVL84:
+ 1135               	.L45:
+  58:main.c        **** 	
+  59:main.c        **** 	while(1) {
+  60:main.c        **** 		if (resetCommonLines == 1) {
+ 1136               		.loc 3 60 0
+ 1137 0028 81E0      		ldi r24,lo8(1)
+ 1138 002a 8812      		cpse r8,r24
+ 1139 002c 00C0      		rjmp .L46
+ 1140               	.LVL85:
+ 1141               	.L147:
+  61:main.c        **** 			rd_wr_csmreq_cs2_reset();
+ 1142               		.loc 3 61 0
+ 1143 002e 00D0      		rcall rd_wr_csmreq_cs2_reset
+ 1144               	.LVL86:
+ 1145               	.L46:
+  62:main.c        **** 		}
+  63:main.c        **** 		receivedChar = USART_Receive(); // Wait for 1 byte of data
+ 1146               		.loc 3 63 0
+ 1147 0030 00D0      		rcall USART_Receive
+ 1148               	.LVL87:
+ 1149 0032 8093 0000 		sts receivedChar,r24
+  64:main.c        **** 		
+  65:main.c        **** 		
+  66:main.c        **** 		// Return the cart mode in use
+  67:main.c        **** 		if (receivedChar == CART_MODE) {
+ 1150               		.loc 3 67 0
+ 1151 0036 8334      		cpi r24,lo8(67)
+ 1152 0038 01F4      		brne .L47
+  68:main.c        **** 			USART_Transmit(cartMode);
+ 1153               		.loc 3 68 0
+ 1154 003a 8091 0000 		lds r24,cartMode
+ 1155 003e 00D0      		rcall USART_Transmit
+ 1156               	.LVL88:
+ 1157 0040 00C0      		rjmp .L149
+ 1158               	.L47:
+  69:main.c        **** 			stop_timeout_timer();
+  70:main.c        **** 		}
+  71:main.c        **** 		
+  72:main.c        **** 		// Change to GB mode or GBA mode if requested
+  73:main.c        **** 		else if (receivedChar == GB_CART_MODE) {
+ 1159               		.loc 3 73 0
+ 1160 0042 8734      		cpi r24,lo8(71)
+ 1161 0044 01F4      		brne .L49
+  74:main.c        **** 			gb_mode();
+ 1162               		.loc 3 74 0
+ 1163 0046 00D0      		rcall gb_mode
+ 1164               	.LVL89:
+  75:main.c        **** 			flashBank1CommandWrites = 0; // Reset back to normal
+ 1165               		.loc 3 75 0
+ 1166 0048 1092 0000 		sts flashBank1CommandWrites,__zero_reg__
+ 1167               	.L149:
+  76:main.c        **** 			stop_timeout_timer();
+ 1168               		.loc 3 76 0
+ 1169 004c 00D0      		rcall stop_timeout_timer
+ 1170               	.LVL90:
+ 1171 004e 00C0      		rjmp .L45
+ 1172               	.L49:
+  77:main.c        **** 		}
+  78:main.c        **** 		
+  79:main.c        **** 		// Set address
+  80:main.c        **** 		else if (receivedChar == SET_START_ADDRESS) {
+ 1173               		.loc 3 80 0
+ 1174 0050 8134      		cpi r24,lo8(65)
+ 1175 0052 01F4      		brne .L50
+  81:main.c        **** 			usart_read_chars(); // Read start address
+ 1176               		.loc 3 81 0
+ 1177 0054 00D0      		rcall usart_read_chars
+ 1178               	.LVL91:
+  82:main.c        **** 			address = strtol(receivedBuffer, NULL, 16); // Convert address string in hex to dec
+ 1179               		.loc 3 82 0
+ 1180 0056 40E1      		ldi r20,lo8(16)
+ 1181 0058 50E0      		ldi r21,0
+ 1182 005a 60E0      		ldi r22,0
+ 1183 005c 70E0      		ldi r23,0
+ 1184 005e 80E0      		ldi r24,lo8(receivedBuffer)
+ 1185 0060 90E0      		ldi r25,hi8(receivedBuffer)
+ 1186 0062 00D0      		rcall strtol
+ 1187               	.LVL92:
+ 1188 0064 2B01      		movw r4,r22
+ 1189 0066 3C01      		movw r6,r24
+ 1190               	.LVL93:
+ 1191 0068 00C0      		rjmp .L45
+ 1192               	.L50:
+  83:main.c        **** 		}
+  84:main.c        **** 		
+  85:main.c        **** 		
+  86:main.c        **** 		// ****** Gameboy / Gameboy Colour ******
+  87:main.c        **** 		
+  88:main.c        **** 		// Read 64 bytes of ROM/RAM from address (and increment) until anything but 1 is received
+  89:main.c        **** 		else if (receivedChar == READ_ROM_RAM) {
+ 1193               		.loc 3 89 0
+ 1194 006a 8235      		cpi r24,lo8(82)
+ 1195 006c 01F4      		brne .L51
+  90:main.c        **** 			gb_mode();
+ 1196               		.loc 3 90 0
+ 1197 006e 00D0      		rcall gb_mode
+ 1198               	.LVL94:
+  91:main.c        **** 			receivedChar = '1';
+ 1199               		.loc 3 91 0
+ 1200 0070 81E3      		ldi r24,lo8(49)
+ 1201               	.LVL95:
+ 1202               	.L152:
+  92:main.c        **** 			while (receivedChar == '1') {
+  93:main.c        **** 				PORTD |= (1<<ACTIVITY_LED);
+  94:main.c        **** 				for (uint8_t x = 0; x < 64; x++) {
+  95:main.c        **** 					USART_Transmit(read_8bit_data(address));
+  96:main.c        **** 					address++;
+  97:main.c        **** 				}
+  98:main.c        **** 				
+  99:main.c        **** 				PORTD &= ~(1<<ACTIVITY_LED);
+ 100:main.c        **** 				receivedChar = USART_Receive();
+ 1203               		.loc 3 100 0
+ 1204 0072 8093 0000 		sts receivedChar,r24
+ 1205               	.LVL96:
+  92:main.c        **** 			while (receivedChar == '1') {
+ 1206               		.loc 3 92 0
+ 1207 0076 8091 0000 		lds r24,receivedChar
+ 1208 007a 8133      		cpi r24,lo8(49)
+ 1209 007c 01F4      		brne .L45
+  93:main.c        **** 				for (uint8_t x = 0; x < 64; x++) {
+ 1210               		.loc 3 93 0
+ 1211 007e 939A      		sbi 0x12,3
+ 1212               	.LVL97:
+ 1213 0080 00E0      		ldi r16,0
+ 1214 0082 10E0      		ldi r17,0
+ 1215               	.LVL98:
+ 1216               	.L53:
+ 1217               	.LBB125:
+  95:main.c        **** 					address++;
+ 1218               		.loc 3 95 0 discriminator 3
+ 1219 0084 C801      		movw r24,r16
+ 1220 0086 840D      		add r24,r4
+ 1221 0088 951D      		adc r25,r5
+ 1222 008a 00D0      		rcall read_8bit_data
+ 1223               	.LVL99:
+ 1224 008c 00D0      		rcall USART_Transmit
+ 1225               	.LVL100:
+ 1226 008e 0F5F      		subi r16,-1
+ 1227 0090 1F4F      		sbci r17,-1
+ 1228               	.LVL101:
+  94:main.c        **** 					USART_Transmit(read_8bit_data(address));
+ 1229               		.loc 3 94 0 discriminator 3
+ 1230 0092 0034      		cpi r16,64
+ 1231 0094 1105      		cpc r17,__zero_reg__
+ 1232 0096 01F4      		brne .L53
+ 1233 0098 90E4      		ldi r25,64
+ 1234 009a 490E      		add r4,r25
+ 1235 009c 511C      		adc r5,__zero_reg__
+ 1236 009e 611C      		adc r6,__zero_reg__
+ 1237 00a0 711C      		adc r7,__zero_reg__
+ 1238               	.LBE125:
+  99:main.c        **** 				receivedChar = USART_Receive();
+ 1239               		.loc 3 99 0
+ 1240 00a2 9398      		cbi 0x12,3
+ 1241               		.loc 3 100 0
+ 1242 00a4 00D0      		rcall USART_Receive
+ 1243               	.LVL102:
+ 1244 00a6 00C0      		rjmp .L152
+ 1245               	.LVL103:
+ 1246               	.L51:
+ 101:main.c        **** 			}
+ 102:main.c        **** 		}
+ 103:main.c        **** 		
+ 104:main.c        **** 		// Read and send 0x4000 bytes of data
+ 105:main.c        **** 		else if (receivedChar == READ_ROM_4000H) {
+ 1247               		.loc 3 105 0
+ 1248 00a8 8135      		cpi r24,lo8(81)
+ 1249 00aa 01F4      		brne .L55
+ 106:main.c        **** 			gb_mode();
+ 1250               		.loc 3 106 0
+ 1251 00ac 00D0      		rcall gb_mode
+ 1252               	.LVL104:
+ 107:main.c        **** 			PORTD |= (1<<ACTIVITY_LED);
+ 1253               		.loc 3 107 0
+ 1254 00ae 939A      		sbi 0x12,3
+ 1255               	.LVL105:
+ 1256               	.LBB126:
+ 108:main.c        **** 			for (uint16_t x = 0; x < 0x4000; x++) {
+ 1257               		.loc 3 108 0
+ 1258 00b0 00E0      		ldi r16,0
+ 1259 00b2 10E0      		ldi r17,0
+ 1260               	.LVL106:
+ 1261               	.L56:
+ 109:main.c        **** 				USART_Transmit(read_8bit_data(address));
+ 1262               		.loc 3 109 0 discriminator 3
+ 1263 00b4 C801      		movw r24,r16
+ 1264 00b6 840D      		add r24,r4
+ 1265 00b8 951D      		adc r25,r5
+ 1266 00ba 00D0      		rcall read_8bit_data
+ 1267               	.LVL107:
+ 1268 00bc 00D0      		rcall USART_Transmit
+ 1269               	.LVL108:
+ 108:main.c        **** 			for (uint16_t x = 0; x < 0x4000; x++) {
+ 1270               		.loc 3 108 0 discriminator 3
+ 1271 00be 0F5F      		subi r16,-1
+ 1272 00c0 1F4F      		sbci r17,-1
+ 1273               	.LVL109:
+ 1274 00c2 0115      		cp r16,__zero_reg__
+ 1275 00c4 E0E4      		ldi r30,64
+ 1276 00c6 1E07      		cpc r17,r30
+ 1277 00c8 01F4      		brne .L56
+ 1278 00ca F0E4      		ldi r31,64
+ 1279 00cc 5F0E      		add r5,r31
+ 1280 00ce 611C      		adc r6,__zero_reg__
+ 1281 00d0 711C      		adc r7,__zero_reg__
+ 1282 00d2 00C0      		rjmp .L150
+ 1283               	.LVL110:
+ 1284               	.L55:
+ 1285               	.LBE126:
+ 110:main.c        **** 				address++;
+ 111:main.c        **** 			}
+ 112:main.c        **** 			PORTD &= ~(1<<ACTIVITY_LED);
+ 113:main.c        **** 		}
+ 114:main.c        **** 		
+ 115:main.c        **** 		// Write 64 bytes to RAM on address (and increment)
+ 116:main.c        **** 		else if (receivedChar == WRITE_RAM) {
+ 1286               		.loc 3 116 0
+ 1287 00d4 8735      		cpi r24,lo8(87)
+ 1288 00d6 01F4      		brne .L57
+ 117:main.c        **** 			gb_mode();
+ 1289               		.loc 3 117 0
+ 1290 00d8 00D0      		rcall gb_mode
+ 1291               	.LVL111:
+ 118:main.c        **** 			
+ 119:main.c        **** 			// Read 64 bytes first as CH340G sends them all at once
+ 120:main.c        **** 			usart_read_bytes(64);
+ 1292               		.loc 3 120 0
+ 1293 00da 80E4      		ldi r24,lo8(64)
+ 1294 00dc 90E0      		ldi r25,0
+ 1295 00de 00D0      		rcall usart_read_bytes
+ 1296               	.LVL112:
+ 121:main.c        **** 			
+ 122:main.c        **** 			PORTD |= (1<<ACTIVITY_LED);
+ 1297               		.loc 3 122 0
+ 1298 00e0 939A      		sbi 0x12,3
+ 1299               	.LVL113:
+ 1300 00e2 00E0      		ldi r16,lo8(receivedBuffer)
+ 1301 00e4 10E0      		ldi r17,hi8(receivedBuffer)
+ 1302 00e6 E12C      		mov r14,__zero_reg__
+ 1303 00e8 F12C      		mov r15,__zero_reg__
+ 1304               	.LVL114:
+ 1305               	.L58:
+ 1306               	.LBB127:
+ 123:main.c        **** 			for (uint8_t x = 0; x < 64; x++) {
+ 124:main.c        **** 				write_8bit_data(address, receivedBuffer[x], MEMORY_WRITE);
+ 1307               		.loc 3 124 0 discriminator 3
+ 1308 00ea F801      		movw r30,r16
+ 1309 00ec 6191      		ld r22,Z+
+ 1310 00ee 8F01      		movw r16,r30
+ 1311 00f0 C701      		movw r24,r14
+ 1312 00f2 840D      		add r24,r4
+ 1313 00f4 951D      		adc r25,r5
+ 1314 00f6 41E0      		ldi r20,lo8(1)
+ 1315 00f8 00D0      		rcall write_8bit_data
+ 1316               	.LVL115:
+ 1317 00fa FFEF      		ldi r31,-1
+ 1318 00fc EF1A      		sub r14,r31
+ 1319 00fe FF0A      		sbc r15,r31
+ 1320               	.LVL116:
+ 123:main.c        **** 			for (uint8_t x = 0; x < 64; x++) {
+ 1321               		.loc 3 123 0 discriminator 3
+ 1322 0100 20E4      		ldi r18,64
+ 1323 0102 E216      		cp r14,r18
+ 1324 0104 F104      		cpc r15,__zero_reg__
+ 1325 0106 01F4      		brne .L58
+ 1326 0108 80E4      		ldi r24,64
+ 1327 010a 480E      		add r4,r24
+ 1328 010c 511C      		adc r5,__zero_reg__
+ 1329 010e 611C      		adc r6,__zero_reg__
+ 1330 0110 711C      		adc r7,__zero_reg__
+ 1331 0112 00C0      		rjmp .L154
+ 1332               	.LVL117:
+ 1333               	.L57:
+ 1334               	.LBE127:
+ 125:main.c        **** 				address++;
+ 126:main.c        **** 			}
+ 127:main.c        **** 			
+ 128:main.c        **** 			PORTD &= ~(1<<ACTIVITY_LED);
+ 129:main.c        **** 			USART_Transmit(SEND_ACK); // Send back acknowledgement
+ 130:main.c        **** 		}
+ 131:main.c        **** 		
+ 132:main.c        **** 		// Set bank address and write a byte
+ 133:main.c        **** 		else if (receivedChar == SET_BANK) {
+ 1335               		.loc 3 133 0
+ 1336 0114 8234      		cpi r24,lo8(66)
+ 1337 0116 01F4      		brne .L59
+ 1338               	.LBB128:
+ 134:main.c        **** 			gb_mode();
+ 1339               		.loc 3 134 0
+ 1340 0118 00D0      		rcall gb_mode
+ 1341               	.LVL118:
+ 135:main.c        **** 			
+ 136:main.c        **** 			usart_read_chars(); // Read start address
+ 1342               		.loc 3 136 0
+ 1343 011a 00D0      		rcall usart_read_chars
+ 1344               	.LVL119:
+ 137:main.c        **** 			uint16_t bankaddress = strtol(receivedBuffer, NULL, 16); // Convert address string in hex to dec
+ 1345               		.loc 3 137 0
+ 1346 011c 40E1      		ldi r20,lo8(16)
+ 1347 011e 50E0      		ldi r21,0
+ 1348 0120 60E0      		ldi r22,0
+ 1349 0122 70E0      		ldi r23,0
+ 1350 0124 80E0      		ldi r24,lo8(receivedBuffer)
+ 1351 0126 90E0      		ldi r25,hi8(receivedBuffer)
+ 1352 0128 00D0      		rcall strtol
+ 1353               	.LVL120:
+ 1354 012a 6B01      		movw r12,r22
+ 1355 012c 7C01      		movw r14,r24
+ 1356               	.LVL121:
+ 138:main.c        **** 			
+ 139:main.c        **** 			receivedChar = USART_Receive(); // Wait for bank number
+ 1357               		.loc 3 139 0
+ 1358 012e 00D0      		rcall USART_Receive
+ 1359               	.LVL122:
+ 1360 0130 8093 0000 		sts receivedChar,r24
+ 140:main.c        **** 			if (receivedChar == 'B') {
+ 1361               		.loc 3 140 0
+ 1362 0134 8234      		cpi r24,lo8(66)
+ 1363 0136 01F0      		breq .+2
+ 1364 0138 00C0      		rjmp .L45
+ 1365               	.LBB129:
+ 141:main.c        **** 				usart_read_chars(); // Read data
+ 1366               		.loc 3 141 0
+ 1367 013a 00D0      		rcall usart_read_chars
+ 1368               	.LVL123:
+ 142:main.c        **** 				uint8_t data = atoi(receivedBuffer); // Convert data string to dec
+ 1369               		.loc 3 142 0
+ 1370 013c 80E0      		ldi r24,lo8(receivedBuffer)
+ 1371 013e 90E0      		ldi r25,hi8(receivedBuffer)
+ 1372 0140 00D0      		rcall atoi
+ 1373               	.LVL124:
+ 143:main.c        **** 				lastBankAccessed = data; // Store the last bank accessed (used for flash carts that need it)
+ 1374               		.loc 3 143 0
+ 1375 0142 8093 0000 		sts lastBankAccessed,r24
+ 144:main.c        **** 				
+ 145:main.c        **** 				write_8bit_data(bankaddress, data, BANK_WRITE);
+ 1376               		.loc 3 145 0
+ 1377 0146 40E0      		ldi r20,0
+ 1378 0148 682F      		mov r22,r24
+ 1379 014a C601      		movw r24,r12
+ 1380               	.LVL125:
+ 1381 014c 00D0      		rcall write_8bit_data
+ 1382               	.LVL126:
+ 1383 014e 00C0      		rjmp .L45
+ 1384               	.LVL127:
+ 1385               	.L59:
+ 1386               	.LBE129:
+ 1387               	.LBE128:
+ 146:main.c        **** 			}
+ 147:main.c        **** 		}
+ 148:main.c        **** 		
+ 149:main.c        **** 		
+ 150:main.c        **** 		// ---------- GB FLASH CARTS ----------
+ 151:main.c        **** 		// Select which pin need to pulse as WE (Audio or WR)
+ 152:main.c        **** 		else if (receivedChar == GB_FLASH_WE_PIN) {
+ 1388               		.loc 3 152 0
+ 1389 0150 8035      		cpi r24,lo8(80)
+ 1390 0152 01F4      		brne .L60
+ 153:main.c        **** 			flashWriteWePin = USART_Receive();
+ 1391               		.loc 3 153 0
+ 1392 0154 00D0      		rcall USART_Receive
+ 1393               	.LVL128:
+ 1394 0156 8093 0000 		sts flashWriteWePin,r24
+ 154:main.c        **** 			
+ 155:main.c        **** 			if (flashWriteWePin == WE_AS_AUDIO_PIN) {
+ 1395               		.loc 3 155 0
+ 1396 015a 8134      		cpi r24,lo8(65)
+ 1397 015c 01F0      		breq .+2
+ 1398 015e 00C0      		rjmp .L45
+ 156:main.c        **** 				DDRE |= (1<<AUDIO_PIN);
+ 1399               		.loc 3 156 0
+ 1400 0160 319A      		sbi 0x6,1
+ 157:main.c        **** 				audioPin_high;
+ 1401               		.loc 3 157 0
+ 1402 0162 399A      		sbi 0x7,1
+ 1403 0164 00C0      		rjmp .L45
+ 1404               	.L60:
+ 158:main.c        **** 			}
+ 159:main.c        **** 		}
+ 160:main.c        **** 		
+ 161:main.c        **** 		// Some flash carts may require changing the bank back to 1 in order to accept flash chip command
+ 162:main.c        **** 		else if (receivedChar == GB_FLASH_BANK_1_COMMAND_WRITES) {
+ 1405               		.loc 3 162 0
+ 1406 0166 8E34      		cpi r24,lo8(78)
+ 1407 0168 01F4      		brne .L61
+ 163:main.c        **** 			flashBank1CommandWrites = 1;
+ 1408               		.loc 3 163 0
+ 1409 016a 91E0      		ldi r25,lo8(1)
+ 1410 016c 9093 0000 		sts flashBank1CommandWrites,r25
+ 1411 0170 00C0      		rjmp .L45
+ 1412               	.L61:
+ 164:main.c        **** 		}
+ 165:main.c        **** 		
+ 166:main.c        **** 		// Load the program method to use
+ 167:main.c        **** 		else if (receivedChar == GB_FLASH_PROGRAM_METHOD) {
+ 1413               		.loc 3 167 0
+ 1414 0172 8534      		cpi r24,lo8(69)
+ 1415 0174 01F4      		brne .L62
+ 1416 0176 00E0      		ldi r16,lo8(flashWriteCycle)
+ 1417 0178 10E0      		ldi r17,hi8(flashWriteCycle)
+ 1418               	.L63:
+ 1419               	.LBB130:
+ 168:main.c        **** 			for (uint8_t x = 0; x < 3; x++) {
+ 169:main.c        **** 				usart_read_chars(); // Address
+ 1420               		.loc 3 169 0 discriminator 3
+ 1421 017a 00D0      		rcall usart_read_chars
+ 1422               	.LVL129:
+ 170:main.c        **** 				flashWriteCycle[x][0] = strtol(receivedBuffer, NULL, 16);
+ 1423               		.loc 3 170 0 discriminator 3
+ 1424 017c 40E1      		ldi r20,lo8(16)
+ 1425 017e 50E0      		ldi r21,0
+ 1426 0180 60E0      		ldi r22,0
+ 1427 0182 70E0      		ldi r23,0
+ 1428 0184 80E0      		ldi r24,lo8(receivedBuffer)
+ 1429 0186 90E0      		ldi r25,hi8(receivedBuffer)
+ 1430 0188 00D0      		rcall strtol
+ 1431               	.LVL130:
+ 1432 018a F801      		movw r30,r16
+ 1433 018c 7183      		std Z+1,r23
+ 1434 018e 6083      		st Z,r22
+ 171:main.c        **** 				USART_Transmit(SEND_ACK);
+ 1435               		.loc 3 171 0 discriminator 3
+ 1436 0190 81E3      		ldi r24,lo8(49)
+ 1437 0192 00D0      		rcall USART_Transmit
+ 1438               	.LVL131:
+ 172:main.c        **** 				
+ 173:main.c        **** 				usart_read_chars(); // Data
+ 1439               		.loc 3 173 0 discriminator 3
+ 1440 0194 00D0      		rcall usart_read_chars
+ 1441               	.LVL132:
+ 174:main.c        **** 				flashWriteCycle[x][1] = strtol(receivedBuffer, NULL, 16);
+ 1442               		.loc 3 174 0 discriminator 3
+ 1443 0196 40E1      		ldi r20,lo8(16)
+ 1444 0198 50E0      		ldi r21,0
+ 1445 019a 60E0      		ldi r22,0
+ 1446 019c 70E0      		ldi r23,0
+ 1447 019e 80E0      		ldi r24,lo8(receivedBuffer)
+ 1448 01a0 90E0      		ldi r25,hi8(receivedBuffer)
+ 1449 01a2 00D0      		rcall strtol
+ 1450               	.LVL133:
+ 1451 01a4 F801      		movw r30,r16
+ 1452 01a6 7383      		std Z+3,r23
+ 1453 01a8 6283      		std Z+2,r22
+ 175:main.c        **** 				USART_Transmit(SEND_ACK);
+ 1454               		.loc 3 175 0 discriminator 3
+ 1455 01aa 81E3      		ldi r24,lo8(49)
+ 1456 01ac 00D0      		rcall USART_Transmit
+ 1457               	.LVL134:
+ 1458 01ae 0C5F      		subi r16,-4
+ 1459 01b0 1F4F      		sbci r17,-1
+ 168:main.c        **** 				usart_read_chars(); // Address
+ 1460               		.loc 3 168 0 discriminator 3
+ 1461 01b2 80E0      		ldi r24,lo8(flashWriteCycle+12)
+ 1462 01b4 90E0      		ldi r25,hi8(flashWriteCycle+12)
+ 1463 01b6 8017      		cp r24,r16
+ 1464 01b8 9107      		cpc r25,r17
+ 1465 01ba 01F4      		brne .L63
+ 1466 01bc 00C0      		rjmp .L45
+ 1467               	.L62:
+ 1468               	.LBE130:
+ 176:main.c        **** 			}
+ 177:main.c        **** 		}
+ 178:main.c        **** 		
+ 179:main.c        **** 		// Write address and one byte to Flash, pulse a pin
+ 180:main.c        **** 		else if (receivedChar == GB_FLASH_WRITE_BYTE) {
+ 1469               		.loc 3 180 0
+ 1470 01be 8634      		cpi r24,lo8(70)
+ 1471 01c0 01F4      		brne .L64
+ 1472               	.LBB131:
+ 181:main.c        **** 			usart_read_chars(); // Read address
+ 1473               		.loc 3 181 0
+ 1474 01c2 00D0      		rcall usart_read_chars
+ 1475               	.LVL135:
+ 182:main.c        **** 			uint16_t flashAddress = strtol(receivedBuffer, NULL, 16);
+ 1476               		.loc 3 182 0
+ 1477 01c4 40E1      		ldi r20,lo8(16)
+ 1478 01c6 50E0      		ldi r21,0
+ 1479 01c8 60E0      		ldi r22,0
+ 1480 01ca 70E0      		ldi r23,0
+ 1481 01cc 80E0      		ldi r24,lo8(receivedBuffer)
+ 1482 01ce 90E0      		ldi r25,hi8(receivedBuffer)
+ 1483 01d0 00D0      		rcall strtol
+ 1484               	.LVL136:
+ 1485 01d2 6B01      		movw r12,r22
+ 1486 01d4 7C01      		movw r14,r24
+ 1487               	.LVL137:
+ 183:main.c        **** 			
+ 184:main.c        **** 			usart_read_chars(); // Read data byte
+ 1488               		.loc 3 184 0
+ 1489 01d6 00D0      		rcall usart_read_chars
+ 1490               	.LVL138:
+ 185:main.c        **** 			uint8_t flashByte = strtol(receivedBuffer, NULL, 16);
+ 1491               		.loc 3 185 0
+ 1492 01d8 40E1      		ldi r20,lo8(16)
+ 1493 01da 50E0      		ldi r21,0
+ 1494 01dc 60E0      		ldi r22,0
+ 1495 01de 70E0      		ldi r23,0
+ 1496 01e0 80E0      		ldi r24,lo8(receivedBuffer)
+ 1497 01e2 90E0      		ldi r25,hi8(receivedBuffer)
+ 1498 01e4 00D0      		rcall strtol
+ 1499               	.LVL139:
+ 186:main.c        **** 			
+ 187:main.c        **** 			PORTD |= (1<<ACTIVITY_LED);
+ 1500               		.loc 3 187 0
+ 1501 01e6 939A      		sbi 0x12,3
+ 188:main.c        **** 			gb_flash_write_bus_cycle(flashAddress, flashByte);
+ 1502               		.loc 3 188 0
+ 1503 01e8 C601      		movw r24,r12
+ 1504 01ea 00D0      		rcall gb_flash_write_bus_cycle
+ 1505               	.LVL140:
+ 1506               	.L154:
+ 189:main.c        **** 			PORTD &= ~(1<<ACTIVITY_LED);
+ 1507               		.loc 3 189 0
+ 1508 01ec 9398      		cbi 0x12,3
+ 190:main.c        **** 			
+ 191:main.c        **** 			USART_Transmit(SEND_ACK); // Send back acknowledgement
+ 1509               		.loc 3 191 0
+ 1510 01ee 81E3      		ldi r24,lo8(49)
+ 1511 01f0 00C0      		rjmp .L151
+ 1512               	.LVL141:
+ 1513               	.L64:
+ 1514               	.LBE131:
+ 192:main.c        **** 		}
+ 193:main.c        **** 		
+ 194:main.c        **** 		// Write 64 bytes to Flash address one byte write at a time (and increment), pulse a pin
+ 195:main.c        **** 		else if (receivedChar == GB_FLASH_WRITE_64BYTE) {
+ 1515               		.loc 3 195 0
+ 1516 01f2 8435      		cpi r24,lo8(84)
+ 1517 01f4 01F4      		brne .L65
+ 196:main.c        **** 			usart_read_bytes(64);
+ 1518               		.loc 3 196 0
+ 1519 01f6 80E4      		ldi r24,lo8(64)
+ 1520 01f8 90E0      		ldi r25,0
+ 1521 01fa 00D0      		rcall usart_read_bytes
+ 1522               	.LVL142:
+ 197:main.c        **** 			start_timeout_timer();
+ 1523               		.loc 3 197 0
+ 1524 01fc 00D0      		rcall start_timeout_timer
+ 1525               	.LVL143:
+ 198:main.c        **** 			
+ 199:main.c        **** 			PORTD |= (1<<ACTIVITY_LED);
+ 1526               		.loc 3 199 0
+ 1527 01fe 939A      		sbi 0x12,3
+ 200:main.c        **** 			if (flashBank1CommandWrites == 0) {
+ 1528               		.loc 3 200 0
+ 1529 0200 8091 0000 		lds r24,flashBank1CommandWrites
+ 1530 0204 00E0      		ldi r16,lo8(receivedBuffer)
+ 1531 0206 10E0      		ldi r17,hi8(receivedBuffer)
+ 1532 0208 E12C      		mov r14,__zero_reg__
+ 1533 020a F12C      		mov r15,__zero_reg__
+ 1534 020c 8111      		cpse r24,__zero_reg__
+ 1535 020e 00C0      		rjmp .L71
+ 1536               	.LVL144:
+ 1537               	.L68:
+ 1538               	.LBB132:
+ 201:main.c        **** 				for (uint8_t x = 0; x < 64; x++) {
+ 202:main.c        **** 					if (receivedBuffer[x] != 0xFF) {
+ 1539               		.loc 3 202 0
+ 1540 0210 F801      		movw r30,r16
+ 1541 0212 6191      		ld r22,Z+
+ 1542 0214 8F01      		movw r16,r30
+ 1543 0216 6F3F      		cpi r22,lo8(-1)
+ 1544 0218 01F0      		breq .L67
+ 203:main.c        **** 						gb_flash_write_byte(address, receivedBuffer[x]);
+ 1545               		.loc 3 203 0
+ 1546 021a C701      		movw r24,r14
+ 1547 021c 840D      		add r24,r4
+ 1548 021e 951D      		adc r25,r5
+ 1549 0220 00D0      		rcall gb_flash_write_byte
+ 1550               	.LVL145:
+ 1551               	.L67:
+ 1552 0222 FFEF      		ldi r31,-1
+ 1553 0224 EF1A      		sub r14,r31
+ 1554 0226 FF0A      		sbc r15,r31
+ 1555               	.LVL146:
+ 201:main.c        **** 				for (uint8_t x = 0; x < 64; x++) {
+ 1556               		.loc 3 201 0 discriminator 2
+ 1557 0228 20E4      		ldi r18,64
+ 1558 022a E216      		cp r14,r18
+ 1559 022c F104      		cpc r15,__zero_reg__
+ 1560 022e 01F4      		brne .L68
+ 1561 0230 00C0      		rjmp .L153
+ 1562               	.LVL147:
+ 1563               	.L70:
+ 1564 0232 FFEF      		ldi r31,-1
+ 1565 0234 EF1A      		sub r14,r31
+ 1566 0236 FF0A      		sbc r15,r31
+ 1567               	.LVL148:
+ 1568               	.LBE132:
+ 1569               	.LBB133:
+ 204:main.c        **** 					}
+ 205:main.c        **** 					address++;
+ 206:main.c        **** 				}
+ 207:main.c        **** 			}
+ 208:main.c        **** 			else { // Some flash carts need to change to bank 1 to issue flash commands
+ 209:main.c        **** 				for (uint8_t x = 0; x < 64; x++) {
+ 1570               		.loc 3 209 0 discriminator 2
+ 1571 0238 20E4      		ldi r18,64
+ 1572 023a E216      		cp r14,r18
+ 1573 023c F104      		cpc r15,__zero_reg__
+ 1574 023e 01F4      		brne .+2
+ 1575 0240 00C0      		rjmp .L153
+ 1576               	.LVL149:
+ 1577               	.L71:
+ 210:main.c        **** 					if (receivedBuffer[x] != 0xFF) {
+ 1578               		.loc 3 210 0
+ 1579 0242 F801      		movw r30,r16
+ 1580 0244 6191      		ld r22,Z+
+ 1581 0246 8F01      		movw r16,r30
+ 1582 0248 6F3F      		cpi r22,lo8(-1)
+ 1583 024a 01F0      		breq .L70
+ 211:main.c        **** 						gb_flash_write_byte_bank1_commands(address, receivedBuffer[x]);
+ 1584               		.loc 3 211 0
+ 1585 024c C701      		movw r24,r14
+ 1586 024e 840D      		add r24,r4
+ 1587 0250 951D      		adc r25,r5
+ 1588 0252 00D0      		rcall gb_flash_write_byte_bank1_commands
+ 1589               	.LVL150:
+ 1590 0254 00C0      		rjmp .L70
+ 1591               	.LVL151:
+ 1592               	.L65:
+ 1593               	.LBE133:
+ 212:main.c        **** 					}
+ 213:main.c        **** 					address++;
+ 214:main.c        **** 				}
+ 215:main.c        **** 			}
+ 216:main.c        **** 			
+ 217:main.c        **** 			check_if_timed_out(); // Send ACK if successful write
+ 218:main.c        **** 		}
+ 219:main.c        **** 		
+ 220:main.c        **** 		// Buffered programming, write 32 bytes to Flash address
+ 221:main.c        **** 		else if (receivedChar == GB_FLASH_WRITE_BUFFERED_32BYTE) {
+ 1594               		.loc 3 221 0
+ 1595 0256 8935      		cpi r24,lo8(89)
+ 1596 0258 01F0      		breq .+2
+ 1597 025a 00C0      		rjmp .L72
+ 1598               	.LBB134:
+ 222:main.c        **** 			usart_read_bytes(32);
+ 1599               		.loc 3 222 0
+ 1600 025c 80E2      		ldi r24,lo8(32)
+ 1601 025e 90E0      		ldi r25,0
+ 1602 0260 00D0      		rcall usart_read_bytes
+ 1603               	.LVL152:
+ 223:main.c        **** 			start_timeout_timer();
+ 1604               		.loc 3 223 0
+ 1605 0262 00D0      		rcall start_timeout_timer
+ 1606               	.LVL153:
+ 224:main.c        **** 			PORTD |= (1<<ACTIVITY_LED);
+ 1607               		.loc 3 224 0
+ 1608 0264 939A      		sbi 0x12,3
+ 225:main.c        **** 			
+ 226:main.c        **** 			// Setup buffered write
+ 227:main.c        **** 			gb_flash_write_bus_cycle(0xAAA, 0xAA);
+ 1609               		.loc 3 227 0
+ 1610 0266 6AEA      		ldi r22,lo8(-86)
+ 1611 0268 8AEA      		ldi r24,lo8(-86)
+ 1612 026a 9AE0      		ldi r25,lo8(10)
+ 1613 026c 00D0      		rcall gb_flash_write_bus_cycle
+ 1614               	.LVL154:
+ 228:main.c        **** 			gb_flash_write_bus_cycle(0x555, 0x55);
+ 1615               		.loc 3 228 0
+ 1616 026e 65E5      		ldi r22,lo8(85)
+ 1617 0270 85E5      		ldi r24,lo8(85)
+ 1618 0272 95E0      		ldi r25,lo8(5)
+ 1619 0274 00D0      		rcall gb_flash_write_bus_cycle
+ 1620               	.LVL155:
+ 229:main.c        **** 			gb_flash_write_bus_cycle(address, 0x25);
+ 1621               		.loc 3 229 0
+ 1622 0276 7201      		movw r14,r4
+ 1623 0278 65E2      		ldi r22,lo8(37)
+ 1624 027a C201      		movw r24,r4
+ 1625 027c 00D0      		rcall gb_flash_write_bus_cycle
+ 1626               	.LVL156:
+ 230:main.c        **** 			gb_flash_write_bus_cycle(address, 0x1F); // Length
+ 1627               		.loc 3 230 0
+ 1628 027e 6FE1      		ldi r22,lo8(31)
+ 1629 0280 C201      		movw r24,r4
+ 1630 0282 00D0      		rcall gb_flash_write_bus_cycle
+ 1631               	.LVL157:
+ 1632               	.LBB135:
+ 1633               	.LBB136:
+ 1634               		.loc 2 276 0
+ 1635 0284 95E0      		ldi r25,lo8(5)
+ 1636 0286 9A95      	1:	dec r25
+ 1637 0288 01F4      		brne 1b
+ 1638 028a 0000      		nop
+ 1639               	.LVL158:
+ 1640 028c 00E0      		ldi r16,lo8(receivedBuffer)
+ 1641 028e 10E0      		ldi r17,hi8(receivedBuffer)
+ 1642 0290 C12C      		mov r12,__zero_reg__
+ 1643 0292 D12C      		mov r13,__zero_reg__
+ 1644               	.LVL159:
+ 1645               	.L73:
+ 1646               	.LBE136:
+ 1647               	.LBE135:
+ 1648               	.LBB138:
+ 231:main.c        **** 			_delay_us(1);
+ 232:main.c        **** 			
+ 233:main.c        **** 			// Write data
+ 234:main.c        **** 			for (uint8_t x = 0; x < 32; x++) {
+ 235:main.c        **** 				gb_flash_write_bus_cycle(address, receivedBuffer[x]);
+ 1649               		.loc 3 235 0 discriminator 3
+ 1650 0294 F801      		movw r30,r16
+ 1651 0296 6191      		ld r22,Z+
+ 1652 0298 8F01      		movw r16,r30
+ 1653 029a C701      		movw r24,r14
+ 1654 029c 8C0D      		add r24,r12
+ 1655 029e 9D1D      		adc r25,r13
+ 1656 02a0 00D0      		rcall gb_flash_write_bus_cycle
+ 1657               	.LVL160:
+ 1658 02a2 FFEF      		ldi r31,-1
+ 1659 02a4 CF1A      		sub r12,r31
+ 1660 02a6 DF0A      		sbc r13,r31
+ 1661               	.LVL161:
+ 234:main.c        **** 				gb_flash_write_bus_cycle(address, receivedBuffer[x]);
+ 1662               		.loc 3 234 0 discriminator 3
+ 1663 02a8 20E2      		ldi r18,32
+ 1664 02aa C216      		cp r12,r18
+ 1665 02ac D104      		cpc r13,__zero_reg__
+ 1666 02ae 01F4      		brne .L73
+ 1667 02b0 80E2      		ldi r24,32
+ 1668 02b2 480E      		add r4,r24
+ 1669 02b4 511C      		adc r5,__zero_reg__
+ 1670 02b6 611C      		adc r6,__zero_reg__
+ 1671 02b8 711C      		adc r7,__zero_reg__
+ 1672               	.LBE138:
+ 236:main.c        **** 				address++;
+ 237:main.c        **** 			}
+ 238:main.c        **** 			
+ 239:main.c        **** 			// Write buffer to flash
+ 240:main.c        **** 			gb_flash_write_bus_cycle(address-32, 0x29);
+ 1673               		.loc 3 240 0
+ 1674 02ba C201      		movw r24,r4
+ 1675 02bc 8097      		sbiw r24,32
+ 1676 02be 69E2      		ldi r22,lo8(41)
+ 1677 02c0 00D0      		rcall gb_flash_write_bus_cycle
+ 1678               	.LVL162:
+ 1679               	.LBB139:
+ 1680               	.LBB140:
+ 1681               		.loc 2 276 0
+ 1682 02c2 EFE1      		ldi r30,lo8(799)
+ 1683 02c4 F3E0      		ldi r31,hi8(799)
+ 1684 02c6 3197      	1:	sbiw r30,1
+ 1685 02c8 01F4      		brne 1b
+ 1686 02ca 00C0      		rjmp .
+ 1687 02cc 0000      		nop
+ 1688               	.LVL163:
+ 1689               	.LBE140:
+ 1690               	.LBE139:
+ 241:main.c        **** 			_delay_us(200);
+ 242:main.c        **** 			
+ 243:main.c        **** 			// Verify last byte written
+ 244:main.c        **** 			uint8_t dataVerify = gb_flash_read_byte(address-1);
+ 1691               		.loc 3 244 0
+ 1692 02ce 8201      		movw r16,r4
+ 1693 02d0 0150      		subi r16,1
+ 1694 02d2 1109      		sbc r17,__zero_reg__
+ 1695 02d4 C801      		movw r24,r16
+ 1696 02d6 00D0      		rcall gb_flash_read_byte
+ 1697               	.LVL164:
+ 1698               	.L74:
+ 245:main.c        **** 			uint8_t verifyCount = 0;
+ 246:main.c        **** 			while (dataVerify != receivedBuffer[31]) {
+ 1699               		.loc 3 246 0
+ 1700 02d8 9091 0000 		lds r25,receivedBuffer+31
+ 1701 02dc 8917      		cp r24,r25
+ 1702 02de 01F4      		brne .+2
+ 1703 02e0 00C0      		rjmp .L104
+ 247:main.c        **** 				dataVerify = gb_flash_read_byte(address-1);
+ 1704               		.loc 3 247 0
+ 1705 02e2 C801      		movw r24,r16
+ 1706               	.LVL165:
+ 1707 02e4 00D0      		rcall gb_flash_read_byte
+ 1708               	.LVL166:
+ 1709               	.LBB141:
+ 1710               	.LBB142:
+ 1711               		.loc 2 276 0
+ 1712 02e6 FAE1      		ldi r31,lo8(26)
+ 1713 02e8 FA95      	1:	dec r31
+ 1714 02ea 01F4      		brne 1b
+ 1715 02ec 00C0      		rjmp .
+ 1716               	.LVL167:
+ 1717               	.LBE142:
+ 1718               	.LBE141:
+ 248:main.c        **** 				_delay_us(5);
+ 249:main.c        **** 				verifyCount++;
+ 250:main.c        **** 				if (writingTimedout == 1) {
+ 1719               		.loc 3 250 0
+ 1720 02ee 9091 0000 		lds r25,writingTimedout
+ 1721 02f2 9130      		cpi r25,lo8(1)
+ 1722 02f4 01F4      		brne .L74
+ 1723 02f6 00C0      		rjmp .L104
+ 1724               	.LVL168:
+ 1725               	.L72:
+ 1726               	.LBE134:
+ 251:main.c        **** 					break;
+ 252:main.c        **** 				}
+ 253:main.c        **** 			}
+ 254:main.c        **** 			
+ 255:main.c        **** 			check_if_timed_out(); // Send ACK if successful write
+ 256:main.c        **** 		}
+ 257:main.c        **** 		
+ 258:main.c        **** 		// Buffered programming, write 256 bytes to Flash address
+ 259:main.c        **** 		else if (receivedChar == GB_FLASH_WRITE_BUFFERED_256BYTE) {
+ 1727               		.loc 3 259 0
+ 1728 02f8 8535      		cpi r24,lo8(85)
+ 1729 02fa 01F0      		breq .+2
+ 1730 02fc 00C0      		rjmp .L77
+ 1731               	.LBB144:
+ 260:main.c        **** 			usart_read_bytes(256);
+ 1732               		.loc 3 260 0
+ 1733 02fe 80E0      		ldi r24,0
+ 1734 0300 91E0      		ldi r25,lo8(1)
+ 1735 0302 00D0      		rcall usart_read_bytes
+ 1736               	.LVL169:
+ 261:main.c        **** 			start_timeout_timer();
+ 1737               		.loc 3 261 0
+ 1738 0304 00D0      		rcall start_timeout_timer
+ 1739               	.LVL170:
+ 262:main.c        **** 			PORTD |= (1<<ACTIVITY_LED);
+ 1740               		.loc 3 262 0
+ 1741 0306 939A      		sbi 0x12,3
+ 1742               	.LVL171:
+ 1743 0308 90E0      		ldi r25,lo8(receivedBuffer)
+ 1744 030a E92E      		mov r14,r25
+ 1745 030c 90E0      		ldi r25,hi8(receivedBuffer)
+ 1746 030e F92E      		mov r15,r25
+ 1747 0310 28E0      		ldi r18,lo8(8)
+ 1748 0312 922E      		mov r9,r18
+ 1749               	.LVL172:
+ 1750               	.L78:
+ 1751 0314 CE01      		movw r24,r28
+ 1752 0316 0196      		adiw r24,1
+ 1753 0318 6C01      		movw r12,r24
+ 1754               	.LBE144:
+ 1755               	.LBB155:
+ 1756               	.LBB143:
+ 1757               	.LBB137:
+ 1758               		.loc 2 276 0
+ 1759 031a FC01      		movw r30,r24
+ 1760 031c D701      		movw r26,r14
+ 1761               	.LVL173:
+ 1762               	.L79:
+ 1763               	.LBE137:
+ 1764               	.LBE143:
+ 1765               	.LBE155:
+ 1766               	.LBB156:
+ 1767               	.LBB145:
+ 1768               	.LBB146:
+ 1769               	.LBB147:
+ 263:main.c        **** 			
+ 264:main.c        **** 			int16_t byteCounter = 0;
+ 265:main.c        **** 			for (uint8_t b = 0; b < 8; b++) {
+ 266:main.c        **** 				// Store to local buffer
+ 267:main.c        **** 				uint8_t localBuffer[32];
+ 268:main.c        **** 				for (uint8_t x = 0; x < 32; x++) {
+ 269:main.c        **** 					localBuffer[x] = receivedBuffer[byteCounter];
+ 1770               		.loc 3 269 0 discriminator 3
+ 1771 031e 8D91      		ld r24,X+
+ 1772               	.LVL174:
+ 1773 0320 8193      		st Z+,r24
+ 1774               	.LVL175:
+ 268:main.c        **** 					localBuffer[x] = receivedBuffer[byteCounter];
+ 1775               		.loc 3 268 0 discriminator 3
+ 1776 0322 E215      		cp r30,r2
+ 1777 0324 F305      		cpc r31,r3
+ 1778 0326 01F4      		brne .L79
+ 1779               	.LBE147:
+ 270:main.c        **** 					byteCounter++;
+ 271:main.c        **** 				}
+ 272:main.c        **** 				
+ 273:main.c        **** 				// Setup buffered write
+ 274:main.c        **** 				gb_flash_write_bus_cycle(0xAAA, 0xAA);
+ 1780               		.loc 3 274 0
+ 1781 0328 6AEA      		ldi r22,lo8(-86)
+ 1782 032a 8AEA      		ldi r24,lo8(-86)
+ 1783 032c 9AE0      		ldi r25,lo8(10)
+ 1784 032e 00D0      		rcall gb_flash_write_bus_cycle
+ 1785               	.LVL176:
+ 275:main.c        **** 				gb_flash_write_bus_cycle(0x555, 0x55);
+ 1786               		.loc 3 275 0
+ 1787 0330 65E5      		ldi r22,lo8(85)
+ 1788 0332 85E5      		ldi r24,lo8(85)
+ 1789 0334 95E0      		ldi r25,lo8(5)
+ 1790 0336 00D0      		rcall gb_flash_write_bus_cycle
+ 1791               	.LVL177:
+ 276:main.c        **** 				gb_flash_write_bus_cycle(address, 0x25);
+ 1792               		.loc 3 276 0
+ 1793 0338 5201      		movw r10,r4
+ 1794 033a 65E2      		ldi r22,lo8(37)
+ 1795 033c C201      		movw r24,r4
+ 1796 033e 00D0      		rcall gb_flash_write_bus_cycle
+ 1797               	.LVL178:
+ 277:main.c        **** 				gb_flash_write_bus_cycle(address, 0x1F); // Length
+ 1798               		.loc 3 277 0
+ 1799 0340 6FE1      		ldi r22,lo8(31)
+ 1800 0342 C201      		movw r24,r4
+ 1801 0344 00D0      		rcall gb_flash_write_bus_cycle
+ 1802               	.LVL179:
+ 1803               	.LBB148:
+ 1804               	.LBB149:
+ 1805               		.loc 2 276 0
+ 1806 0346 25E0      		ldi r18,lo8(5)
+ 1807 0348 2A95      	1:	dec r18
+ 1808 034a 01F4      		brne 1b
+ 1809 034c 0000      		nop
+ 1810               	.LVL180:
+ 1811 034e 00E0      		ldi r16,0
+ 1812 0350 10E0      		ldi r17,0
+ 1813               	.LVL181:
+ 1814               	.L80:
+ 1815               	.LBE149:
+ 1816               	.LBE148:
+ 1817               	.LBB150:
+ 278:main.c        **** 				_delay_us(1);
+ 279:main.c        **** 				
+ 280:main.c        **** 				// Write data
+ 281:main.c        **** 				for (uint8_t x = 0; x < 32; x++) {
+ 282:main.c        **** 					gb_flash_write_bus_cycle(address, localBuffer[x]);
+ 1818               		.loc 3 282 0 discriminator 3
+ 1819 0352 F601      		movw r30,r12
+ 1820 0354 6191      		ld r22,Z+
+ 1821 0356 6F01      		movw r12,r30
+ 1822 0358 C501      		movw r24,r10
+ 1823 035a 800F      		add r24,r16
+ 1824 035c 911F      		adc r25,r17
+ 1825 035e 00D0      		rcall gb_flash_write_bus_cycle
+ 1826               	.LVL182:
+ 1827 0360 0F5F      		subi r16,-1
+ 1828 0362 1F4F      		sbci r17,-1
+ 1829               	.LVL183:
+ 281:main.c        **** 					gb_flash_write_bus_cycle(address, localBuffer[x]);
+ 1830               		.loc 3 281 0 discriminator 3
+ 1831 0364 0032      		cpi r16,32
+ 1832 0366 1105      		cpc r17,__zero_reg__
+ 1833 0368 01F4      		brne .L80
+ 1834 036a F0E2      		ldi r31,32
+ 1835 036c 4F0E      		add r4,r31
+ 1836 036e 511C      		adc r5,__zero_reg__
+ 1837 0370 611C      		adc r6,__zero_reg__
+ 1838 0372 711C      		adc r7,__zero_reg__
+ 1839               	.LBE150:
+ 283:main.c        **** 					address++;
+ 284:main.c        **** 				}
+ 285:main.c        **** 				
+ 286:main.c        **** 				// Write buffer to flash
+ 287:main.c        **** 				gb_flash_write_bus_cycle(address-32, 0x29);
+ 1840               		.loc 3 287 0
+ 1841 0374 C201      		movw r24,r4
+ 1842 0376 8097      		sbiw r24,32
+ 1843 0378 69E2      		ldi r22,lo8(41)
+ 1844 037a 00D0      		rcall gb_flash_write_bus_cycle
+ 1845               	.LVL184:
+ 1846               	.LBB151:
+ 1847               	.LBB152:
+ 1848               		.loc 2 276 0
+ 1849 037c 8FE1      		ldi r24,lo8(799)
+ 1850 037e 93E0      		ldi r25,hi8(799)
+ 1851 0380 0197      	1:	sbiw r24,1
+ 1852 0382 01F4      		brne 1b
+ 1853 0384 00C0      		rjmp .
+ 1854 0386 0000      		nop
+ 1855               	.LVL185:
+ 1856 0388 8201      		movw r16,r4
+ 1857               	.LVL186:
+ 1858 038a 0150      		subi r16,1
+ 1859 038c 1109      		sbc r17,__zero_reg__
+ 1860               	.LBE152:
+ 1861               	.LBE151:
+ 288:main.c        **** 				_delay_us(200);
+ 289:main.c        **** 				
+ 290:main.c        **** 				// Verify last byte written
+ 291:main.c        **** 				uint8_t dataVerify = gb_flash_read_byte(address-1);
+ 1862               		.loc 3 291 0
+ 1863 038e C801      		movw r24,r16
+ 1864 0390 00D0      		rcall gb_flash_read_byte
+ 1865               	.LVL187:
+ 1866               	.L81:
+ 292:main.c        **** 				while (dataVerify != localBuffer[31]) {
+ 1867               		.loc 3 292 0
+ 1868 0392 98A1      		ldd r25,Y+32
+ 1869 0394 8917      		cp r24,r25
+ 1870 0396 01F0      		breq .L85
+ 293:main.c        **** 					dataVerify = gb_flash_read_byte(address-1);
+ 1871               		.loc 3 293 0
+ 1872 0398 C801      		movw r24,r16
+ 1873               	.LVL188:
+ 1874 039a 00D0      		rcall gb_flash_read_byte
+ 1875               	.LVL189:
+ 1876               	.LBB153:
+ 1877               	.LBB154:
+ 1878               		.loc 2 276 0
+ 1879 039c 9AE1      		ldi r25,lo8(26)
+ 1880 039e 9A95      	1:	dec r25
+ 1881 03a0 01F4      		brne 1b
+ 1882 03a2 00C0      		rjmp .
+ 1883               	.LVL190:
+ 1884               	.LBE154:
+ 1885               	.LBE153:
+ 294:main.c        **** 					_delay_us(5);
+ 295:main.c        **** 					if (writingTimedout == 1) {
+ 1886               		.loc 3 295 0
+ 1887 03a4 9091 0000 		lds r25,writingTimedout
+ 1888 03a8 9130      		cpi r25,lo8(1)
+ 1889 03aa 01F4      		brne .L81
+ 1890               	.L85:
+ 296:main.c        **** 						break;
+ 297:main.c        **** 					}
+ 298:main.c        **** 				}
+ 299:main.c        **** 				if (writingTimedout == 1) {
+ 1891               		.loc 3 299 0
+ 1892 03ac 8091 0000 		lds r24,writingTimedout
+ 1893               	.LVL191:
+ 1894 03b0 8130      		cpi r24,lo8(1)
+ 1895 03b2 01F4      		brne .+2
+ 1896 03b4 00C0      		rjmp .L104
+ 1897               	.LVL192:
+ 1898 03b6 9A94      		dec r9
+ 1899               	.LVL193:
+ 1900 03b8 E0E2      		ldi r30,32
+ 1901 03ba EE0E      		add r14,r30
+ 1902 03bc F11C      		adc r15,__zero_reg__
+ 1903               	.LVL194:
+ 1904               	.LBE146:
+ 265:main.c        **** 				// Store to local buffer
+ 1905               		.loc 3 265 0
+ 1906 03be 9110      		cpse r9,__zero_reg__
+ 1907 03c0 00C0      		rjmp .L78
+ 1908 03c2 00C0      		rjmp .L104
+ 1909               	.LVL195:
+ 1910               	.L77:
+ 1911               	.LBE145:
+ 1912               	.LBE156:
+ 300:main.c        **** 					break;
+ 301:main.c        **** 				}
+ 302:main.c        **** 			}
+ 303:main.c        **** 			
+ 304:main.c        **** 			check_if_timed_out(); // Send ACK if successful write
+ 305:main.c        **** 		}
+ 306:main.c        **** 		
+ 307:main.c        **** 		// Write 64 bytes to Flash address one byte write at a time, increment and pulse the reset pin af
+ 308:main.c        **** 		else if (receivedChar == GB_FLASH_WRITE_64BYTE_PULSE_RESET) {
+ 1913               		.loc 3 308 0
+ 1914 03c4 8A34      		cpi r24,lo8(74)
+ 1915 03c6 01F4      		brne .L87
+ 309:main.c        **** 			usart_read_bytes(64);
+ 1916               		.loc 3 309 0
+ 1917 03c8 80E4      		ldi r24,lo8(64)
+ 1918 03ca 90E0      		ldi r25,0
+ 1919 03cc 00D0      		rcall usart_read_bytes
+ 1920               	.LVL196:
+ 310:main.c        **** 			start_timeout_timer();
+ 1921               		.loc 3 310 0
+ 1922 03ce 00D0      		rcall start_timeout_timer
+ 1923               	.LVL197:
+ 311:main.c        **** 			
+ 312:main.c        **** 			PORTD |= (1<<ACTIVITY_LED);
+ 1924               		.loc 3 312 0
+ 1925 03d0 939A      		sbi 0x12,3
+ 1926               	.LVL198:
+ 1927 03d2 00E0      		ldi r16,lo8(receivedBuffer)
+ 1928 03d4 10E0      		ldi r17,hi8(receivedBuffer)
+ 1929 03d6 E12C      		mov r14,__zero_reg__
+ 1930 03d8 F12C      		mov r15,__zero_reg__
+ 1931               	.LVL199:
+ 1932               	.L89:
+ 1933               	.LBB157:
+ 313:main.c        **** 			for (uint8_t x = 0; x < 64; x++) {
+ 314:main.c        **** 				if (receivedBuffer[x] != 0xFF) {
+ 1934               		.loc 3 314 0
+ 1935 03da F801      		movw r30,r16
+ 1936 03dc 6191      		ld r22,Z+
+ 1937 03de 8F01      		movw r16,r30
+ 1938 03e0 6F3F      		cpi r22,lo8(-1)
+ 1939 03e2 01F0      		breq .L88
+ 315:main.c        **** 					gb_flash_write_byte_special(address, receivedBuffer[x]);
+ 1940               		.loc 3 315 0
+ 1941 03e4 C701      		movw r24,r14
+ 1942 03e6 840D      		add r24,r4
+ 1943 03e8 951D      		adc r25,r5
+ 1944 03ea 00D0      		rcall gb_flash_write_byte_special
+ 1945               	.LVL200:
+ 1946               	.L88:
+ 1947 03ec FFEF      		ldi r31,-1
+ 1948 03ee EF1A      		sub r14,r31
+ 1949 03f0 FF0A      		sbc r15,r31
+ 1950               	.LVL201:
+ 313:main.c        **** 			for (uint8_t x = 0; x < 64; x++) {
+ 1951               		.loc 3 313 0 discriminator 2
+ 1952 03f2 20E4      		ldi r18,64
+ 1953 03f4 E216      		cp r14,r18
+ 1954 03f6 F104      		cpc r15,__zero_reg__
+ 1955 03f8 01F4      		brne .L89
+ 1956               	.LVL202:
+ 1957               	.L153:
+ 1958 03fa 80E4      		ldi r24,64
+ 1959 03fc 480E      		add r4,r24
+ 1960 03fe 511C      		adc r5,__zero_reg__
+ 1961 0400 611C      		adc r6,__zero_reg__
+ 1962 0402 711C      		adc r7,__zero_reg__
+ 1963 0404 00C0      		rjmp .L104
+ 1964               	.LVL203:
+ 1965               	.L87:
+ 1966               	.LBE157:
+ 316:main.c        **** 				}
+ 317:main.c        **** 				address++;
+ 318:main.c        **** 			}
+ 319:main.c        **** 			
+ 320:main.c        **** 			check_if_timed_out(); // Send ACK if successful write
+ 321:main.c        **** 		}
+ 322:main.c        **** 		
+ 323:main.c        **** 		// Buffered programming, write 256 bytes to Flash address
+ 324:main.c        **** 		else if (receivedChar == GB_FLASH_WRITE_256BYTE) {
+ 1967               		.loc 3 324 0
+ 1968 0406 8835      		cpi r24,lo8(88)
+ 1969 0408 01F0      		breq .+2
+ 1970 040a 00C0      		rjmp .L90
+ 1971               	.LBB158:
+ 325:main.c        **** 			usart_read_bytes(256);
+ 1972               		.loc 3 325 0
+ 1973 040c 80E0      		ldi r24,0
+ 1974 040e 91E0      		ldi r25,lo8(1)
+ 1975 0410 00D0      		rcall usart_read_bytes
+ 1976               	.LVL204:
+ 326:main.c        **** 			start_timeout_timer();
+ 1977               		.loc 3 326 0
+ 1978 0412 00D0      		rcall start_timeout_timer
+ 1979               	.LVL205:
+ 327:main.c        **** 			PORTD |= (1<<ACTIVITY_LED);
+ 1980               		.loc 3 327 0
+ 1981 0414 939A      		sbi 0x12,3
+ 328:main.c        **** 			
+ 329:main.c        **** 			// Setup buffered write
+ 330:main.c        **** 			gb_flash_write_bus_cycle(0xAAA, 0xA9);
+ 1982               		.loc 3 330 0
+ 1983 0416 69EA      		ldi r22,lo8(-87)
+ 1984 0418 8AEA      		ldi r24,lo8(-86)
+ 1985 041a 9AE0      		ldi r25,lo8(10)
+ 1986 041c 00D0      		rcall gb_flash_write_bus_cycle
+ 1987               	.LVL206:
+ 331:main.c        **** 			gb_flash_write_bus_cycle(0x555, 0x56);
+ 1988               		.loc 3 331 0
+ 1989 041e 66E5      		ldi r22,lo8(86)
+ 1990 0420 85E5      		ldi r24,lo8(85)
+ 1991 0422 95E0      		ldi r25,lo8(5)
+ 1992 0424 00D0      		rcall gb_flash_write_bus_cycle
+ 1993               	.LVL207:
+ 332:main.c        **** 			gb_flash_write_bus_cycle(address, 0x26);
+ 1994               		.loc 3 332 0
+ 1995 0426 7201      		movw r14,r4
+ 1996 0428 66E2      		ldi r22,lo8(38)
+ 1997 042a C201      		movw r24,r4
+ 1998 042c 00D0      		rcall gb_flash_write_bus_cycle
+ 1999               	.LVL208:
+ 333:main.c        **** 			gb_flash_write_bus_cycle(address, 0xFF); // Length
+ 2000               		.loc 3 333 0
+ 2001 042e 6FEF      		ldi r22,lo8(-1)
+ 2002 0430 C201      		movw r24,r4
+ 2003 0432 00D0      		rcall gb_flash_write_bus_cycle
+ 2004               	.LVL209:
+ 2005               	.LBB159:
+ 2006               	.LBB160:
+ 2007               		.loc 2 276 0
+ 2008 0434 E7EC      		ldi r30,lo8(199)
+ 2009 0436 F0E0      		ldi r31,hi8(199)
+ 2010 0438 3197      	1:	sbiw r30,1
+ 2011 043a 01F4      		brne 1b
+ 2012 043c 00C0      		rjmp .
+ 2013 043e 0000      		nop
+ 2014               	.LVL210:
+ 2015 0440 00E0      		ldi r16,lo8(receivedBuffer)
+ 2016 0442 10E0      		ldi r17,hi8(receivedBuffer)
+ 2017               	.LBE160:
+ 2018               	.LBE159:
+ 2019               	.LBB161:
+ 334:main.c        **** 			_delay_us(50);
+ 335:main.c        **** 			
+ 336:main.c        **** 			// Write data
+ 337:main.c        **** 			for (int x = 0; x < 256; x++) {
+ 2020               		.loc 3 337 0
+ 2021 0444 C12C      		mov r12,__zero_reg__
+ 2022 0446 D12C      		mov r13,__zero_reg__
+ 2023               	.LVL211:
+ 2024               	.L91:
+ 338:main.c        **** 				gb_flash_write_bus_cycle(address, receivedBuffer[x]);
+ 2025               		.loc 3 338 0 discriminator 3
+ 2026 0448 F801      		movw r30,r16
+ 2027 044a 6191      		ld r22,Z+
+ 2028 044c 8F01      		movw r16,r30
+ 2029 044e C601      		movw r24,r12
+ 2030 0450 8E0D      		add r24,r14
+ 2031 0452 9F1D      		adc r25,r15
+ 2032 0454 00D0      		rcall gb_flash_write_bus_cycle
+ 2033               	.LVL212:
+ 337:main.c        **** 				gb_flash_write_bus_cycle(address, receivedBuffer[x]);
+ 2034               		.loc 3 337 0 discriminator 3
+ 2035 0456 FFEF      		ldi r31,-1
+ 2036 0458 CF1A      		sub r12,r31
+ 2037 045a DF0A      		sbc r13,r31
+ 2038               	.LVL213:
+ 2039 045c C114      		cp r12,__zero_reg__
+ 2040 045e 21E0      		ldi r18,1
+ 2041 0460 D206      		cpc r13,r18
+ 2042 0462 01F4      		brne .L91
+ 2043 0464 8FEF      		ldi r24,-1
+ 2044 0466 581A      		sub r5,r24
+ 2045 0468 680A      		sbc r6,r24
+ 2046 046a 780A      		sbc r7,r24
+ 2047               	.LBE161:
+ 339:main.c        **** 				address++;
+ 340:main.c        **** 			}
+ 341:main.c        **** 			
+ 342:main.c        **** 			// Write buffer to flash
+ 343:main.c        **** 			gb_flash_write_bus_cycle(address-256, 0x2A);
+ 2048               		.loc 3 343 0
+ 2049 046c C201      		movw r24,r4
+ 2050 046e 9A95      		dec r25
+ 2051 0470 6AE2      		ldi r22,lo8(42)
+ 2052 0472 00D0      		rcall gb_flash_write_bus_cycle
+ 2053               	.LVL214:
+ 344:main.c        **** 			
+ 345:main.c        **** 			// Verify last byte written
+ 346:main.c        **** 			uint8_t dataVerify = gb_flash_read_byte(address-1);
+ 2054               		.loc 3 346 0
+ 2055 0474 8201      		movw r16,r4
+ 2056 0476 0150      		subi r16,1
+ 2057 0478 1109      		sbc r17,__zero_reg__
+ 2058 047a C801      		movw r24,r16
+ 2059 047c 00D0      		rcall gb_flash_read_byte
+ 2060               	.LVL215:
+ 2061               	.L92:
+ 347:main.c        **** 			while (dataVerify != receivedBuffer[255]) {
+ 2062               		.loc 3 347 0
+ 2063 047e 9091 0000 		lds r25,receivedBuffer+255
+ 2064 0482 8917      		cp r24,r25
+ 2065 0484 01F4      		brne .+2
+ 2066 0486 00C0      		rjmp .L104
+ 348:main.c        **** 				dataVerify = gb_flash_read_byte(address-1);
+ 2067               		.loc 3 348 0
+ 2068 0488 C801      		movw r24,r16
+ 2069               	.LVL216:
+ 2070 048a 00D0      		rcall gb_flash_read_byte
+ 2071               	.LVL217:
+ 2072               	.LBB162:
+ 2073               	.LBB163:
+ 2074               		.loc 2 276 0
+ 2075 048c 9AE1      		ldi r25,lo8(26)
+ 2076 048e 9A95      	1:	dec r25
+ 2077 0490 01F4      		brne 1b
+ 2078 0492 00C0      		rjmp .
+ 2079               	.LVL218:
+ 2080               	.LBE163:
+ 2081               	.LBE162:
+ 349:main.c        **** 				_delay_us(5);
+ 350:main.c        **** 				if (writingTimedout == 1) {
+ 2082               		.loc 3 350 0
+ 2083 0494 9091 0000 		lds r25,writingTimedout
+ 2084 0498 9130      		cpi r25,lo8(1)
+ 2085 049a 01F4      		brne .L92
+ 2086 049c 00C0      		rjmp .L104
+ 2087               	.LVL219:
+ 2088               	.L90:
+ 2089               	.LBE158:
+ 351:main.c        **** 					break;
+ 352:main.c        **** 				}
+ 353:main.c        **** 			}
+ 354:main.c        **** 			
+ 355:main.c        **** 			check_if_timed_out(); // Send ACK if successful write
+ 356:main.c        **** 		}
+ 357:main.c        **** 		
+ 358:main.c        **** 		// Nintendo Power 1MB Cart, Write 128 bytes to flash
+ 359:main.c        **** 		else if (receivedChar == GB_FLASH_WRITE_NP_128BYTE) {
+ 2090               		.loc 3 359 0
+ 2091 049e 8A37      		cpi r24,lo8(122)
+ 2092 04a0 01F0      		breq .+2
+ 2093 04a2 00C0      		rjmp .L95
+ 360:main.c        **** 			usart_read_bytes(128);
+ 2094               		.loc 3 360 0
+ 2095 04a4 80E8      		ldi r24,lo8(-128)
+ 2096 04a6 90E0      		ldi r25,0
+ 2097 04a8 00D0      		rcall usart_read_bytes
+ 2098               	.LVL220:
+ 361:main.c        **** 			PORTD |= (1<<ACTIVITY_LED);
+ 2099               		.loc 3 361 0
+ 2100 04aa 939A      		sbi 0x12,3
+ 362:main.c        **** 			
+ 363:main.c        **** 			// Enable flash chip access
+ 364:main.c        **** 			gb_flash_write_bus_cycle(0x120, 0x09);
+ 2101               		.loc 3 364 0
+ 2102 04ac 69E0      		ldi r22,lo8(9)
+ 2103 04ae 80E2      		ldi r24,lo8(32)
+ 2104 04b0 91E0      		ldi r25,lo8(1)
+ 2105 04b2 00D0      		rcall gb_flash_write_bus_cycle
+ 2106               	.LVL221:
+ 365:main.c        **** 			gb_flash_write_bus_cycle(0x121, 0xaa);
+ 2107               		.loc 3 365 0
+ 2108 04b4 6AEA      		ldi r22,lo8(-86)
+ 2109 04b6 81E2      		ldi r24,lo8(33)
+ 2110 04b8 91E0      		ldi r25,lo8(1)
+ 2111 04ba 00D0      		rcall gb_flash_write_bus_cycle
+ 2112               	.LVL222:
+ 366:main.c        **** 			gb_flash_write_bus_cycle(0x122, 0x55);
+ 2113               		.loc 3 366 0
+ 2114 04bc 65E5      		ldi r22,lo8(85)
+ 2115 04be 82E2      		ldi r24,lo8(34)
+ 2116 04c0 91E0      		ldi r25,lo8(1)
+ 2117 04c2 00D0      		rcall gb_flash_write_bus_cycle
+ 2118               	.LVL223:
+ 367:main.c        **** 			gb_flash_write_bus_cycle(0x13f, 0xa5);
+ 2119               		.loc 3 367 0
+ 2120 04c4 65EA      		ldi r22,lo8(-91)
+ 2121 04c6 8FE3      		ldi r24,lo8(63)
+ 2122 04c8 91E0      		ldi r25,lo8(1)
+ 2123 04ca 00D0      		rcall gb_flash_write_bus_cycle
+ 2124               	.LVL224:
+ 2125               	.LBB164:
+ 2126               	.LBB165:
+ 2127               		.loc 2 276 0
+ 2128 04cc EAE1      		ldi r30,lo8(26)
+ 2129 04ce EA95      	1:	dec r30
+ 2130 04d0 01F4      		brne 1b
+ 2131 04d2 00C0      		rjmp .
+ 2132               	.LVL225:
+ 2133               	.LBE165:
+ 2134               	.LBE164:
+ 368:main.c        **** 			_delay_us(5);
+ 369:main.c        **** 			
+ 370:main.c        **** 			// Re-Enable writes to MBC registers
+ 371:main.c        **** 			gb_flash_write_bus_cycle(0x120, 0x11);
+ 2135               		.loc 3 371 0
+ 2136 04d4 61E1      		ldi r22,lo8(17)
+ 2137 04d6 80E2      		ldi r24,lo8(32)
+ 2138 04d8 91E0      		ldi r25,lo8(1)
+ 2139 04da 00D0      		rcall gb_flash_write_bus_cycle
+ 2140               	.LVL226:
+ 372:main.c        **** 			gb_flash_write_bus_cycle(0x13f, 0xa5);
+ 2141               		.loc 3 372 0
+ 2142 04dc 65EA      		ldi r22,lo8(-91)
+ 2143 04de 8FE3      		ldi r24,lo8(63)
+ 2144 04e0 91E0      		ldi r25,lo8(1)
+ 2145 04e2 00D0      		rcall gb_flash_write_bus_cycle
+ 2146               	.LVL227:
+ 2147               	.LBB166:
+ 2148               	.LBB167:
+ 2149               		.loc 2 276 0
+ 2150 04e4 FAE1      		ldi r31,lo8(26)
+ 2151 04e6 FA95      	1:	dec r31
+ 2152 04e8 01F4      		brne 1b
+ 2153 04ea 00C0      		rjmp .
+ 2154               	.LVL228:
+ 2155               	.LBE167:
+ 2156               	.LBE166:
+ 373:main.c        **** 			_delay_us(5);
+ 374:main.c        **** 			
+ 375:main.c        **** 			// Bank 1 for commands
+ 376:main.c        **** 			gb_flash_write_bus_cycle(0x2100, 0x01);
+ 2157               		.loc 3 376 0
+ 2158 04ec 61E0      		ldi r22,lo8(1)
+ 2159 04ee 80E0      		ldi r24,0
+ 2160 04f0 91E2      		ldi r25,lo8(33)
+ 2161 04f2 00D0      		rcall gb_flash_write_bus_cycle
+ 2162               	.LVL229:
+ 2163               	.LBB168:
+ 2164               	.LBB169:
+ 2165               		.loc 2 276 0
+ 2166 04f4 2AE1      		ldi r18,lo8(26)
+ 2167 04f6 2A95      	1:	dec r18
+ 2168 04f8 01F4      		brne 1b
+ 2169 04fa 00C0      		rjmp .
+ 2170               	.LVL230:
+ 2171               	.LBE169:
+ 2172               	.LBE168:
+ 377:main.c        **** 			_delay_us(5);
+ 378:main.c        **** 			
+ 379:main.c        **** 			
+ 380:main.c        **** 			// Write setup
+ 381:main.c        **** 			gb_flash_write_bus_cycle(0x120, 0x0F);
+ 2173               		.loc 3 381 0
+ 2174 04fc 6FE0      		ldi r22,lo8(15)
+ 2175 04fe 80E2      		ldi r24,lo8(32)
+ 2176 0500 91E0      		ldi r25,lo8(1)
+ 2177 0502 00D0      		rcall gb_flash_write_bus_cycle
+ 2178               	.LVL231:
+ 382:main.c        **** 			gb_flash_write_bus_cycle(0x125, 0x55);
+ 2179               		.loc 3 382 0
+ 2180 0504 65E5      		ldi r22,lo8(85)
+ 2181 0506 85E2      		ldi r24,lo8(37)
+ 2182 0508 91E0      		ldi r25,lo8(1)
+ 2183 050a 00D0      		rcall gb_flash_write_bus_cycle
+ 2184               	.LVL232:
+ 383:main.c        **** 			gb_flash_write_bus_cycle(0x126, 0x55);
+ 2185               		.loc 3 383 0
+ 2186 050c 65E5      		ldi r22,lo8(85)
+ 2187 050e 86E2      		ldi r24,lo8(38)
+ 2188 0510 91E0      		ldi r25,lo8(1)
+ 2189 0512 00D0      		rcall gb_flash_write_bus_cycle
+ 2190               	.LVL233:
+ 384:main.c        **** 			gb_flash_write_bus_cycle(0x127, 0xAA);
+ 2191               		.loc 3 384 0
+ 2192 0514 6AEA      		ldi r22,lo8(-86)
+ 2193 0516 87E2      		ldi r24,lo8(39)
+ 2194 0518 91E0      		ldi r25,lo8(1)
+ 2195 051a 00D0      		rcall gb_flash_write_bus_cycle
+ 2196               	.LVL234:
+ 385:main.c        **** 			gb_flash_write_bus_cycle(0x13f, 0xA5);
+ 2197               		.loc 3 385 0
+ 2198 051c 65EA      		ldi r22,lo8(-91)
+ 2199 051e 8FE3      		ldi r24,lo8(63)
+ 2200 0520 91E0      		ldi r25,lo8(1)
+ 2201 0522 00D0      		rcall gb_flash_write_bus_cycle
+ 2202               	.LVL235:
+ 2203               	.LBB170:
+ 2204               	.LBB171:
+ 2205               		.loc 2 276 0
+ 2206 0524 8AE1      		ldi r24,lo8(26)
+ 2207 0526 8A95      	1:	dec r24
+ 2208 0528 01F4      		brne 1b
+ 2209 052a 00C0      		rjmp .
+ 2210               	.LVL236:
+ 2211               	.LBE171:
+ 2212               	.LBE170:
+ 386:main.c        **** 			_delay_us(5);
+ 387:main.c        **** 			
+ 388:main.c        **** 			gb_flash_write_bus_cycle(0x120, 0x0F);
+ 2213               		.loc 3 388 0
+ 2214 052c 6FE0      		ldi r22,lo8(15)
+ 2215 052e 80E2      		ldi r24,lo8(32)
+ 2216 0530 91E0      		ldi r25,lo8(1)
+ 2217 0532 00D0      		rcall gb_flash_write_bus_cycle
+ 2218               	.LVL237:
+ 389:main.c        **** 			gb_flash_write_bus_cycle(0x125, 0x2A);
+ 2219               		.loc 3 389 0
+ 2220 0534 6AE2      		ldi r22,lo8(42)
+ 2221 0536 85E2      		ldi r24,lo8(37)
+ 2222 0538 91E0      		ldi r25,lo8(1)
+ 2223 053a 00D0      		rcall gb_flash_write_bus_cycle
+ 2224               	.LVL238:
+ 390:main.c        **** 			gb_flash_write_bus_cycle(0x126, 0xAA);
+ 2225               		.loc 3 390 0
+ 2226 053c 6AEA      		ldi r22,lo8(-86)
+ 2227 053e 86E2      		ldi r24,lo8(38)
+ 2228 0540 91E0      		ldi r25,lo8(1)
+ 2229 0542 00D0      		rcall gb_flash_write_bus_cycle
+ 2230               	.LVL239:
+ 391:main.c        **** 			gb_flash_write_bus_cycle(0x127, 0x55);
+ 2231               		.loc 3 391 0
+ 2232 0544 65E5      		ldi r22,lo8(85)
+ 2233 0546 87E2      		ldi r24,lo8(39)
+ 2234 0548 91E0      		ldi r25,lo8(1)
+ 2235 054a 00D0      		rcall gb_flash_write_bus_cycle
+ 2236               	.LVL240:
+ 392:main.c        **** 			gb_flash_write_bus_cycle(0x13f, 0xA5);
+ 2237               		.loc 3 392 0
+ 2238 054c 65EA      		ldi r22,lo8(-91)
+ 2239 054e 8FE3      		ldi r24,lo8(63)
+ 2240 0550 91E0      		ldi r25,lo8(1)
+ 2241 0552 00D0      		rcall gb_flash_write_bus_cycle
+ 2242               	.LVL241:
+ 2243               	.LBB172:
+ 2244               	.LBB173:
+ 2245               		.loc 2 276 0
+ 2246 0554 9AE1      		ldi r25,lo8(26)
+ 2247 0556 9A95      	1:	dec r25
+ 2248 0558 01F4      		brne 1b
+ 2249 055a 00C0      		rjmp .
+ 2250               	.LVL242:
+ 2251               	.LBE173:
+ 2252               	.LBE172:
+ 393:main.c        **** 			_delay_us(5);
+ 394:main.c        **** 			
+ 395:main.c        **** 			gb_flash_write_bus_cycle(0x120, 0x0F);
+ 2253               		.loc 3 395 0
+ 2254 055c 6FE0      		ldi r22,lo8(15)
+ 2255 055e 80E2      		ldi r24,lo8(32)
+ 2256 0560 91E0      		ldi r25,lo8(1)
+ 2257 0562 00D0      		rcall gb_flash_write_bus_cycle
+ 2258               	.LVL243:
+ 396:main.c        **** 			gb_flash_write_bus_cycle(0x125, 0x55);
+ 2259               		.loc 3 396 0
+ 2260 0564 65E5      		ldi r22,lo8(85)
+ 2261 0566 85E2      		ldi r24,lo8(37)
+ 2262 0568 91E0      		ldi r25,lo8(1)
+ 2263 056a 00D0      		rcall gb_flash_write_bus_cycle
+ 2264               	.LVL244:
+ 397:main.c        **** 			gb_flash_write_bus_cycle(0x126, 0x55);
+ 2265               		.loc 3 397 0
+ 2266 056c 65E5      		ldi r22,lo8(85)
+ 2267 056e 86E2      		ldi r24,lo8(38)
+ 2268 0570 91E0      		ldi r25,lo8(1)
+ 2269 0572 00D0      		rcall gb_flash_write_bus_cycle
+ 2270               	.LVL245:
+ 398:main.c        **** 			gb_flash_write_bus_cycle(0x127, 0xA0);
+ 2271               		.loc 3 398 0
+ 2272 0574 60EA      		ldi r22,lo8(-96)
+ 2273 0576 87E2      		ldi r24,lo8(39)
+ 2274 0578 91E0      		ldi r25,lo8(1)
+ 2275 057a 00D0      		rcall gb_flash_write_bus_cycle
+ 2276               	.LVL246:
+ 399:main.c        **** 			gb_flash_write_bus_cycle(0x13f, 0xA5);
+ 2277               		.loc 3 399 0
+ 2278 057c 65EA      		ldi r22,lo8(-91)
+ 2279 057e 8FE3      		ldi r24,lo8(63)
+ 2280 0580 91E0      		ldi r25,lo8(1)
+ 2281 0582 00D0      		rcall gb_flash_write_bus_cycle
+ 2282               	.LVL247:
+ 2283               	.LBB174:
+ 2284               	.LBB175:
+ 2285               		.loc 2 276 0
+ 2286 0584 EAE1      		ldi r30,lo8(26)
+ 2287 0586 EA95      	1:	dec r30
+ 2288 0588 01F4      		brne 1b
+ 2289 058a 00C0      		rjmp .
+ 2290               	.LVL248:
+ 2291               	.LBE175:
+ 2292               	.LBE174:
+ 400:main.c        **** 			_delay_us(5);
+ 401:main.c        **** 			
+ 402:main.c        **** 			// Set bank back
+ 403:main.c        **** 			write_8bit_data(0x2100, lastBankAccessed, BANK_WRITE);
+ 2293               		.loc 3 403 0
+ 2294 058c 40E0      		ldi r20,0
+ 2295 058e 6091 0000 		lds r22,lastBankAccessed
+ 2296 0592 80E0      		ldi r24,0
+ 2297 0594 91E2      		ldi r25,lo8(33)
+ 2298 0596 00D0      		rcall write_8bit_data
+ 2299               	.LVL249:
+ 2300               	.LBB176:
+ 2301               	.LBB177:
+ 2302               		.loc 2 276 0
+ 2303 0598 FAE1      		ldi r31,lo8(26)
+ 2304 059a FA95      	1:	dec r31
+ 2305 059c 01F4      		brne 1b
+ 2306 059e 00C0      		rjmp .
+ 2307               	.LVL250:
+ 2308               	.LBE177:
+ 2309               	.LBE176:
+ 404:main.c        **** 			_delay_us(5);
+ 405:main.c        **** 			
+ 406:main.c        **** 			// Disable writes to MBC registers
+ 407:main.c        **** 			gb_flash_write_bus_cycle(0x120, 0x10);
+ 2310               		.loc 3 407 0
+ 2311 05a0 60E1      		ldi r22,lo8(16)
+ 2312 05a2 80E2      		ldi r24,lo8(32)
+ 2313 05a4 91E0      		ldi r25,lo8(1)
+ 2314 05a6 00D0      		rcall gb_flash_write_bus_cycle
+ 2315               	.LVL251:
+ 408:main.c        **** 			gb_flash_write_bus_cycle(0x13f, 0xa5);
+ 2316               		.loc 3 408 0
+ 2317 05a8 65EA      		ldi r22,lo8(-91)
+ 2318 05aa 8FE3      		ldi r24,lo8(63)
+ 2319 05ac 91E0      		ldi r25,lo8(1)
+ 2320 05ae 00D0      		rcall gb_flash_write_bus_cycle
+ 2321               	.LVL252:
+ 2322               	.LBB178:
+ 2323               	.LBB179:
+ 2324               		.loc 2 276 0
+ 2325 05b0 2AE1      		ldi r18,lo8(26)
+ 2326 05b2 2A95      	1:	dec r18
+ 2327 05b4 01F4      		brne 1b
+ 2328 05b6 00C0      		rjmp .
+ 2329               	.LVL253:
+ 2330               	.LBE179:
+ 2331               	.LBE178:
+ 409:main.c        **** 			_delay_us(5);
+ 410:main.c        **** 			
+ 411:main.c        **** 			// Undo Wakeup
+ 412:main.c        **** 			gb_flash_write_bus_cycle(0x120, 0x08);
+ 2332               		.loc 3 412 0
+ 2333 05b8 68E0      		ldi r22,lo8(8)
+ 2334 05ba 80E2      		ldi r24,lo8(32)
+ 2335 05bc 91E0      		ldi r25,lo8(1)
+ 2336 05be 00D0      		rcall gb_flash_write_bus_cycle
+ 2337               	.LVL254:
+ 413:main.c        **** 			gb_flash_write_bus_cycle(0x13f, 0xa5);
+ 2338               		.loc 3 413 0
+ 2339 05c0 65EA      		ldi r22,lo8(-91)
+ 2340 05c2 8FE3      		ldi r24,lo8(63)
+ 2341 05c4 91E0      		ldi r25,lo8(1)
+ 2342 05c6 00D0      		rcall gb_flash_write_bus_cycle
+ 2343               	.LVL255:
+ 2344               	.LBB180:
+ 2345               	.LBB181:
+ 2346               		.loc 2 276 0
+ 2347 05c8 8AE1      		ldi r24,lo8(26)
+ 2348 05ca 8A95      	1:	dec r24
+ 2349 05cc 01F4      		brne 1b
+ 2350 05ce 00C0      		rjmp .
+ 2351               	.LVL256:
+ 2352 05d0 00E0      		ldi r16,lo8(receivedBuffer)
+ 2353 05d2 10E0      		ldi r17,hi8(receivedBuffer)
+ 2354               	.L96:
+ 2355               	.LBE181:
+ 2356               	.LBE180:
+ 2357               	.LBB182:
+ 414:main.c        **** 			_delay_us(5);
+ 415:main.c        **** 			
+ 416:main.c        **** 			
+ 417:main.c        **** 			// Write data
+ 418:main.c        **** 			for (uint8_t x = 0; x < 128; x++) {
+ 2358               		.loc 3 418 0 discriminator 1
+ 2359 05d4 80E0      		ldi r24,lo8(receivedBuffer+128)
+ 2360 05d6 90E0      		ldi r25,hi8(receivedBuffer+128)
+ 2361 05d8 8017      		cp r24,r16
+ 2362 05da 9107      		cpc r25,r17
+ 2363 05dc 01F0      		breq .L155
+ 419:main.c        **** 				gb_flash_write_bus_cycle(address, receivedBuffer[x]);
+ 2364               		.loc 3 419 0 discriminator 3
+ 2365 05de F801      		movw r30,r16
+ 2366 05e0 6191      		ld r22,Z+
+ 2367 05e2 8F01      		movw r16,r30
+ 2368 05e4 C201      		movw r24,r4
+ 2369 05e6 00D0      		rcall gb_flash_write_bus_cycle
+ 2370               	.LVL257:
+ 2371               	.LBB183:
+ 2372               	.LBB184:
+ 2373               		.loc 2 276 0 discriminator 3
+ 2374 05e8 FAE1      		ldi r31,lo8(26)
+ 2375 05ea FA95      	1:	dec r31
+ 2376 05ec 01F4      		brne 1b
+ 2377 05ee 00C0      		rjmp .
+ 2378               	.LVL258:
+ 2379               	.LBE184:
+ 2380               	.LBE183:
+ 420:main.c        **** 				_delay_us(5);
+ 421:main.c        **** 				address++;
+ 2381               		.loc 3 421 0 discriminator 3
+ 2382 05f0 2FEF      		ldi r18,-1
+ 2383 05f2 421A      		sub r4,r18
+ 2384 05f4 520A      		sbc r5,r18
+ 2385 05f6 620A      		sbc r6,r18
+ 2386 05f8 720A      		sbc r7,r18
+ 2387               	.LVL259:
+ 2388 05fa 00C0      		rjmp .L96
+ 2389               	.L155:
+ 2390               	.LVL260:
+ 2391               	.LBE182:
+ 422:main.c        **** 			}
+ 423:main.c        **** 			
+ 424:main.c        **** 			// Write buffer to flash
+ 425:main.c        **** 			address--;
+ 426:main.c        **** 			gb_flash_write_bus_cycle(address, 0xFF);
+ 2392               		.loc 3 426 0
+ 2393 05fc 6FEF      		ldi r22,lo8(-1)
+ 2394 05fe D301      		movw r26,r6
+ 2395 0600 C201      		movw r24,r4
+ 2396 0602 0197      		sbiw r24,1
+ 2397 0604 A109      		sbc r26,__zero_reg__
+ 2398 0606 B109      		sbc r27,__zero_reg__
+ 2399               	.LVL261:
+ 2400 0608 00D0      		rcall gb_flash_write_bus_cycle
+ 2401               	.LVL262:
+ 2402               	.LBB185:
+ 2403               	.LBB186:
+ 187:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 2404               		.loc 2 187 0
+ 2405 060a EFE3      		ldi r30,lo8(-25537)
+ 2406 060c FCE9      		ldi r31,hi8(-25537)
+ 2407 060e 3197      	1:	sbiw r30,1
+ 2408 0610 01F4      		brne 1b
+ 2409 0612 00C0      		rjmp .
+ 2410 0614 0000      		nop
+ 2411               	.LVL263:
+ 2412               	.LBE186:
+ 2413               	.LBE185:
+ 427:main.c        **** 			address++;
+ 428:main.c        **** 			_delay_ms(10);
+ 429:main.c        **** 			
+ 430:main.c        **** 			USART_Transmit(SEND_ACK); // Send back acknowledgement
+ 2414               		.loc 3 430 0
+ 2415 0616 81E3      		ldi r24,lo8(49)
+ 2416 0618 00D0      		rcall USART_Transmit
+ 2417               	.LVL264:
+ 2418               	.L150:
+ 431:main.c        **** 			PORTD &= ~(1<<ACTIVITY_LED);
+ 2419               		.loc 3 431 0
+ 2420 061a 9398      		cbi 0x12,3
+ 2421 061c 00C0      		rjmp .L45
+ 2422               	.LVL265:
+ 2423               	.L95:
+ 432:main.c        **** 		}
+ 433:main.c        **** 		
+ 434:main.c        **** 		// Buffered programming, write 32 bytes to Flash address
+ 435:main.c        **** 		// Intel chips such as 28F640J5 (Thanks to lesserkuma for adding support)
+ 436:main.c        **** 		else if (receivedChar == GB_FLASH_WRITE_INTEL_BUFFERED_32BYTE) {
+ 2424               		.loc 3 436 0
+ 2425 061e 8937      		cpi r24,lo8(121)
+ 2426 0620 01F0      		breq .+2
+ 2427 0622 00C0      		rjmp .L98
+ 437:main.c        **** 			usart_read_bytes(32);
+ 2428               		.loc 3 437 0
+ 2429 0624 80E2      		ldi r24,lo8(32)
+ 2430 0626 90E0      		ldi r25,0
+ 2431 0628 00D0      		rcall usart_read_bytes
+ 2432               	.LVL266:
+ 438:main.c        **** 			PORTD |= (1<<ACTIVITY_LED);
+ 2433               		.loc 3 438 0
+ 2434 062a 939A      		sbi 0x12,3
+ 439:main.c        **** 			
+ 440:main.c        **** 			// Setup buffered write
+ 441:main.c        **** 			gb_flash_write_bus_cycle(address, 0xE8);
+ 2435               		.loc 3 441 0
+ 2436 062c 8201      		movw r16,r4
+ 2437 062e 68EE      		ldi r22,lo8(-24)
+ 2438 0630 C201      		movw r24,r4
+ 2439 0632 00D0      		rcall gb_flash_write_bus_cycle
+ 2440               	.LVL267:
+ 442:main.c        **** 			
+ 443:main.c        **** 			// Wait until ready
+ 444:main.c        **** 			//do { status = gb_flash_read_byte(address); } while(status != 0x80);
+ 445:main.c        **** 			start_timeout_timer();
+ 2441               		.loc 3 445 0
+ 2442 0634 00D0      		rcall start_timeout_timer
+ 2443               	.LVL268:
+ 2444               	.L99:
+ 446:main.c        **** 			while (gb_flash_read_byte(address) != 0x80) {
+ 2445               		.loc 3 446 0
+ 2446 0636 C801      		movw r24,r16
+ 2447 0638 00D0      		rcall gb_flash_read_byte
+ 2448               	.LVL269:
+ 2449 063a 8038      		cpi r24,lo8(-128)
+ 2450 063c 01F0      		breq .L100
+ 447:main.c        **** 				if (writingTimedout == 1) {
+ 2451               		.loc 3 447 0
+ 2452 063e 8091 0000 		lds r24,writingTimedout
+ 2453 0642 8130      		cpi r24,lo8(1)
+ 2454 0644 01F4      		brne .L99
+ 2455               	.L100:
+ 448:main.c        **** 					break;
+ 449:main.c        **** 				}
+ 450:main.c        **** 			}
+ 451:main.c        **** 			
+ 452:main.c        **** 			if (writingTimedout == 0) {
+ 2456               		.loc 3 452 0
+ 2457 0646 8091 0000 		lds r24,writingTimedout
+ 2458 064a 8111      		cpse r24,__zero_reg__
+ 2459 064c 00C0      		rjmp .L45
+ 453:main.c        **** 				start_timeout_timer();
+ 2460               		.loc 3 453 0
+ 2461 064e 00D0      		rcall start_timeout_timer
+ 2462               	.LVL270:
+ 454:main.c        **** 				
+ 455:main.c        **** 				// Set buffer size
+ 456:main.c        **** 				gb_flash_write_bus_cycle(address, 0x1F);
+ 2463               		.loc 3 456 0
+ 2464 0650 6FE1      		ldi r22,lo8(31)
+ 2465 0652 C801      		movw r24,r16
+ 2466 0654 00D0      		rcall gb_flash_write_bus_cycle
+ 2467               	.LVL271:
+ 2468 0656 80E0      		ldi r24,lo8(receivedBuffer)
+ 2469 0658 E82E      		mov r14,r24
+ 2470 065a 80E0      		ldi r24,hi8(receivedBuffer)
+ 2471 065c F82E      		mov r15,r24
+ 2472 065e C12C      		mov r12,__zero_reg__
+ 2473 0660 D12C      		mov r13,__zero_reg__
+ 2474               	.LVL272:
+ 2475               	.L102:
+ 2476               	.LBB187:
+ 457:main.c        **** 				
+ 458:main.c        **** 				// Write data to buffer
+ 459:main.c        **** 				for (uint8_t x = 0; x < 32; x++) {
+ 460:main.c        **** 					gb_flash_write_bus_cycle(address, receivedBuffer[x]);
+ 2477               		.loc 3 460 0 discriminator 3
+ 2478 0662 F701      		movw r30,r14
+ 2479 0664 6191      		ld r22,Z+
+ 2480 0666 7F01      		movw r14,r30
+ 2481 0668 C801      		movw r24,r16
+ 2482 066a 8C0D      		add r24,r12
+ 2483 066c 9D1D      		adc r25,r13
+ 2484 066e 00D0      		rcall gb_flash_write_bus_cycle
+ 2485               	.LVL273:
+ 2486 0670 FFEF      		ldi r31,-1
+ 2487 0672 CF1A      		sub r12,r31
+ 2488 0674 DF0A      		sbc r13,r31
+ 2489               	.LVL274:
+ 459:main.c        **** 					gb_flash_write_bus_cycle(address, receivedBuffer[x]);
+ 2490               		.loc 3 459 0 discriminator 3
+ 2491 0676 20E2      		ldi r18,32
+ 2492 0678 C216      		cp r12,r18
+ 2493 067a D104      		cpc r13,__zero_reg__
+ 2494 067c 01F4      		brne .L102
+ 2495 067e 80E2      		ldi r24,32
+ 2496 0680 480E      		add r4,r24
+ 2497 0682 511C      		adc r5,__zero_reg__
+ 2498 0684 611C      		adc r6,__zero_reg__
+ 2499 0686 711C      		adc r7,__zero_reg__
+ 2500               	.LBE187:
+ 461:main.c        **** 					address++;
+ 462:main.c        **** 				}
+ 463:main.c        **** 				
+ 464:main.c        **** 				// Write buffer to flash
+ 465:main.c        **** 				gb_flash_write_bus_cycle(address-32, 0xD0);
+ 2501               		.loc 3 465 0
+ 2502 0688 8201      		movw r16,r4
+ 2503 068a 0052      		subi r16,32
+ 2504 068c 1109      		sbc r17,__zero_reg__
+ 2505 068e 60ED      		ldi r22,lo8(-48)
+ 2506 0690 C801      		movw r24,r16
+ 2507 0692 00D0      		rcall gb_flash_write_bus_cycle
+ 2508               	.LVL275:
+ 2509               	.LBB188:
+ 2510               	.LBB189:
+ 2511               		.loc 2 276 0
+ 2512 0694 EFE0      		ldi r30,lo8(783)
+ 2513 0696 F3E0      		ldi r31,hi8(783)
+ 2514 0698 3197      	1:	sbiw r30,1
+ 2515 069a 01F4      		brne 1b
+ 2516 069c 00C0      		rjmp .
+ 2517 069e 0000      		nop
+ 2518               	.L103:
+ 2519               	.LBE189:
+ 2520               	.LBE188:
+ 466:main.c        **** 				_delay_us(196);
+ 467:main.c        **** 				
+ 468:main.c        **** 				// Wait until ready
+ 469:main.c        **** 				//do { status = gb_flash_read_byte(address-32); } while(status != 0x80);
+ 470:main.c        **** 				while (gb_flash_read_byte(address-32) != 0x80) {
+ 2521               		.loc 3 470 0
+ 2522 06a0 C801      		movw r24,r16
+ 2523 06a2 00D0      		rcall gb_flash_read_byte
+ 2524               	.LVL276:
+ 2525 06a4 8038      		cpi r24,lo8(-128)
+ 2526 06a6 01F0      		breq .L104
+ 471:main.c        **** 					if (writingTimedout == 1) {
+ 2527               		.loc 3 471 0
+ 2528 06a8 8091 0000 		lds r24,writingTimedout
+ 2529 06ac 8130      		cpi r24,lo8(1)
+ 2530 06ae 01F4      		brne .L103
+ 2531               	.LVL277:
+ 2532               	.L104:
+ 472:main.c        **** 						break;
+ 473:main.c        **** 					}
+ 474:main.c        **** 				}
+ 475:main.c        **** 				
+ 476:main.c        **** 				check_if_timed_out(); // Send ACK if successful write
+ 2533               		.loc 3 476 0
+ 2534 06b0 00D0      		rcall check_if_timed_out
+ 2535               	.LVL278:
+ 2536 06b2 00C0      		rjmp .L45
+ 2537               	.LVL279:
+ 2538               	.L98:
+ 477:main.c        **** 			}
+ 478:main.c        **** 		}
+ 479:main.c        **** 		
+ 480:main.c        **** 		
+ 481:main.c        **** 		// ---------- General commands ----------
+ 482:main.c        **** 		// Set any pin as input/output
+ 483:main.c        **** 		// Reads the DDR/PORT (e.g. DDRB/PORTB is 'B') and the hex value that represents pins to set to a
+ 484:main.c        **** 		/*else if (receivedChar == SET_INPUT || receivedChar == SET_OUTPUT) {
+ 485:main.c        **** 			char portChar = USART_Receive();
+ 486:main.c        **** 			usart_read_chars();
+ 487:main.c        **** 			uint8_t setValue = strtol(receivedBuffer, NULL, 16);
+ 488:main.c        **** 			
+ 489:main.c        **** 			PORTD |= (1<<ACTIVITY_LED);
+ 490:main.c        **** 			if (receivedChar == SET_INPUT) {
+ 491:main.c        **** 				if (portChar == 'A') {
+ 492:main.c        **** 					DDRA &= ~(setValue);
+ 493:main.c        **** 				}
+ 494:main.c        **** 				else if (portChar == 'B') {
+ 495:main.c        **** 					DDRB &= ~(setValue);
+ 496:main.c        **** 				}
+ 497:main.c        **** 				else if (portChar == 'C') {
+ 498:main.c        **** 					DDRC &= ~(setValue);
+ 499:main.c        **** 				}
+ 500:main.c        **** 				else if (portChar == 'D') {
+ 501:main.c        **** 					DDRD &= ~(setValue);
+ 502:main.c        **** 				}
+ 503:main.c        **** 				else if (portChar == 'E') {
+ 504:main.c        **** 					DDRE &= ~(setValue);
+ 505:main.c        **** 				}
+ 506:main.c        **** 			}
+ 507:main.c        **** 			else if (receivedChar == SET_OUTPUT) {
+ 508:main.c        **** 				if (portChar == 'A') {
+ 509:main.c        **** 					DDRA |= (setValue);
+ 510:main.c        **** 				}
+ 511:main.c        **** 				else if (portChar == 'B') {
+ 512:main.c        **** 					DDRB |= (setValue);
+ 513:main.c        **** 				}
+ 514:main.c        **** 				else if (portChar == 'C') {
+ 515:main.c        **** 					DDRC |= (setValue);
+ 516:main.c        **** 				}
+ 517:main.c        **** 				else if (portChar == 'D') {
+ 518:main.c        **** 					DDRD |= (setValue);
+ 519:main.c        **** 				}
+ 520:main.c        **** 				else if (portChar == 'E') {
+ 521:main.c        **** 					DDRE |= (setValue);
+ 522:main.c        **** 				}
+ 523:main.c        **** 			}
+ 524:main.c        **** 			PORTD &= ~(1<<ACTIVITY_LED);
+ 525:main.c        **** 		}
+ 526:main.c        **** 		
+ 527:main.c        **** 		// Set pin output as low
+ 528:main.c        **** 		else if (receivedChar == SET_OUTPUT_LOW) {
+ 529:main.c        **** 			char portChar = USART_Receive();			
+ 530:main.c        **** 			usart_read_chars();
+ 531:main.c        **** 			uint8_t setValue = strtol(receivedBuffer, NULL, 16);
+ 532:main.c        **** 			
+ 533:main.c        **** 			PORTD |= (1<<ACTIVITY_LED);
+ 534:main.c        **** 			if (portChar == 'A') {
+ 535:main.c        **** 				PORTA &= ~(setValue);
+ 536:main.c        **** 			}
+ 537:main.c        **** 			else if (portChar == 'B') {
+ 538:main.c        **** 				PORTB &= ~(setValue);
+ 539:main.c        **** 			}
+ 540:main.c        **** 			else if (portChar == 'C') {
+ 541:main.c        **** 				PORTC &= ~(setValue);
+ 542:main.c        **** 			}
+ 543:main.c        **** 			else if (portChar == 'D') {
+ 544:main.c        **** 				PORTD &= ~(setValue);
+ 545:main.c        **** 			}
+ 546:main.c        **** 			else if (portChar == 'E') {
+ 547:main.c        **** 				PORTE &= ~(setValue);
+ 548:main.c        **** 			}
+ 549:main.c        **** 			PORTD &= ~(1<<ACTIVITY_LED);
+ 550:main.c        **** 		}
+ 551:main.c        **** 		
+ 552:main.c        **** 		// Set pin output as high
+ 553:main.c        **** 		else if (receivedChar == SET_OUTPUT_HIGH) {
+ 554:main.c        **** 			char portChar = USART_Receive();			
+ 555:main.c        **** 			usart_read_chars();
+ 556:main.c        **** 			uint8_t setValue = strtol(receivedBuffer, NULL, 16);
+ 557:main.c        **** 			
+ 558:main.c        **** 			PORTD |= (1<<ACTIVITY_LED);
+ 559:main.c        **** 			if (portChar == 'A') {
+ 560:main.c        **** 				PORTA |= (setValue);
+ 561:main.c        **** 			}
+ 562:main.c        **** 			else if (portChar == 'B') {
+ 563:main.c        **** 				PORTB |= (setValue);
+ 564:main.c        **** 			}
+ 565:main.c        **** 			else if (portChar == 'C') {
+ 566:main.c        **** 				PORTC |= (setValue);
+ 567:main.c        **** 			}
+ 568:main.c        **** 			else if (portChar == 'D') {
+ 569:main.c        **** 				PORTD |= (setValue);
+ 570:main.c        **** 			}
+ 571:main.c        **** 			else if (portChar == 'E') {
+ 572:main.c        **** 				PORTE |= (setValue);
+ 573:main.c        **** 			}
+ 574:main.c        **** 			PORTD &= ~(1<<ACTIVITY_LED);
+ 575:main.c        **** 		}
+ 576:main.c        **** 		
+ 577:main.c        **** 		// Read all pins of a PORT and return the value
+ 578:main.c        **** 		else if (receivedChar == READ_INPUT) {
+ 579:main.c        **** 			char portChar = USART_Receive();			
+ 580:main.c        **** 			
+ 581:main.c        **** 			PORTD |= (1<<ACTIVITY_LED);
+ 582:main.c        **** 			if (portChar == 'A') {
+ 583:main.c        **** 				USART_Transmit(PINA);
+ 584:main.c        **** 			}
+ 585:main.c        **** 			else if (portChar == 'B') {
+ 586:main.c        **** 				USART_Transmit(PINB);
+ 587:main.c        **** 			}
+ 588:main.c        **** 			else if (portChar == 'C') {
+ 589:main.c        **** 				USART_Transmit(PINC);
+ 590:main.c        **** 			}
+ 591:main.c        **** 			else if (portChar == 'D') {
+ 592:main.c        **** 				USART_Transmit(PIND);
+ 593:main.c        **** 			}
+ 594:main.c        **** 			else if (portChar == 'E') {
+ 595:main.c        **** 				USART_Transmit(PINE);
+ 596:main.c        **** 			}
+ 597:main.c        **** 			PORTD &= ~(1<<ACTIVITY_LED);
+ 598:main.c        **** 		}*/
+ 599:main.c        **** 		
+ 600:main.c        **** 		// Set the reset common lines variable on or off, useful if you are controlling all the pins dire
+ 601:main.c        **** 		else if (receivedChar == RESET_COMMON_LINES) {
+ 2539               		.loc 3 601 0
+ 2540 06b4 8D34      		cpi r24,lo8(77)
+ 2541 06b6 01F4      		brne .L106
+ 2542               	.LBB190:
+ 602:main.c        **** 			char commonChar = USART_Receive();
+ 2543               		.loc 3 602 0
+ 2544 06b8 00D0      		rcall USART_Receive
+ 2545               	.LVL280:
+ 603:main.c        **** 			if (commonChar == '1') {
+ 2546               		.loc 3 603 0
+ 2547 06ba 8133      		cpi r24,lo8(49)
+ 2548 06bc 01F4      		brne .L156
+ 604:main.c        **** 				resetCommonLines = 1;
+ 2549               		.loc 3 604 0
+ 2550 06be 8824      		clr r8
+ 2551 06c0 8394      		inc r8
+ 2552 06c2 00C0      		rjmp .L147
+ 2553               	.L156:
+ 605:main.c        **** 			}
+ 606:main.c        **** 			else if (commonChar == '0') {
+ 2554               		.loc 3 606 0
+ 2555 06c4 8033      		cpi r24,lo8(48)
+ 2556 06c6 01F0      		breq .+2
+ 2557 06c8 00C0      		rjmp .L45
+ 607:main.c        **** 				resetCommonLines = 0;
+ 2558               		.loc 3 607 0
+ 2559 06ca 812C      		mov r8,__zero_reg__
+ 2560 06cc 00C0      		rjmp .L46
+ 2561               	.LVL281:
+ 2562               	.L106:
+ 2563               	.LBE190:
+ 608:main.c        **** 			}
+ 609:main.c        **** 		}
+ 610:main.c        **** 		
+ 611:main.c        **** 		// Send back the PCB version number
+ 612:main.c        **** 		else if (receivedChar == READ_PCB_VERSION) {
+ 2564               		.loc 3 612 0
+ 2565 06ce 8836      		cpi r24,lo8(104)
+ 2566 06d0 01F4      		brne .L107
+ 613:main.c        **** 			USART_Transmit(PCB_VERSION);
+ 2567               		.loc 3 613 0
+ 2568 06d2 84E6      		ldi r24,lo8(100)
+ 2569 06d4 00C0      		rjmp .L151
+ 2570               	.L107:
+ 614:main.c        **** 		}
+ 615:main.c        **** 		
+ 616:main.c        **** 		// Send back the firmware version number
+ 617:main.c        **** 		else if (receivedChar == READ_FIRMWARE_VERSION) {
+ 2571               		.loc 3 617 0
+ 2572 06d6 8635      		cpi r24,lo8(86)
+ 2573 06d8 01F4      		brne .L108
+ 618:main.c        **** 			USART_Transmit(FIRMWARE_VERSION);
+ 2574               		.loc 3 618 0
+ 2575 06da 86E1      		ldi r24,lo8(22)
+ 2576               	.LVL282:
+ 2577               	.L151:
+ 2578 06dc 00D0      		rcall USART_Transmit
+ 2579               	.LVL283:
+ 2580 06de 00C0      		rjmp .L45
+ 2581               	.LVL284:
+ 2582               	.L108:
+ 619:main.c        **** 		}
+ 620:main.c        **** 		
+ 621:main.c        **** 		// Send back 32KB for a speed test
+ 622:main.c        **** 		else if (receivedChar == FAST_READ_CHECK) {
+ 2583               		.loc 3 622 0
+ 2584 06e0 8B32      		cpi r24,lo8(43)
+ 2585 06e2 01F4      		brne .L109
+ 2586 06e4 00E0      		ldi r16,0
+ 2587 06e6 10E4      		ldi r17,lo8(64)
+ 2588               	.L110:
+ 2589               	.LVL285:
+ 2590               	.LBB191:
+ 623:main.c        **** 			for (uint16_t x = 0; x < 0x4000; x++) {
+ 624:main.c        **** 				USART_Transmit('1');
+ 2591               		.loc 3 624 0 discriminator 3
+ 2592 06e8 81E3      		ldi r24,lo8(49)
+ 2593 06ea 00D0      		rcall USART_Transmit
+ 2594               	.LVL286:
+ 625:main.c        **** 				USART_Transmit('0');
+ 2595               		.loc 3 625 0 discriminator 3
+ 2596 06ec 80E3      		ldi r24,lo8(48)
+ 2597 06ee 00D0      		rcall USART_Transmit
+ 2598               	.LVL287:
+ 2599 06f0 0150      		subi r16,1
+ 2600 06f2 1109      		sbc r17,__zero_reg__
+ 2601               	.LVL288:
+ 623:main.c        **** 			for (uint16_t x = 0; x < 0x4000; x++) {
+ 2602               		.loc 3 623 0 discriminator 3
+ 2603 06f4 01F4      		brne .L110
+ 2604 06f6 00C0      		rjmp .L45
+ 2605               	.LVL289:
+ 2606               	.L109:
+ 2607               	.LBE191:
+ 626:main.c        **** 			}
+ 627:main.c        **** 		}
+ 628:main.c        **** 		
+ 629:main.c        **** 		// Reset the AVR if it matches the number
+ 630:main.c        **** 		else if (receivedChar == RESET_AVR) {
+ 2608               		.loc 3 630 0
+ 2609 06f8 8A32      		cpi r24,lo8(42)
+ 2610 06fa 01F0      		breq .+2
+ 2611 06fc 00C0      		rjmp .L45
+ 2612               	.LBB192:
+ 631:main.c        **** 			usart_read_chars();
+ 2613               		.loc 3 631 0
+ 2614 06fe 00D0      		rcall usart_read_chars
+ 2615               	.LVL290:
+ 632:main.c        **** 			uint32_t resetValue = strtol(receivedBuffer, NULL, 16);
+ 2616               		.loc 3 632 0
+ 2617 0700 40E1      		ldi r20,lo8(16)
+ 2618 0702 50E0      		ldi r21,0
+ 2619 0704 60E0      		ldi r22,0
+ 2620 0706 70E0      		ldi r23,0
+ 2621 0708 80E0      		ldi r24,lo8(receivedBuffer)
+ 2622 070a 90E0      		ldi r25,hi8(receivedBuffer)
+ 2623 070c 00D0      		rcall strtol
+ 2624               	.LVL291:
+ 633:main.c        **** 			if (resetValue == RESET_VALUE) {
+ 2625               		.loc 3 633 0
+ 2626 070e 613E      		cpi r22,-31
+ 2627 0710 754E      		sbci r23,-27
+ 2628 0712 8740      		sbci r24,7
+ 2629 0714 9105      		cpc r25,__zero_reg__
+ 2630 0716 01F0      		breq .+2
+ 2631 0718 00C0      		rjmp .L45
+ 634:main.c        **** 				// Clear watchdog flag
+ 635:main.c        **** 				MCUCSR &= ~(1<<WDRF);
+ 2632               		.loc 3 635 0
+ 2633 071a 84B7      		in r24,0x34
+ 2634 071c 877F      		andi r24,lo8(-9)
+ 2635 071e 84BF      		out 0x34,r24
+ 636:main.c        **** 				
+ 637:main.c        **** 				// Start timed sequence
+ 638:main.c        **** 				WDTCR = (1<<WDCE) | (1<<WDE);
+ 2636               		.loc 3 638 0
+ 2637 0720 28E1      		ldi r18,lo8(24)
+ 2638 0722 21BD      		out 0x21,r18
+ 639:main.c        **** 				
+ 640:main.c        **** 				// Reset in 250 ms
+ 641:main.c        **** 				WDTCR = (1<<WDP2) | (1<<WDE);
+ 2639               		.loc 3 641 0
+ 2640 0724 8CE0      		ldi r24,lo8(12)
+ 2641 0726 81BD      		out 0x21,r24
+ 2642               	.LVL292:
+ 2643               	.LBB193:
+ 2644               	.LBB194:
+ 2645               		.file 4 "c:\\winavr-20100110\\avr\\include\\util\\delay_basic.h"
+   1:c:\winavr-20100110\avr\include\util\delay_basic.h **** /* Copyright (c) 2002, Marek Michalkiewicz
+   2:c:\winavr-20100110\avr\include\util\delay_basic.h ****    Copyright (c) 2007 Joerg Wunsch
+   3:c:\winavr-20100110\avr\include\util\delay_basic.h ****    All rights reserved.
+   4:c:\winavr-20100110\avr\include\util\delay_basic.h **** 
+   5:c:\winavr-20100110\avr\include\util\delay_basic.h ****    Redistribution and use in source and binary forms, with or without
+   6:c:\winavr-20100110\avr\include\util\delay_basic.h ****    modification, are permitted provided that the following conditions are met:
+   7:c:\winavr-20100110\avr\include\util\delay_basic.h **** 
+   8:c:\winavr-20100110\avr\include\util\delay_basic.h ****    * Redistributions of source code must retain the above copyright
+   9:c:\winavr-20100110\avr\include\util\delay_basic.h ****      notice, this list of conditions and the following disclaimer.
+  10:c:\winavr-20100110\avr\include\util\delay_basic.h **** 
+  11:c:\winavr-20100110\avr\include\util\delay_basic.h ****    * Redistributions in binary form must reproduce the above copyright
+  12:c:\winavr-20100110\avr\include\util\delay_basic.h ****      notice, this list of conditions and the following disclaimer in
+  13:c:\winavr-20100110\avr\include\util\delay_basic.h ****      the documentation and/or other materials provided with the
+  14:c:\winavr-20100110\avr\include\util\delay_basic.h ****      distribution.
+  15:c:\winavr-20100110\avr\include\util\delay_basic.h **** 
+  16:c:\winavr-20100110\avr\include\util\delay_basic.h ****    * Neither the name of the copyright holders nor the names of
+  17:c:\winavr-20100110\avr\include\util\delay_basic.h ****      contributors may be used to endorse or promote products derived
+  18:c:\winavr-20100110\avr\include\util\delay_basic.h ****      from this software without specific prior written permission.
+  19:c:\winavr-20100110\avr\include\util\delay_basic.h **** 
+  20:c:\winavr-20100110\avr\include\util\delay_basic.h ****   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+  21:c:\winavr-20100110\avr\include\util\delay_basic.h ****   AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+  22:c:\winavr-20100110\avr\include\util\delay_basic.h ****   IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+  23:c:\winavr-20100110\avr\include\util\delay_basic.h ****   ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+  24:c:\winavr-20100110\avr\include\util\delay_basic.h ****   LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+  25:c:\winavr-20100110\avr\include\util\delay_basic.h ****   CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+  26:c:\winavr-20100110\avr\include\util\delay_basic.h ****   SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+  27:c:\winavr-20100110\avr\include\util\delay_basic.h ****   INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+  28:c:\winavr-20100110\avr\include\util\delay_basic.h ****   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+  29:c:\winavr-20100110\avr\include\util\delay_basic.h ****   ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+  30:c:\winavr-20100110\avr\include\util\delay_basic.h ****   POSSIBILITY OF SUCH DAMAGE. */
+  31:c:\winavr-20100110\avr\include\util\delay_basic.h **** 
+  32:c:\winavr-20100110\avr\include\util\delay_basic.h **** /* $Id$ */
+  33:c:\winavr-20100110\avr\include\util\delay_basic.h **** 
+  34:c:\winavr-20100110\avr\include\util\delay_basic.h **** #ifndef _UTIL_DELAY_BASIC_H_
+  35:c:\winavr-20100110\avr\include\util\delay_basic.h **** #define _UTIL_DELAY_BASIC_H_ 1
+  36:c:\winavr-20100110\avr\include\util\delay_basic.h **** 
+  37:c:\winavr-20100110\avr\include\util\delay_basic.h **** #include <inttypes.h>
+  38:c:\winavr-20100110\avr\include\util\delay_basic.h **** 
+  39:c:\winavr-20100110\avr\include\util\delay_basic.h **** #if !defined(__DOXYGEN__)
+  40:c:\winavr-20100110\avr\include\util\delay_basic.h **** static __inline__ void _delay_loop_1(uint8_t __count) __attribute__((__always_inline__));
+  41:c:\winavr-20100110\avr\include\util\delay_basic.h **** static __inline__ void _delay_loop_2(uint16_t __count) __attribute__((__always_inline__));
+  42:c:\winavr-20100110\avr\include\util\delay_basic.h **** #endif
+  43:c:\winavr-20100110\avr\include\util\delay_basic.h **** 
+  44:c:\winavr-20100110\avr\include\util\delay_basic.h **** /** \file */
+  45:c:\winavr-20100110\avr\include\util\delay_basic.h **** /** \defgroup util_delay_basic <util/delay_basic.h>: Basic busy-wait delay loops
+  46:c:\winavr-20100110\avr\include\util\delay_basic.h ****     \code
+  47:c:\winavr-20100110\avr\include\util\delay_basic.h ****     #include <util/delay_basic.h>
+  48:c:\winavr-20100110\avr\include\util\delay_basic.h ****     \endcode
+  49:c:\winavr-20100110\avr\include\util\delay_basic.h **** 
+  50:c:\winavr-20100110\avr\include\util\delay_basic.h ****     The functions in this header file implement simple delay loops
+  51:c:\winavr-20100110\avr\include\util\delay_basic.h ****     that perform a busy-waiting.  They are typically used to
+  52:c:\winavr-20100110\avr\include\util\delay_basic.h ****     facilitate short delays in the program execution.  They are
+  53:c:\winavr-20100110\avr\include\util\delay_basic.h ****     implemented as count-down loops with a well-known CPU cycle
+  54:c:\winavr-20100110\avr\include\util\delay_basic.h ****     count per loop iteration.  As such, no other processing can
+  55:c:\winavr-20100110\avr\include\util\delay_basic.h ****     occur simultaneously.  It should be kept in mind that the
+  56:c:\winavr-20100110\avr\include\util\delay_basic.h ****     functions described here do not disable interrupts.
+  57:c:\winavr-20100110\avr\include\util\delay_basic.h **** 
+  58:c:\winavr-20100110\avr\include\util\delay_basic.h ****     In general, for long delays, the use of hardware timers is
+  59:c:\winavr-20100110\avr\include\util\delay_basic.h ****     much preferrable, as they free the CPU, and allow for
+  60:c:\winavr-20100110\avr\include\util\delay_basic.h ****     concurrent processing of other events while the timer is
+  61:c:\winavr-20100110\avr\include\util\delay_basic.h ****     running.  However, in particular for very short delays, the
+  62:c:\winavr-20100110\avr\include\util\delay_basic.h ****     overhead of setting up a hardware timer is too much compared
+  63:c:\winavr-20100110\avr\include\util\delay_basic.h ****     to the overall delay time.
+  64:c:\winavr-20100110\avr\include\util\delay_basic.h **** 
+  65:c:\winavr-20100110\avr\include\util\delay_basic.h ****     Two inline functions are provided for the actual delay algorithms.
+  66:c:\winavr-20100110\avr\include\util\delay_basic.h **** 
+  67:c:\winavr-20100110\avr\include\util\delay_basic.h **** */
+  68:c:\winavr-20100110\avr\include\util\delay_basic.h **** 
+  69:c:\winavr-20100110\avr\include\util\delay_basic.h **** /** \ingroup util_delay_basic
+  70:c:\winavr-20100110\avr\include\util\delay_basic.h **** 
+  71:c:\winavr-20100110\avr\include\util\delay_basic.h ****     Delay loop using an 8-bit counter \c __count, so up to 256
+  72:c:\winavr-20100110\avr\include\util\delay_basic.h ****     iterations are possible.  (The value 256 would have to be passed
+  73:c:\winavr-20100110\avr\include\util\delay_basic.h ****     as 0.)  The loop executes three CPU cycles per iteration, not
+  74:c:\winavr-20100110\avr\include\util\delay_basic.h ****     including the overhead the compiler needs to setup the counter
+  75:c:\winavr-20100110\avr\include\util\delay_basic.h ****     register.
+  76:c:\winavr-20100110\avr\include\util\delay_basic.h **** 
+  77:c:\winavr-20100110\avr\include\util\delay_basic.h ****     Thus, at a CPU speed of 1 MHz, delays of up to 768 microseconds
+  78:c:\winavr-20100110\avr\include\util\delay_basic.h ****     can be achieved.
+  79:c:\winavr-20100110\avr\include\util\delay_basic.h **** */
+  80:c:\winavr-20100110\avr\include\util\delay_basic.h **** void
+  81:c:\winavr-20100110\avr\include\util\delay_basic.h **** _delay_loop_1(uint8_t __count)
+  82:c:\winavr-20100110\avr\include\util\delay_basic.h **** {
+  83:c:\winavr-20100110\avr\include\util\delay_basic.h **** 	__asm__ volatile (
+  84:c:\winavr-20100110\avr\include\util\delay_basic.h **** 		"1: dec %0" "\n\t"
+  85:c:\winavr-20100110\avr\include\util\delay_basic.h **** 		"brne 1b"
+  86:c:\winavr-20100110\avr\include\util\delay_basic.h **** 		: "=r" (__count)
+  87:c:\winavr-20100110\avr\include\util\delay_basic.h **** 		: "0" (__count)
+  88:c:\winavr-20100110\avr\include\util\delay_basic.h **** 	);
+  89:c:\winavr-20100110\avr\include\util\delay_basic.h **** }
+  90:c:\winavr-20100110\avr\include\util\delay_basic.h **** 
+  91:c:\winavr-20100110\avr\include\util\delay_basic.h **** /** \ingroup util_delay_basic
+  92:c:\winavr-20100110\avr\include\util\delay_basic.h **** 
+  93:c:\winavr-20100110\avr\include\util\delay_basic.h ****     Delay loop using a 16-bit counter \c __count, so up to 65536
+  94:c:\winavr-20100110\avr\include\util\delay_basic.h ****     iterations are possible.  (The value 65536 would have to be
+  95:c:\winavr-20100110\avr\include\util\delay_basic.h ****     passed as 0.)  The loop executes four CPU cycles per iteration,
+  96:c:\winavr-20100110\avr\include\util\delay_basic.h ****     not including the overhead the compiler requires to setup the
+  97:c:\winavr-20100110\avr\include\util\delay_basic.h ****     counter register pair.
+  98:c:\winavr-20100110\avr\include\util\delay_basic.h **** 
+  99:c:\winavr-20100110\avr\include\util\delay_basic.h ****     Thus, at a CPU speed of 1 MHz, delays of up to about 262.1
+ 100:c:\winavr-20100110\avr\include\util\delay_basic.h ****     milliseconds can be achieved.
+ 101:c:\winavr-20100110\avr\include\util\delay_basic.h ****  */
+ 102:c:\winavr-20100110\avr\include\util\delay_basic.h **** void
+ 103:c:\winavr-20100110\avr\include\util\delay_basic.h **** _delay_loop_2(uint16_t __count)
+ 104:c:\winavr-20100110\avr\include\util\delay_basic.h **** {
+ 105:c:\winavr-20100110\avr\include\util\delay_basic.h **** 	__asm__ volatile (
+ 2646               		.loc 4 105 0
+ 2647 0728 8FEF      		ldi r24,lo8(-1)
+ 2648 072a 9FEF      		ldi r25,lo8(-1)
+ 2649               	/* #APP */
+ 2650               	 ;  105 "c:\winavr-20100110\avr\include\util\delay_basic.h" 1
+ 2651 072c 0197      		1: sbiw r24,1
+ 2652 072e 01F4      		brne 1b
+ 2653               	 ;  0 "" 2
+ 2654               	.LVL293:
+ 2655               	/* #NOAPP */
+ 2656 0730 00C0      		rjmp .L45
+ 2657               	.LBE194:
+ 2658               	.LBE193:
+ 2659               	.LBE192:
+ 2660               		.cfi_endproc
+ 2661               	.LFE30:
+ 2663               		.text
+ 2664               	.global	__vector_6
+ 2666               	__vector_6:
+ 2667               	.LFB31:
+ 642:main.c        **** 				
+ 643:main.c        **** 				// Wait for reset
+ 644:main.c        **** 				_delay_loop_2(65535);
+ 645:main.c        **** 			}
+ 646:main.c        **** 		}
+ 647:main.c        **** 	}
+ 648:main.c        **** }
+ 649:main.c        **** 
+ 650:main.c        **** // Timeout after ~500ms which also blinks the LED
+ 651:main.c        **** ISR(TIMER1_OVF_vect) {
+ 2668               		.loc 3 651 0
+ 2669               		.cfi_startproc
+ 2670 0338 1F92      		push r1
+ 2671               	.LCFI24:
+ 2672               		.cfi_def_cfa_offset 3
+ 2673               		.cfi_offset 1, -2
+ 2674 033a 0F92      		push r0
+ 2675               	.LCFI25:
+ 2676               		.cfi_def_cfa_offset 4
+ 2677               		.cfi_offset 0, -3
+ 2678 033c 0FB6      		in r0,__SREG__
+ 2679 033e 0F92      		push r0
+ 2680 0340 1124      		clr __zero_reg__
+ 2681 0342 8F93      		push r24
+ 2682               	.LCFI26:
+ 2683               		.cfi_def_cfa_offset 5
+ 2684               		.cfi_offset 24, -4
+ 2685 0344 9F93      		push r25
+ 2686               	.LCFI27:
+ 2687               		.cfi_def_cfa_offset 6
+ 2688               		.cfi_offset 25, -5
+ 2689               	/* prologue: Signal */
+ 2690               	/* frame size = 0 */
+ 2691               	/* stack size = 5 */
+ 2692               	.L__stack_usage = 5
+ 652:main.c        **** 	PORTD ^= (1<<ACTIVITY_LED);
+ 2693               		.loc 3 652 0
+ 2694 0346 92B3      		in r25,0x12
+ 2695 0348 88E0      		ldi r24,lo8(8)
+ 2696 034a 8927      		eor r24,r25
+ 2697 034c 82BB      		out 0x12,r24
+ 653:main.c        **** 	writingTimedout = 1;
+ 2698               		.loc 3 653 0
+ 2699 034e 81E0      		ldi r24,lo8(1)
+ 2700 0350 8093 0000 		sts writingTimedout,r24
+ 2701               	/* epilogue start */
+ 654:main.c        **** }...
+ 2702               		.loc 3 654 0
+ 2703 0354 9F91      		pop r25
+ 2704 0356 8F91      		pop r24
+ 2705 0358 0F90      		pop r0
+ 2706 035a 0FBE      		out __SREG__,r0
+ 2707 035c 0F90      		pop r0
+ 2708 035e 1F90      		pop r1
+ 2709 0360 1895      		reti
+ 2710               		.cfi_endproc
+ 2711               	.LFE31:
+ 2713               	.global	cartMode
+ 2714               		.data
+ 2717               	cartMode:
+ 2718 0000 01        		.byte	1
+ 2719               	.global	writingTimedout
+ 2720               		.section .bss
+ 2723               	writingTimedout:
+ 2724 0000 00        		.zero	1
+ 2725               	.global	lastBankAccessed
+ 2728               	lastBankAccessed:
+ 2729 0001 00        		.zero	1
+ 2730               	.global	flashBank1CommandWrites
+ 2733               	flashBank1CommandWrites:
+ 2734 0002 00        		.zero	1
+ 2735               		.comm	flashWriteCycle,12,1
+ 2736               		.comm	flashWriteWePin,1,1
+ 2737               		.comm	receivedChar,1,1
+ 2738               		.comm	receivedBuffer,256,1
+ 2739               		.text
+ 2740               	.Letext0:
+ 2741               		.file 5 "c:\\winavr-20100110\\avr\\include\\stdint.h"
+ 2742               		.file 6 "c:\\winavr-20100110\\avr\\include\\stdlib.h"
+DEFINED SYMBOLS
+                            *ABS*:00000000 main.c
+C:\Users\Alex\AppData\Local\Temp\cctO4dyg.s:2      *ABS*:0000003e __SP_H__
+C:\Users\Alex\AppData\Local\Temp\cctO4dyg.s:3      *ABS*:0000003d __SP_L__
+C:\Users\Alex\AppData\Local\Temp\cctO4dyg.s:4      *ABS*:0000003f __SREG__
+C:\Users\Alex\AppData\Local\Temp\cctO4dyg.s:5      *ABS*:00000000 __tmp_reg__
+C:\Users\Alex\AppData\Local\Temp\cctO4dyg.s:6      *ABS*:00000001 __zero_reg__
+C:\Users\Alex\AppData\Local\Temp\cctO4dyg.s:12     .text:00000000 USART_Receive
+C:\Users\Alex\AppData\Local\Temp\cctO4dyg.s:34     .text:00000008 USART_Transmit
+C:\Users\Alex\AppData\Local\Temp\cctO4dyg.s:55     .text:00000010 usart_read_bytes
+                            *COM*:00000100 receivedBuffer
+C:\Users\Alex\AppData\Local\Temp\cctO4dyg.s:118    .text:0000003a usart_read_chars
+C:\Users\Alex\AppData\Local\Temp\cctO4dyg.s:158    .text:00000050 rd_wr_csmreq_cs2_reset
+C:\Users\Alex\AppData\Local\Temp\cctO4dyg.s:180    .text:0000005a gb_mode
+C:\Users\Alex\AppData\Local\Temp\cctO4dyg.s:207    .text:0000006a set_16bit_address
+C:\Users\Alex\AppData\Local\Temp\cctO4dyg.s:226    .text:00000070 read_8bit_data
+C:\Users\Alex\AppData\Local\Temp\cctO4dyg.s:274    .text:00000086 write_8bit_data
+C:\Users\Alex\AppData\Local\Temp\cctO4dyg.s:343    .text:000000b4 gb_flash_read_byte
+C:\Users\Alex\AppData\Local\Temp\cctO4dyg.s:391    .text:000000ca gb_flash_write_bus_cycle
+                            *COM*:00000001 flashWriteWePin
+C:\Users\Alex\AppData\Local\Temp\cctO4dyg.s:494    .text:00000108 gb_flash_write_byte
+                            *COM*:0000000c flashWriteCycle
+C:\Users\Alex\AppData\Local\Temp\cctO4dyg.s:2723   .bss:00000000 writingTimedout
+C:\Users\Alex\AppData\Local\Temp\cctO4dyg.s:598    .text:00000172 gb_flash_write_byte_special
+C:\Users\Alex\AppData\Local\Temp\cctO4dyg.s:2733   .bss:00000002 flashBank1CommandWrites
+C:\Users\Alex\AppData\Local\Temp\cctO4dyg.s:2728   .bss:00000001 lastBankAccessed
+C:\Users\Alex\AppData\Local\Temp\cctO4dyg.s:729    .text:00000200 gb_flash_write_byte_bank1_commands
+C:\Users\Alex\AppData\Local\Temp\cctO4dyg.s:903    .text:0000029e start_timeout_timer
+C:\Users\Alex\AppData\Local\Temp\cctO4dyg.s:926    .text:000002ae stop_timeout_timer
+C:\Users\Alex\AppData\Local\Temp\cctO4dyg.s:949    .text:000002bc check_if_timed_out
+C:\Users\Alex\AppData\Local\Temp\cctO4dyg.s:981    .text:000002ce setup
+C:\Users\Alex\AppData\Local\Temp\cctO4dyg.s:1091   .text.startup:00000000 main
+                            *COM*:00000001 receivedChar
+C:\Users\Alex\AppData\Local\Temp\cctO4dyg.s:2717   .data:00000000 cartMode
+C:\Users\Alex\AppData\Local\Temp\cctO4dyg.s:2666   .text:00000338 __vector_6
+
+UNDEFINED SYMBOLS
+strtol
+atoi
+__do_copy_data
+__do_clear_bss
