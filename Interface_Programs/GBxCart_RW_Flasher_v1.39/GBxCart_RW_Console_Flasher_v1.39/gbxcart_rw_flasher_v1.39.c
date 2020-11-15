@@ -1,9 +1,9 @@
 /*
  GBxCart RW - Console Interface Flasher
- Version: 1.38
+ Version: 1.39
  Author: Alex from insideGadgets (www.insidegadgets.com)
  Created: 26/08/2017
- Last Modified: 17/10/2020
+ Last Modified: 5/11/2020
  License: CC-BY-NC-SA
  
  This program allows you to write ROMs to Flash Carts that are supported.
@@ -27,7 +27,7 @@
 
 int main(int argc, char **argv) {
 	
-	printf("GBxCart RW Flasher v1.38 by insideGadgets\n");
+	printf("GBxCart RW Flasher v1.39 by insideGadgets\n");
 	printf("#########################################\n");
 	
 	// Check arguments
@@ -1904,7 +1904,7 @@ int main(int argc, char **argv) {
 				}
 			}
 			else if (flashCartType == 42) {
-				printf("insideGadgets 2 MByte 128KB SRAM Gameboy Flash Cart (ULP)\n");
+				printf("insideGadgets 2 MByte 128KB SRAM/32KB FRAM Gameboy Flash Cart (ULP)\n");
 				if (fileSize > 0x200000) {
 					fclose(romFile);
 					printf("\n%s \nFile size is larger than the available Flash cart space of 2 MByte\n", argv[1]);
@@ -2182,7 +2182,7 @@ int main(int argc, char **argv) {
 			// Check if file is more than 16MB or using 32MB chip, if so, do a chip erase instead of sector by sector erase
 			// (sector by sector erase won't seem to work properly after 16MB because A24 is at GND)
 			uint8_t sectorEraseEnabled = 1;
-			if (fileSize > 0x1000000 || (readBuffer[0] == 0x89 && readBuffer[1] == 0x0 && readBuffer[2] == 0x7E && readBuffer[3] == 0x22)) {
+			if (fileSize > 0x1000000 || (fileSize > 0x800000 && (readBuffer[0] == 0x89 && readBuffer[1] == 0x0 && readBuffer[2] == 0x7E && readBuffer[3] == 0x22))) {
 				sectorEraseEnabled = 0;
 				currAddr = 0x0000;	
 				set_number(currAddr, SET_START_ADDRESS);
@@ -2305,7 +2305,7 @@ int main(int argc, char **argv) {
 			// Check if file is more than 16MB or using 32MB chip, if so, do a chip erase instead of sector by sector erase
 			// (sector by sector erase won't seem to work properly after 16MB because A24 is at GND)
 			uint8_t sectorEraseEnabled = 1;
-			if (fileSize > 0x1000000 || (readBuffer[0] == 0x89 && readBuffer[1] == 0x0 && readBuffer[2] == 0x7E && readBuffer[3] == 0x22)) {
+			if (fileSize > 0x1000000 || (fileSize > 0x800000 && (readBuffer[0] == 0x89 && readBuffer[1] == 0x0 && readBuffer[2] == 0x7E && readBuffer[3] == 0x22))) {
 				sectorEraseEnabled = 0;
 				currAddr = 0x0000;	
 				set_number(currAddr, SET_START_ADDRESS);
@@ -2664,6 +2664,8 @@ int main(int argc, char **argv) {
 				return 1;
 			}
 			
+			gba_check_flash_id();
+			
 			printf("\nWriting to ROM (Flash cart) from %s\n", filenameOnly);
 			printf("[             25%%             50%%             75%%            100%%]\n[");
 			
@@ -2734,6 +2736,8 @@ int main(int argc, char **argv) {
 				return 1;
 			}
 			
+			gba_check_flash_id();
+			
 			printf("\nWriting to ROM (Flash cart) from %s\n", filenameOnly);
 			printf("[             25%%             50%%             75%%            100%%]\n[");
 			
@@ -2752,7 +2756,6 @@ int main(int argc, char **argv) {
 			while ((endAddrAligned / 256) % 64 != 0) { // Align to 64 for printing progress
 				endAddrAligned--;
 			}
-			
 			xmas_setup(endAddrAligned / 28);
 			
 			// Write ROM
@@ -2810,10 +2813,6 @@ int main(int argc, char **argv) {
 				return 1;
 			}
 			
-			printf("\nWriting to ROM (Flash cart) from %s\n", filenameOnly);
-			printf("[             25%%             50%%             75%%            100%%]\n[");
-			
-			
 			// Set to reading mode
 			currAddr = 0x0000;
 			gba_flash_write_address_byte(currAddr, 0xFF);
@@ -2834,6 +2833,7 @@ int main(int argc, char **argv) {
 			while ((endAddrAligned / 64)  % 64 != 0) { // Align to 64 for printing progress
 				endAddrAligned--;
 			}
+			xmas_setup(endAddrAligned / 28);
 			
 			// Flash ID command
 			gba_flash_write_address_byte(0x00, 0x90);
@@ -2847,6 +2847,7 @@ int main(int argc, char **argv) {
 			
 			// For chips with 4x 16K sectors at the start
 			// 256L30B (0x8A, 0x0, 0x15, 0x88)
+			uint8_t bottomBootSector = 0;
 			int sectorEraseAddress = 0x20000;
 			if (readBuffer[0] == 0x8A && readBuffer[1] == 0 && readBuffer[2] == 0x15 && readBuffer[3] == 0x88) {
 				sectorEraseAddress = 0x8000;
@@ -2855,12 +2856,19 @@ int main(int argc, char **argv) {
 			else if (readBuffer[0] == 0x8A && readBuffer[1] == 0 && readBuffer[2] == 0x10 && readBuffer[3] == 0x88) {
 				sectorEraseAddress = 0x8000;
 			}
+			// M36L0R705 (0x20, 0x00, 0xC4, 0x88), Bottom 
+			else if (readBuffer[0] == 0x20 && readBuffer[1] == 0 && readBuffer[2] == 0xC4 && readBuffer[3] == 0x88) {
+				bottomBootSector = 1;
+			}
+			printf("\nFlash ID: 0x%X,0x%X,0x%X,0x%X\n", readBuffer[0], readBuffer[1], readBuffer[2], readBuffer[3]);
 			
 			// Back to reading mode
 			gba_flash_write_address_byte(currAddr, 0xFF);
 			delay_ms(5);
 			
-			xmas_setup(endAddrAligned / 28);
+			
+			printf("\nWriting to ROM (Flash cart) from %s\n", filenameOnly);
+			printf("[             25%%             50%%             75%%            100%%]\n[");
 			
 			// Write ROM
 			currAddr = 0x0000;	
@@ -2868,9 +2876,14 @@ int main(int argc, char **argv) {
 			uint32_t addressForManualWrite = 0x7FC0;
 			
 			while (currAddr < endAddr) {
+				// For chips with 4x 16K bottom boot sectors, after 0xFE8000, change to 0x8000 sector size
+				if (currAddr >= 0xFE8000 && bottomBootSector == 1) {
+					sectorEraseAddress = 0x8000;
+				}
+				
 				if (currAddr % sectorEraseAddress == 0) { // Erase next sector
-					// For chips with 4x 16K sectors, after 64K, change to 0x20000 sector size
-					if (currAddr >= 0x20000 && sectorEraseAddress == 0x8000) {
+					// For chips with 4x 16K top boot sectors, after 64K, change to 0x20000 sector size
+					if (currAddr >= 0x20000 && sectorEraseAddress == 0x8000 && bottomBootSector == 0) {
 						sectorEraseAddress = 0x20000;
 					}
 					
@@ -2978,6 +2991,7 @@ int main(int argc, char **argv) {
 			while ((endAddrAligned / 64)  % 64 != 0) { // Align to 64 for printing progress
 				endAddrAligned--;
 			}
+			xmas_setup(endAddrAligned / 28);
 			
 			// Flash ID command
 			gba_flash_write_address_byte(0x00, 0x90);
@@ -3004,11 +3018,15 @@ int main(int argc, char **argv) {
 				sectorEraseAddress = 0x2000; // 8K sectors at start
 				flashIDType = 1;
 			}
+			printf("\nFlash ID: 0x%X,0x%X,0x%X,0x%X\n", readBuffer[0], readBuffer[1], readBuffer[2], readBuffer[3]);
 			
 			// Back to reading mode
 			gba_flash_write_address_byte(currAddr, 0xFF);
 			delay_ms(5);
 			
+			
+			printf("\nWriting to ROM (Flash cart) from %s\n", filenameOnly);
+			printf("[             25%%             50%%             75%%            100%%]\n[");
 			
 			// Write ROM
 			currAddr = 0x0000;	
@@ -3091,6 +3109,8 @@ int main(int argc, char **argv) {
 				read_one_letter();
 				return 1;
 			}
+			
+			gba_check_flash_id();
 			
 			printf("\nWriting to ROM (Flash cart) from %s\n", filenameOnly);
 			printf("[             25%%             50%%             75%%            100%%]\n[");
@@ -3502,7 +3522,7 @@ int main(int argc, char **argv) {
 					 "3. insideGadgets 1 MByte 128KB SRAM Flash Cart\n"\
 					 "4. insideGadgets 1 MByte 128KB SRAM Custom Logo Flash Cart\n"\
 					 "5. insideGadgets 2 MByte 128KB SRAM Flash Cart\n"\
-					 "6. insideGadgets 2 MByte 128KB SRAM Flash Cart (ULP)\n"\
+					 "6. insideGadgets 2 MByte 128KB SRAM/32KB FRAM Flash Cart (ULP)\n"\
 					 "7. insideGadgets 2 MByte 32KB FRAM Flash Cart\n"\
 					 "8. insideGadgets 4 MByte 128KB SRAM/FRAM Flash Cart\n"\
 					 "9. insideGadgets 4 MByte 32KB FRAM MBC3 RTC Flash Cart\n"\
