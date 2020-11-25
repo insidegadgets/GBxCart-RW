@@ -1,9 +1,9 @@
 /*
  GBxCart RW - Console Interface
- Version: 1.30
+ Version: 1.31
  Author: Alex from insideGadgets (www.insidegadgets.com)
  Created: 7/11/2016
- Last Modified: 23/09/2020
+ Last Modified: 24/11/2020
  
  */
 
@@ -1315,55 +1315,43 @@ void gba_read_gametitle(void) {
 // Read the first 192 bytes of ROM, read the title, check and test for ROM, SRAM, EEPROM and Flash
 void read_gba_header (void) {
 	uint8_t logoCheck = 0;
-	uint8_t logoCheckCounter = 0;
 	uint8_t startRomBuffer[385];
 	
-	while (logoCheck == 0) {
-		currAddr = 0x0000;
-		endAddr = 0x00BF;
-		set_number(currAddr, SET_START_ADDRESS);
-		set_mode(GBA_READ_ROM);
+	currAddr = 0x0000;
+	endAddr = 0x00BF;
+	set_number(currAddr, SET_START_ADDRESS);
+	set_mode(GBA_READ_ROM);
+	
+	while (currAddr < endAddr) {
+		uint8_t comReadBytes = com_read_bytes(READ_BUFFER, 64);
 		
-		while (currAddr < endAddr) {
-			uint8_t comReadBytes = com_read_bytes(READ_BUFFER, 64);
+		if (comReadBytes == 64) {
+			memcpy(&startRomBuffer[currAddr], readBuffer, 64);
+			currAddr += 64;
 			
-			if (comReadBytes == 64) {
-				memcpy(&startRomBuffer[currAddr], readBuffer, 64);
-				currAddr += 64;
-				
-				// Request 64 bytes more
-				if (currAddr < endAddr) {
-					com_read_cont();
-				}
-			}
-			else { // Didn't receive 64 bytes, usually this only happens for Apple MACs
-				com_read_stop();
-				delay_ms(500);
-				
-				// Flush buffer
-				RS232_PollComport(cport_nr, readBuffer, 64);											
-				
-				// Start off where we left off
-				set_number(currAddr / 2, SET_START_ADDRESS);
-				set_mode(GBA_READ_ROM);	
+			// Request 64 bytes more
+			if (currAddr < endAddr) {
+				com_read_cont();
 			}
 		}
-		com_read_stop();
-		
-		logoCheck = 1;
-		for (uint16_t logoAddress = 0x04; logoAddress <= 0x9F; logoAddress++) {
-			if (nintendoLogoGBA[(logoAddress-0x04)] != startRomBuffer[logoAddress]) {
-				logoCheck = 0;
-				printf(".");
-				break;
-			}
+		else { // Didn't receive 64 bytes, usually this only happens for Apple MACs
+			com_read_stop();
+			delay_ms(500);
+			
+			// Flush buffer
+			RS232_PollComport(cport_nr, readBuffer, 64);											
+			
+			// Start off where we left off
+			set_number(currAddr / 2, SET_START_ADDRESS);
+			set_mode(GBA_READ_ROM);	
 		}
-		
-		delay_ms(250);
-		logoCheckCounter++;
-		
-		if (logoCheckCounter >= 20) {
-			break;
+	}
+	com_read_stop();
+	
+	logoCheck = 1;
+	for (uint16_t logoAddress = 0x04; logoAddress <= 0x9F; logoAddress++) {
+		if (nintendoLogoGBA[(logoAddress-0x04)] != startRomBuffer[logoAddress]) {
+			logoCheck = 0;
 		}
 	}
 	
