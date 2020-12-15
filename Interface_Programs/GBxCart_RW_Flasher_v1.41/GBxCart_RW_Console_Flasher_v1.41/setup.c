@@ -1,9 +1,9 @@
 /*
- GBxCart RW - Console Interface Flasher
- Version: 1.39
+ GBxCart RW - Console Flasher
+ Version: 1.41
  Author: Alex from insideGadgets (www.insidegadgets.com)
  Created: 26/08/2017
- Last Modified: 5/11/2020
+ Last Modified: 4/12/2020
  License: CC-BY-NC-SA
   
  */
@@ -34,6 +34,7 @@
 #include "rs232/rs232.h"
 int cport_nr = 7; // /dev/ttyS7 (COM8 on windows)
 int bdrate = 1000000; // 1,000,000 baud
+int pauseWhenCompleted = 1;
 
 // Common vars
 uint8_t gbxcartFirmwareVersion = 0;
@@ -101,7 +102,12 @@ void read_config(void) {
 
 	FILE* configfile = fopen (configFilePath , "rt");
 	if (configfile != NULL) {
-		if (fscanf(configfile, "%d\n%d", &cport_nr, &bdrate) != 2) {
+		int configResult = fscanf(configfile, "%d\n%d\n%d", &cport_nr, &bdrate, &pauseWhenCompleted);
+		//printf("Result %i\n", configResult);
+		//printf("COM %i\n", cport_nr);
+		//printf("Pause %i\n", pauseWhenCompleted);
+		
+		if (configResult == 1 || configResult >= 4) {
 			fprintf(stderr, "Config file is corrupt\n");
 		}
 		else {
@@ -114,7 +120,7 @@ void read_config(void) {
 	}
 }
 
-// Write the config.ini file for the COM port to use and baud rate
+// Write the config file for the COM port to use and baud rate
 void write_config(void) {
 	char configFilePath[253];
 	
@@ -127,7 +133,7 @@ void write_config(void) {
 	
 	FILE *configfile = fopen(configFilePath, "wt");
 	if (configfile != NULL) {
-		fprintf(configfile, "%d\n%d\n", cport_nr+1, bdrate);
+		fprintf(configfile, "%d\n%d\n%d\n", cport_nr+1, bdrate, pauseWhenCompleted);
 		fclose(configfile);
 	}
 }
@@ -2044,6 +2050,33 @@ int8_t gba_check_flash_id (void) {
 	}
 	if (sameData == 0) {
 		return GBA_FLASH_PROGRAM_AAA;
+	}
+	
+	
+	printf("Flash ID (00, 90): ");
+	gba_flash_write_address_byte(0x00, 0x90);
+	delay_ms(1);
+	
+	currAddr = 0x0000;	
+	set_number(currAddr, SET_START_ADDRESS);
+	set_mode(GBA_READ_ROM);
+	com_read_bytes(READ_BUFFER, 64);
+	com_read_stop();
+	
+	for (uint8_t r = 0; r < 8; r++) {
+		printf("0x%X, ", readBuffer[r]);
+	}
+	printf("\n");
+	gba_flash_write_address_byte(currAddr, 0xFF);
+	
+	sameData = 1;
+	for (uint8_t r = 0; r < 4; r++) {
+		if (readROMResult[r] != readBuffer[r]) {
+			sameData = 0;
+		}
+	}
+	if (sameData == 0) {
+		return GBA_FLASH_INTEL_90;
 	}
 	
 	printf("\n*** Flash chip doesn't appear to be responding. Please re-seat the cart and power cycle GBxCart ***\n");

@@ -1,9 +1,9 @@
 /*
- GBxCart RW - Console Interface Flasher
- Version: 1.39
+ GBxCart RW - Console Flasher
+ Version: 1.41
  Author: Alex from insideGadgets (www.insidegadgets.com)
  Created: 26/08/2017
- Last Modified: 5/11/2020
+ Last Modified: 4/12/2020
  License: CC-BY-NC-SA
  
  This program allows you to write ROMs to Flash Carts that are supported.
@@ -27,7 +27,7 @@
 
 int main(int argc, char **argv) {
 	
-	printf("GBxCart RW Flasher v1.39 by insideGadgets\n");
+	printf("GBxCart RW Flasher v1.41 by insideGadgets\n");
 	printf("#########################################\n");
 	
 	// Check arguments
@@ -67,6 +67,12 @@ int main(int argc, char **argv) {
 			return 1;
 		}
 		
+		#ifdef TIMETEST
+			// Timing test
+			printf("Timing started\n");
+			clock_t t;
+			t = clock();
+		#endif
 		
 		// Separate the file name
 		char filenameOnly[100];
@@ -133,7 +139,9 @@ int main(int argc, char **argv) {
 				break;
 			}
 		}
-		fileSize = lastTrimLocation;
+		if (lastTrimLocation > 32768) {
+			fileSize = lastTrimLocation;
+		}
 		fseek(romFile, 0, SEEK_SET);
 		
 		
@@ -148,6 +156,99 @@ int main(int argc, char **argv) {
 			flashCartType = atoi(argv[2]);
 			mode5vOverride = atoi(argv[3]);
 		}
+		
+		
+		// Auto detect methods first, if matched Flash ID with other methods then use those methods
+		if (flashCartType == 54) { 
+			printf("Generic GBA Flash Cart (Auto detect)\n");
+			
+			// Check file size
+			if (fileSize > 0x2000000) {
+				fclose(romFile);
+				printf("\n%s \nFile size is larger than the available Flash cart space of 32 MBytes\n", argv[1]);
+				read_one_letter();
+				return 1;
+			}
+			if (gbxcartFirmwareVersion <= 19) {
+				printf("Firmware R20 or higher is required for this functionality.\n");
+				read_one_letter();
+				return 1;
+			}
+			
+			// Read rom a tiny bit before writing
+			currAddr = 0x0000;	
+			set_number(currAddr, SET_START_ADDRESS);
+			delay_ms(5);
+			set_mode(GBA_READ_ROM);
+			delay_ms(5);
+			com_read_bytes(READ_BUFFER, 64);
+			com_read_stop();
+			
+			// Set end address as file size
+			endAddr = fileSize;
+			uint32_t endAddrAligned = fileSize;
+			while ((endAddrAligned / 256) % 64 != 0) { // Align to 64 for printing progress
+				endAddrAligned--;
+			}
+			xmas_setup(endAddrAligned / 28);
+			
+			
+			// Check Flash ID
+			detectedFlashWritingMethod = gba_check_flash_id();
+			if (detectedFlashWritingMethod >= 0) {
+				
+				// iG carts
+				if (readBuffer[0] == 0x89 && readBuffer[1] == 0x0 && readBuffer[2] == 0x7E && readBuffer[3] == 0x22) {
+					flashCartType = 41;
+				}
+				else if (readBuffer[0] == 0x01 && readBuffer[1] == 0x0 && readBuffer[2] == 0x7E && readBuffer[3] == 0x22) {
+					flashCartType = 20;
+				}
+				// MSP55LV128
+				else if (readBuffer[0] == 0x04 && readBuffer[1] == 0x0 && readBuffer[2] == 0x7D && readBuffer[3] == 0x22) {
+					flashCartType = 21;
+				}
+				// MSP55LV128M
+				else if (readBuffer[0] == 0x02 && readBuffer[1] == 0x0 && readBuffer[2] == 0x7D && readBuffer[3] == 0x22) {
+					flashCartType = 22;
+				}
+				// 256L30B (0x8A, 0x0, 0x15, 0x88)
+				else if (readBuffer[0] == 0x8A && readBuffer[1] == 0 && readBuffer[2] == 0x15 && readBuffer[3] == 0x88) {
+					flashCartType = 23;
+				}
+				// 4000L0YBQ0 (0x8A, 0x0, 0x10, 0x88)
+				else if (readBuffer[0] == 0x8A && readBuffer[1] == 0 && readBuffer[2] == 0x10 && readBuffer[3] == 0x88) {
+					flashCartType = 23;
+				}
+				// M36L0R705 (0x20, 0x00, 0xC4, 0x88), Bottom 
+				else if (readBuffer[0] == 0x20 && readBuffer[1] == 0 && readBuffer[2] == 0xC4 && readBuffer[3] == 0x88) {
+					flashCartType = 23;
+				}
+				// (0x20, 0x00, 0x0E, 0x88)
+				else if (readBuffer[0] == 0x20 && readBuffer[1] == 0 && readBuffer[2] == 0x0E && readBuffer[3] == 0x88) {
+					flashCartType = 23;
+				}
+				// 28F128W30 (0x8A, 0x0, 0x5x, 0x88)
+				else if (readBuffer[0] == 0x8A && readBuffer[1] == 0 && (readBuffer[2] & 0xF8) == 0x50 && readBuffer[3] == 0x88) {
+					flashCartType = 25;
+				}
+				// (0x8A, 0x0, 0x15, 0x88)
+				else if (readBuffer[0] == 0x8A && readBuffer[1] == 0 && readBuffer[2] == 0x15 && readBuffer[3] == 0x88) {
+					flashCartType = 25;
+				}
+				else {
+					flashCartType = 54;
+				}
+				
+				if (flashCartType != 54) {
+					printf("\nFound cart: ");
+				}
+				else {
+					printf("\n");
+				}
+			}
+		}
+		
 		
 		// ****** GB Flash Carts ******
 		if (flashCartType >= 101) {
@@ -1173,6 +1274,12 @@ int main(int argc, char **argv) {
 			gb_flash_pin_setup(WE_AS_AUDIO_PIN); // Audio pin
 			gb_flash_program_setup(GB_FLASH_PROGRAM_555);// Flash program byte method
 			gb_check_change_flash_id(GB_FLASH_PROGRAM_555);
+			
+			// Check if Flash ID matches
+			if (flashCartType == 35 && (flashID[0] != 0x04 || flashID[1] != 0xD4 || flashID[2] != 0x00 || flashID[3] != 0x00)) {
+				printf("*** Flash ID doesn't match expected value of 0xBF, 0xB5, 0x01, 0xFF ***\n");
+				read_one_letter();
+			}
 			
 			// Chip erase
 			printf("\nErasing Flash");
@@ -2663,8 +2770,19 @@ int main(int argc, char **argv) {
 				read_one_letter();
 				return 1;
 			}
+			if (gbxcartFirmwareVersion <= 22) {
+				printf("Firmware R23 or higher is required for this functionality.\n");
+				read_one_letter();
+				return 1;
+			}
 			
 			gba_check_flash_id();
+			
+			// 29LV128DTMC
+			uint8_t bufferedMode = 1;
+			if (readBuffer[0] == 0xC1 && readBuffer[1] == 0x0 && readBuffer[2] == 0x7D && readBuffer[3] == 0x22) {
+				bufferedMode = 0;
+			}
 			
 			printf("\nWriting to ROM (Flash cart) from %s\n", filenameOnly);
 			printf("[             25%%             50%%             75%%            100%%]\n[");
@@ -2708,16 +2826,31 @@ int main(int argc, char **argv) {
 					delay_ms(5);
 				}
 				
-				if (com_write_bytes_from_file_skip_FFs(GBA_FLASH_WRITE_256BYTE_SWAPPED_D0D1, romFile, 256)) {
-					com_wait_for_ack();
-					currAddr += 256;
-					readBytes += 256;
+				if (bufferedMode == 1) {
+					if (com_write_bytes_from_file_skip_FFs(GBA_FLASH_WRITE_BUFFERED_256BYTE_SWAPPED_D0D1, romFile, 256)) {
+						com_wait_for_ack();
+						currAddr += 256;
+						readBytes += 256;
+					}
+					else {
+						currAddr += 256;
+						readBytes += 256;
+						set_number(currAddr / 2, SET_START_ADDRESS); // Divide address by 2
+						delay_ms(2);
+					}
 				}
 				else {
-					currAddr += 256;
-					readBytes += 256;
-					set_number(currAddr / 2, SET_START_ADDRESS); // Divide address by 2
-					delay_ms(2);
+					if (com_write_bytes_from_file_skip_FFs(GBA_FLASH_WRITE_256BYTE_SWAPPED_D0D1, romFile, 256)) {
+						com_wait_for_ack();
+						currAddr += 256;
+						readBytes += 256;
+					}
+					else {
+						currAddr += 256;
+						readBytes += 256;
+						set_number(currAddr / 2, SET_START_ADDRESS); // Divide address by 2
+						delay_ms(2);
+					}
 				}
 				
 				print_progress_percent_addr(readBytes, endAddrAligned / 64);
@@ -2732,6 +2865,11 @@ int main(int argc, char **argv) {
 			if (fileSize > 0x2000000) {
 				fclose(romFile);
 				printf("\n%s \nFile size is larger than the available Flash cart space of 32 MBytes\n", argv[1]);
+				read_one_letter();
+				return 1;
+			}
+			if (gbxcartFirmwareVersion <= 22) {
+				printf("Firmware R23 or higher is required for this functionality.\n");
 				read_one_letter();
 				return 1;
 			}
@@ -2779,7 +2917,7 @@ int main(int argc, char **argv) {
 					delay_ms(5);
 				}
 				
-				if (com_write_bytes_from_file_skip_FFs(GBA_FLASH_WRITE_256BYTE_SWAPPED_D0D1, romFile, 256)) {
+				if (com_write_bytes_from_file_skip_FFs(GBA_FLASH_WRITE_BUFFERED_256BYTE_SWAPPED_D0D1, romFile, 256)) {
 					com_wait_for_ack();
 					currAddr += 256;
 					readBytes += 256;
@@ -3513,6 +3651,20 @@ int main(int argc, char **argv) {
 			read_one_letter();
 			return 1;
 		}
+		
+		#ifdef TIMETEST
+			t = clock() - t;
+			double time_taken = ((double)t)/CLOCKS_PER_SEC; // calculate the elapsed time
+			printf("The program took %f seconds to execute", time_taken);
+			read_one_letter();
+		#endif
+		
+		#ifdef _WIN32
+			if (pauseWhenCompleted == 1) {
+				printf("\n\nCompleted\n");
+				read_one_letter();
+			}
+		#endif
 	}	
 	else {
 		printf("\nPlease select a Flash Cart:\n"\

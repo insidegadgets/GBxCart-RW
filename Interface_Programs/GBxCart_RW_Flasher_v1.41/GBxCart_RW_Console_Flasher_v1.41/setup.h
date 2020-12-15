@@ -1,9 +1,9 @@
 /*
- GBxCart RW - Console Interface Flasher
- Version: 1.39
+ GBxCart RW - Console Flasher
+ Version: 1.41
  Author: Alex from insideGadgets (www.insidegadgets.com)
  Created: 26/08/2017
- Last Modified: 5/11/2020
+ Last Modified: 4/12/2020
  License: CC-BY-NC-SA
   
  */
@@ -17,6 +17,8 @@
 #include <stdint.h>
 #include <stdio.h>
 
+//#define TIMETEST 1
+
 #define LOW 0
 #define HIGH 1
 #define false 0
@@ -26,6 +28,7 @@
 #include "rs232/rs232.h"
 extern int cport_nr;
 extern int bdrate;
+extern int pauseWhenCompleted;
 
 #define CART_MODE 'C'
 #define GB_MODE 1
@@ -98,6 +101,7 @@ extern int bdrate;
 #define GBA_FLASH_WRITE_256BYTE_SWAPPED_D0D1 't'
 #define GBA_FLASH_WRITE_256BYTE 'f'
 #define GBA_FLASH_WRITE_BUFFERED_256BYTE 'c'
+#define GBA_FLASH_WRITE_BUFFERED_256BYTE_SWAPPED_D0D1 'd'
 #define GBA_FLASH_WRITE_INTEL_64BYTE 'l'
 #define GBA_FLASH_WRITE_INTEL_64BYTE_WORD 'u'
 #define GBA_FLASH_WRITE_INTEL_INTERLEAVED_256BYTE 'v'
@@ -105,6 +109,7 @@ extern int bdrate;
 
 #define GBA_FLASH_PROGRAM_AAA '0'
 #define GBA_FLASH_PROGRAM_AAA_BIT01_SWAPPED '1'
+#define GBA_FLASH_INTEL_90 '2'
 
 // General commands
 #define CART_MODE 'C'

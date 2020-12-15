@@ -23,9 +23,24 @@
 #endif
 
 uint8_t miniFirmware = 22;
-uint8_t standardFirmware = 22;
+uint8_t standardFirmware = 23;
 
 #include "setup.h" // See defines, variables, constants, functions here
+
+void watchdog_reset(int delayTime) {
+	// Break out of any existing functions on ATmega
+	set_mode('0');
+	
+	// Activate Watchdog reset to occur in ~250ms to return us to the boot loader
+	set_number(RESET_VALUE, RESET_AVR);
+	
+	// Close the port
+	RS232_CloseComport(cport_nr);
+	
+	delay_ms(delayTime);
+	
+	printf("WDT Reset Done\n");
+}
 
 int main(int argc, char **argv) {
 	char portname[128];
@@ -55,7 +70,6 @@ int main(int argc, char **argv) {
 	
 	// Get PCB version
 	gbxcartPcbVersion = request_value(READ_PCB_VERSION);
-	RS232_CloseComport(cport_nr);
 	
 	if (gbxcartPcbVersion == 100) {
 		printf("Detected GBxCart RW: Mini PCB version\n");
@@ -89,9 +103,8 @@ int main(int argc, char **argv) {
 			char modeSelected = read_one_letter();
 			if (modeSelected == 'y' || modeSelected == 'Y') {
 				printf("\n\n");
-				char tsbReset[100];
-				sprintf(tsbReset, "tsb" DIR_SEPARATOR "gbxcart_rw_wdt_reset_v1.0" EXE_SUFFIX " %i %i", cport_nr+1, delayTime);
-				system(tsbReset);
+				
+				watchdog_reset(delayTime);
 				
 				char tsbFirmware[200];
 				#ifdef _WIN32
@@ -126,9 +139,8 @@ int main(int argc, char **argv) {
 			if (modeSelected == 'y' || modeSelected == 'Y') {
 				if (gbxcartPcbVersion == 2) { // v1.1-v1.2 PCB
 					printf("\n\n");
-					char tsbReset[100];
-					sprintf(tsbReset, "tsb" DIR_SEPARATOR "gbxcart_rw_wdt_reset_v1.0" EXE_SUFFIX " %i %i", cport_nr+1, delayTime);
-					system(tsbReset);
+					
+					watchdog_reset(delayTime);
 					
 					char tsbFirmware[200];
 					#ifdef _WIN32
@@ -141,9 +153,8 @@ int main(int argc, char **argv) {
 				}
 				else if (gbxcartPcbVersion == 4) { // v1.3 PCB
 					printf("\n\n");
-					char tsbReset[100];
-					sprintf(tsbReset, "tsb" DIR_SEPARATOR "gbxcart_rw_wdt_reset_v1.0" EXE_SUFFIX " %i %i", cport_nr+1, delayTime);
-					system(tsbReset);
+					
+					watchdog_reset(delayTime);
 					
 					char tsbFirmware[200];
 					#ifdef _WIN32
@@ -153,6 +164,9 @@ int main(int argc, char **argv) {
 					#endif
 					system(tsbFirmware);
 					printf("Finished\n");
+					
+					// To do for Mac users:
+					// sprintf(tsbFirmware, "mono tsb" DIR_SEPARATOR "tsbloader_adv.exe -port=/dev/tty.usbserial-1410 -fop=w -ffile=gbxcart_rw_v1.3_pcb_r%i.hex", standardFirmware);
 				}
 			}
 			else {
@@ -179,9 +193,8 @@ int main(int argc, char **argv) {
 			char modeSelected = read_one_letter();
 			if (modeSelected == 'y' || modeSelected == 'Y') {
 				printf("\n\n");
-				char tsbReset[100];
-				sprintf(tsbReset, "tsb" DIR_SEPARATOR "gbxcart_rw_wdt_reset_v1.0" EXE_SUFFIX " %i %i", cport_nr+1, delayTime);
-				system(tsbReset);
+				
+				watchdog_reset(delayTime);
 				
 				char tsbFirmware[200];
 				#ifdef _WIN32

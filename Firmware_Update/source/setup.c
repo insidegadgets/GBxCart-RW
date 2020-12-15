@@ -14,9 +14,9 @@
 #endif
 
 #if defined(__linux__) || defined(__FreeBSD__) || defined(__APPLE__)
-#define RS232_PORTNR  45
+#define RS232_PORTNR  57
 #else
-#define RS232_PORTNR  16
+#define RS232_PORTNR  30
 #endif
 
 #include <stdio.h>
