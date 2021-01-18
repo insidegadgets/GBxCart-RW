@@ -14,7 +14,7 @@ compile with the command: gcc demo_rx.c rs232.c -Wall -Wextra -o2 -o test_rx
 #include <stdio.h>
 
 #ifdef _WIN32
-#include <windows.h>
+#include <Windows.h>
 #else
 #include <unistd.h>
 #endif

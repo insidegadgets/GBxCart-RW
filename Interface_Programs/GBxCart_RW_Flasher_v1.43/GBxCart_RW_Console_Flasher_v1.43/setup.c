@@ -1,9 +1,9 @@
 /*
  GBxCart RW - Console Flasher
- Version: 1.41
+ Version: 1.43
  Author: Alex from insideGadgets (www.insidegadgets.com)
  Created: 26/08/2017
- Last Modified: 4/12/2020
+ Last Modified: 18/01/2021
  License: CC-BY-NC-SA
   
  */
@@ -83,10 +83,10 @@ uint8_t nintendoLogoGBA[] = {0x24, 0xFF, 0xAE, 0x51, 0x69, 0x9A, 0xA2, 0x21, 0x3
 										0x78, 0x00, 0x90, 0xCB, 0x88, 0x11, 0x3A, 0x94, 0x65, 0xC0, 0x7C, 0x63, 0x87, 0xF0, 0x3C, 0xAF, 
 										0xD6, 0x25, 0xE4, 0x8B, 0x38, 0x0A, 0xAC, 0x72, 0x21, 0xD4, 0xF8, 0x07};
 uint8_t flashCartList[] = { 1, 29, 30, 31, 2, 42, 3, 4, 35, 5, 6, // GB iG carts
-									  0, 52, 53, 8, 32, 9, 33, 10, 11, 12, 34, 13, 14, 15, 39, 40, 38, 16, 17,  // GB carts
-									  20, 27, 41, 43, 21, 22, 23, 24, 25, 26, 36, 37, 54, // GBA carts
-									  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-									  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+									  0, 52, 53, 8, 32, 9, 33, 10, 11, 12, 34, 13, 14, 15, 39, 40, 38, 52, 16, 17,  // GB carts
+									  20, 27, 41, 43, 55, 21, 22, 23, 24, 25, 26, 36, 37, 54, // GBA carts
+									  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+									  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
 									  44, 45, 46, 47, 48, 49, 50, 51}; 
 
 // Read the config.ini file for the COM port to use and baud rate

@@ -1,9 +1,9 @@
 /*
  GBxCart RW - Console Flasher
- Version: 1.41
+ Version: 1.43
  Author: Alex from insideGadgets (www.insidegadgets.com)
  Created: 26/08/2017
- Last Modified: 4/12/2020
+ Last Modified: 18/01/2021
  License: CC-BY-NC-SA
  
  This program allows you to write ROMs to Flash Carts that are supported.
@@ -27,7 +27,7 @@
 
 int main(int argc, char **argv) {
 	
-	printf("GBxCart RW Flasher v1.41 by insideGadgets\n");
+	printf("GBxCart RW Flasher v1.43 by insideGadgets\n");
 	printf("#########################################\n");
 	
 	// Check arguments
@@ -94,7 +94,7 @@ int main(int argc, char **argv) {
 #endif
 		
 		printf("\n--- Write ROM to Flash Cart ---\n");
-		printf("Cart selected: ");
+		//printf("Cart selected: ");
 		
 		uint32_t readBytes = 0;
 		uint16_t sector = 0;
@@ -115,6 +115,7 @@ int main(int argc, char **argv) {
 		
 		// Find last 0xFF in the file
 		long lastTrimLocation = fileSize;
+		long originalFileSize = fileSize;
 		uint8_t endTrim = 0;
 		uint8_t buffer[64];		
 		for (long x = fileSize-64; x > 0; x -= 64) {
@@ -354,7 +355,7 @@ int main(int argc, char **argv) {
 		
 		else if (flashCartType == 1) {
 			printf(" 32 KByte Gameboy Flash Cart\n");
-			printf("\nGoing to write to ROM (Flash cart) from %s\n", filenameOnly);
+			printf("\nGoing to write %s\n", filenameOnly);
 			
 			currAddr = 0x0000;
 			endAddr = 0x7FFF;
@@ -425,7 +426,7 @@ int main(int argc, char **argv) {
 			else {
 				printf("insideGadgets 512 KByte Gameboy Flash Cart\n");
 			}
-			printf("\nGoing to write to ROM (Flash cart) from %s\n", filenameOnly);
+			printf("\nGoing to write %s\n", filenameOnly);
 			
 			// PCB v1.3 - Set 5V
 			if (gbxcartPcbVersion == PCB_1_3 || gbxcartPcbVersion == GBXMAS) {
@@ -646,7 +647,7 @@ int main(int argc, char **argv) {
 				}
 			}
 			
-			printf("\nGoing to write to ROM (Flash cart) from %s\n", filenameOnly);
+			printf("\nGoing to write %s\n", filenameOnly);
 			
 			currAddr = 0x0000;
 			endAddr = 0x7FFF;
@@ -717,7 +718,7 @@ int main(int argc, char **argv) {
 		
 		else if (flashCartType == 10) {
 			printf("2 MByte (BV5) Gameboy Flash Cart\n");
-			printf("\nGoing to write to ROM (Flash cart) from %s\n", filenameOnly);
+			printf("\nGoing to write %s\n", filenameOnly);
 			
 			// PCB v1.3 - Set 5V
 			if (gbxcartPcbVersion == PCB_1_3 || gbxcartPcbVersion == GBXMAS) {
@@ -818,7 +819,7 @@ int main(int argc, char **argv) {
 				}
 			}
 			
-			printf("\nGoing to write to ROM (Flash cart) from %s\n", filenameOnly);
+			printf("\nGoing to write %s\n", filenameOnly);
 			
 			currAddr = 0x0000;
 			endAddr = 0x7FFF;
@@ -890,7 +891,7 @@ int main(int argc, char **argv) {
 		else if (flashCartType == 12 || flashCartType == 2 || flashCartType == 3 || flashCartType == 34) {
 			if (flashCartType == 12) {
 				printf("2 MByte (AM29F016B) / 4 MByte (AM29F032B) (WR as WE) Gameboy Flash Cart\n");
-				printf("\nGoing to write to ROM (Flash cart) from %s\n", filenameOnly);
+				printf("\nGoing to write %s\n", filenameOnly);
 				
 				// Check file size
 				if (fileSize > 0x400000) {
@@ -902,7 +903,7 @@ int main(int argc, char **argv) {
 			}
 			else if (flashCartType == 34) {
 				printf("2 MByte (AM29F016B) / 4 MByte (AM29F032B) (Audio as WE) Gameboy Flash Cart\n");
-				printf("\nGoing to write to ROM (Flash cart) from %s\n", filenameOnly);
+				printf("\nGoing to write %s\n", filenameOnly);
 				
 				// Check file size
 				if (fileSize > 0x400000) {
@@ -914,7 +915,7 @@ int main(int argc, char **argv) {
 			}
 			else if (flashCartType == 2) {
 				printf("insideGadgets 2 MByte 128KB SRAM Flash Cart\n");
-				printf("\nGoing to write to ROM (Flash cart) from %s\n", filenameOnly);
+				printf("\nGoing to write %s\n", filenameOnly);
 				
 				// Check file size
 				if (fileSize > 0x200000) {
@@ -926,7 +927,7 @@ int main(int argc, char **argv) {
 			}
 			else if (flashCartType == 3) {
 				printf("insideGadgets 2 MByte 32KB FRAM Flash Cart\n");
-				printf("\nGoing to write to ROM (Flash cart) from %s\n", filenameOnly);
+				printf("\nGoing to write %s\n", filenameOnly);
 				
 				// Check file size
 				if (fileSize > 0x200000) {
@@ -1019,7 +1020,7 @@ int main(int argc, char **argv) {
 		
 		else if (flashCartType == 13) {
 			printf("2 MByte (GB Smart 16M) Gameboy Flash Cart\n");
-			printf("\nGoing to write to ROM (Flash cart) from %s\n", filenameOnly);
+			printf("\nGoing to write %s\n", filenameOnly);
 			
 			// PCB v1.3 - Set 5V
 			if (gbxcartPcbVersion == PCB_1_3 || gbxcartPcbVersion == GBXMAS) {
@@ -1148,7 +1149,7 @@ int main(int argc, char **argv) {
 		
 		else if (flashCartType == 14 || flashCartType == 48) {
 			printf("4 MByte (M29W640 / 29DL32BF / GL032A10BAIR4 / S29AL016M9) Gameboy Flash Cart\n");
-			printf("\nGoing to write to ROM (Flash cart) from %s\n", filenameOnly);
+			printf("\nGoing to write %s\n", filenameOnly);
 			
 			// 5v override and set to default cart selections
 			if (flashCartType == 48) {
@@ -1247,7 +1248,7 @@ int main(int argc, char **argv) {
 			else if (flashCartType == 35) {
 				printf("insideGadgets 4 MByte 32KB FRAM MBC3 RTC Flash Cart\n");
 			}
-			printf("\nGoing to write to ROM (Flash cart) from %s\n", filenameOnly);
+			printf("\nGoing to write %s\n", filenameOnly);
 			
 			// PCB v1.3 - Set 5V
 			if (gbxcartPcbVersion == PCB_1_3 || gbxcartPcbVersion == GBXMAS) {
@@ -1444,7 +1445,7 @@ int main(int argc, char **argv) {
 				}
 			}
 			
-			printf("\nGoing to write to ROM (Flash cart) from %s\n", filenameOnly);
+			printf("\nGoing to write %s\n", filenameOnly);
 			if (gbxcartPcbVersion == MINI && gbxcartFirmwareVersion <= 16) {
 				printf("Firmware R17 or higher is required for this functionality.\n");
 				read_one_letter();
@@ -1560,6 +1561,100 @@ int main(int argc, char **argv) {
 			fclose(romFile);
 		}
 		
+		else if (flashCartType == 52) {
+			printf("RetroStage 1/2/4/8 MByte, 32KB FRAM/128KB SRAM Gameboy Blaster Flash Cart\n");
+			printf("\nGoing to write %s\n", filenameOnly);
+			
+			// PCB v1.3 - Set 5V
+			if (gbxcartPcbVersion == PCB_1_3 || gbxcartPcbVersion == GBXMAS) {
+				set_mode(VOLTAGE_5V);
+				delay_ms(500);
+			}
+			currAddr = 0x0000;
+			endAddr = 0x7FFF;
+			
+			// Check file size
+			if (fileSize > 0x800000) {
+				fclose(romFile);
+				printf("\n%s \nFile size is larger than the available Flash cart space of 8 MByte\n", argv[1]);
+				read_one_letter();
+				return 1;
+			}
+			
+			// Calculate banks needed from ROM file size
+			romBanks = ceil((double) fileSize / (double) 16384);
+			
+			// Flash Setup
+			set_mode(GB_CART_MODE); // Gameboy mode
+			delay_ms(5);
+			gb_flash_pin_setup(WE_AND_RST_AS_WR_PIN); // WR+RST pin
+			gb_flash_program_setup(GB_FLASH_PROGRAM_AAA);// Flash program byte method
+			gb_check_change_flash_id(GB_FLASH_PROGRAM_AAA);
+			
+			set_number(0, SET_START_ADDRESS);
+			delay_ms(5);
+			
+			// Chip erase
+			printf("\nErasing Flash");
+			xmas_chip_erase_animation();
+			gb_flash_write_address_byte(0xAAA, 0xAA);
+			gb_flash_write_address_byte(0x555, 0x55);
+			gb_flash_write_address_byte(0xAAA, 0x80);
+			gb_flash_write_address_byte(0xAAA, 0xAA);
+			gb_flash_write_address_byte(0x555, 0x55);
+			gb_flash_write_address_byte(0xAAA, 0x10);
+			
+			// Wait for first byte to be 0xFF
+			wait_for_flash_chip_erase_ff(1);
+			xmas_setup((romBanks * 16384) / 28);
+			
+			printf("\n\nWriting to ROM (Flash cart) from %s\n", filenameOnly);
+			printf("[             25%%             50%%             75%%            100%%]\n[");
+			
+			// Write ROM
+			currAddr = 0x0000;
+			for (uint16_t bank = 1; bank < romBanks; bank++) {				
+				if (bank > 1) { currAddr = 0x4000; }
+				
+				// Set start address
+				set_number(currAddr, SET_START_ADDRESS);
+				delay_ms(5);
+				
+				// Read data
+				while (currAddr < endAddr) {
+					if (currAddr == 0x4000) { // Switch banks here just before the next bank, not any time sooner
+						if (bank >= 256) {
+							set_bank(0x3000, 1); // High bit
+						}
+						else {
+							set_bank(0x3000, 0); // High bit
+						}
+						set_bank(0x2100, bank);
+					}
+					
+					if (gbxcartFirmwareVersion <= 19) {
+						com_write_bytes_from_file(GB_FLASH_WRITE_64BYTE, romFile, 64);
+						com_wait_for_ack();
+						currAddr += 64;
+						readBytes += 64;
+					}
+					else {
+						com_write_bytes_from_file(GB_FLASH_WRITE_BUFFERED_256BYTE, romFile, 256);
+						com_wait_for_ack();
+						currAddr += 256;
+						readBytes += 256;
+					}
+					
+					// Print progress
+					print_progress_percent(readBytes, (romBanks * 16384) / 64);
+					led_progress_percent(readBytes, (romBanks * 16384) / 28);
+				}
+			}
+			
+			printf("]");
+			fclose(romFile);
+		}
+		
 		else if (flashCartType == 16 || flashCartType == 17 || flashCartType == 50 || flashCartType == 51) {
 			// 5v override and set to default cart selections
 			if (flashCartType == 50) {
@@ -1577,7 +1672,7 @@ int main(int argc, char **argv) {
 			else {
 				printf("32 MByte (4x 8MB Banks) (M29W256 / MX29GL256 / MSP55LV100) Gameboy Flash Cart\n");
 			}
-			printf("\nGoing to write to ROM (Flash cart) from %s\n", filenameOnly);
+			printf("\nGoing to write %s\n", filenameOnly);
 			printf("\n*** After writing is complete, you will need to power cycle the device in order to write to the other 8MB banks ***\n\n");
 			
 			// PCB v1.1/1.2
@@ -1724,7 +1819,7 @@ int main(int argc, char **argv) {
 			else {
 				printf("64 MByte Mighty Flash Cart - Buffered (Experimental)\n");
 			}
-			printf("\nGoing to write to ROM (Flash cart) from %s\n", filenameOnly);
+			printf("\nGoing to write %s\n", filenameOnly);
 			
 			// PCB v1.3 - Set 5V
 			if (gbxcartPcbVersion == PCB_1_3 || gbxcartPcbVersion == GBXMAS) {
@@ -1906,7 +2001,7 @@ int main(int argc, char **argv) {
 		
 		else if (flashCartType == 4) {
 			printf("insideGadgets 4 MByte 128KB SRAM/FRAM Gameboy Flash Cart\n");
-			printf("\nGoing to write to ROM (Flash cart) from %s\n", filenameOnly);
+			printf("\nGoing to write %s\n", filenameOnly);
 			
 			// PCB v1.3 - Set 5V
 			if (gbxcartPcbVersion == PCB_1_3 || gbxcartPcbVersion == GBXMAS) {
@@ -1946,7 +2041,7 @@ int main(int argc, char **argv) {
 			delay_ms(5);
 			
 			// Chip erase
-			printf("\nErasing Flash ");
+			printf("\nErasing Flash");
 			xmas_chip_erase_animation();
 			gb_flash_write_address_byte(0xAAA, 0xAA);
 			gb_flash_write_address_byte(0x555, 0x55);
@@ -2029,7 +2124,7 @@ int main(int argc, char **argv) {
 				}
 			}
 			
-			printf("\nGoing to write to ROM (Flash cart) from %s\n", filenameOnly);
+			printf("\nGoing to write %s\n", filenameOnly);
 			
 			// PCB v1.3 - Set 5V
 			if (gbxcartPcbVersion == PCB_1_3 || gbxcartPcbVersion == GBXMAS) {
@@ -2130,7 +2225,7 @@ int main(int argc, char **argv) {
 					delay_ms(500);
 				}
 			}
-			printf("\nGoing to write to ROM (Flash cart) from %s\n\n", filenameOnly);
+			printf("\nGoing to write %s\n\n", filenameOnly);
 			
 			// Check file size
 			if (fileSize > 0x400000) {
@@ -2235,7 +2330,7 @@ int main(int argc, char **argv) {
 		// ****** GBA Flash Carts ******
 		else if (flashCartType == 20) {
 			printf("insideGadgets GBA 32MB (512Kbit/1Mbit Flash Save) or (256Kbit FRAM) Flash Cart\n");
-			printf("\nGoing to write to ROM (Flash cart) from %s\n", filenameOnly);
+			printf("\nGoing to write %s\n", filenameOnly);
 			
 			// Check file size
 			if (fileSize > 0x2000000) {
@@ -2358,7 +2453,7 @@ int main(int argc, char **argv) {
 		}
 		else if (flashCartType == 27) {
 			printf("insideGadgets GBA 32MB 4K/64K EEPROM Flash Cart\n");
-			printf("\nGoing to write to ROM (Flash cart) from %s\n", filenameOnly);
+			printf("\nGoing to write %s\n", filenameOnly);
 			
 			// Check file size
 			if (fileSize > 0x2000000) {
@@ -2486,7 +2581,7 @@ int main(int argc, char **argv) {
 		}
 		else if (flashCartType == 41) {
 			printf("insideGadgets GBA 32MB RTC 1Mbit Flash Save Flash Cart\n");
-			printf("\nGoing to write to ROM (Flash cart) from %s\n", filenameOnly);
+			printf("\nGoing to write %s\n", filenameOnly);
 			
 			// Check file size
 			if (fileSize > 0x2000000) {
@@ -2623,7 +2718,7 @@ int main(int argc, char **argv) {
 		}
 		else if (flashCartType == 43) {
 			printf("insideGadgets GBA 16MB 64K EEPROM Solar+RTC Flash Cart\n");
-			printf("\nGoing to write to ROM (Flash cart) from %s\n", filenameOnly);
+			printf("\nGoing to write %s\n", filenameOnly);
 			
 			// Check file size
 			if (fileSize > 0x1000000) {
@@ -2759,9 +2854,93 @@ int main(int argc, char **argv) {
 				led_progress_percent(readBytes, endAddrAligned / 28);
 			}
 		}
+		else if (flashCartType == 55) {
+			printf("insideGadgets 2MB, 512Kbit Flash Save, Homebrew Flash Cart\n");
+			printf("\nGoing to write %s\n", filenameOnly);
+			
+			// Check file size
+			if (fileSize > 0x200000) {
+				fclose(romFile);
+				printf("\n%s \nFile size is larger than the available Flash cart space of 2 MBytes\n", argv[1]);
+				read_one_letter();
+				return 1;
+			}
+			if (gbxcartFirmwareVersion <= 19) {
+				printf("Firmware R20 or higher is required for this functionality.\n");
+				read_one_letter();
+				return 1;
+			}
+			
+			// Read rom a tiny bit before writing
+			currAddr = 0x0000;	
+			set_number(currAddr, SET_START_ADDRESS);
+			delay_ms(5);
+			set_mode(GBA_READ_ROM);
+			delay_ms(5);
+			com_read_bytes(READ_BUFFER, 64);
+			com_read_stop();
+			
+			// Set end address as file size
+			endAddr = fileSize;
+			uint32_t endAddrAligned = fileSize;
+			while ((endAddrAligned / 256) % 64 != 0) { // Align to 64 for printing progress
+				endAddrAligned--;
+			}
+			
+			// Verify chip ID
+			gba_flash_write_address_byte(0xAAA, 0xAA);
+			gba_flash_write_address_byte(0x555, 0x55);
+			gba_flash_write_address_byte(0xAAA, 0x90);
+			
+			currAddr = 0x0000;	
+			set_number(currAddr, SET_START_ADDRESS);
+			delay_ms(5);
+			set_mode(GBA_READ_ROM);
+			delay_ms(5);
+			com_read_bytes(READ_BUFFER, 64);
+			com_read_stop();
+			gba_flash_write_address_byte(0x000, 0xF0);
+			
+			printf("\nFlash ID: 0x%X,0x%X,0x%X,0x%X\n", readBuffer[0], readBuffer[1], readBuffer[2], readBuffer[3]);
+			xmas_setup(endAddr / 28);
+			
+			printf("\nWriting to ROM (Flash cart) from %s\n", filenameOnly);
+			printf("[             25%%             50%%             75%%            100%%]\n[");
+			
+			// Write ROM
+			currAddr = 0x0000;	
+			set_number(currAddr, SET_START_ADDRESS);
+			delay_ms(5);
+			int sectorEraseAddress = 0x10000;
+			while (currAddr < endAddr) {
+				if (currAddr % sectorEraseAddress == 0) { // Erase next sector
+					gba_flash_write_address_byte(0xAAA, 0xAA);
+					gba_flash_write_address_byte(0x555, 0x55);
+					gba_flash_write_address_byte(0xAAA, 0x80);
+					gba_flash_write_address_byte(0xAAA, 0xAA);
+					gba_flash_write_address_byte(0x555, 0x55);
+					gba_flash_write_address_byte((uint32_t) sector << 16, 0x30);
+					sector++;
+					
+					// Wait for first 2 bytes to be 0xFF
+					wait_for_gba_flash_sector_ff(currAddr, 0xFF, 0xFF);
+					
+					set_number(currAddr / 2, SET_START_ADDRESS); // Divide address by 2
+					delay_ms(5);
+				}
+				
+				com_write_bytes_from_file(GBA_FLASH_WRITE_256BYTE, romFile, 256);
+				com_wait_for_ack();
+				currAddr += 256;
+				readBytes += 256;
+				
+				print_progress_percent(readBytes, endAddrAligned / 64);
+				led_progress_percent(readBytes, endAddrAligned / 28);
+			}
+		}
 		else if (flashCartType == 21) {
 			printf("16 MByte (MSP55LV128 / 29LV128DTMC) Gameboy Advance Flash Cart\n");
-			printf("\nGoing to write to ROM (Flash cart) from %s\n", filenameOnly);
+			printf("\nGoing to write %s\n", filenameOnly);
 			
 			// Check file size
 			if (fileSize > 0x1000000) {
@@ -2859,7 +3038,7 @@ int main(int argc, char **argv) {
 		}
 		else if (flashCartType == 22) {
 			printf("16 MByte (MSP55LV128M / 29GL128EHMC / MX29GL128ELT / M29W128 / S29GL128) / 32MB (256M29EWH) Gameboy Advance Flash Cart\n");
-			printf("\nGoing to write to ROM (Flash cart) from %s\n", filenameOnly);
+			printf("\nGoing to write %s\n", filenameOnly);
 			
 			// Check file size
 			if (fileSize > 0x2000000) {
@@ -2941,7 +3120,7 @@ int main(int argc, char **argv) {
 				printf("16 MByte M36L0R706 (2) / 32 MByte 256L30B (2) / 4455LLZBQO (2) / 4000L0YBQ0 (2) Gameboy Advance Flash Cart\n");
 			}
 			
-			printf("\nGoing to write to ROM (Flash cart) from %s\n", filenameOnly);
+			printf("\nGoing to write %s\n", filenameOnly);
 			
 			// Check file size
 			if (fileSize > 0x2000000) {
@@ -2998,6 +3177,10 @@ int main(int argc, char **argv) {
 			else if (readBuffer[0] == 0x20 && readBuffer[1] == 0 && readBuffer[2] == 0xC4 && readBuffer[3] == 0x88) {
 				bottomBootSector = 1;
 			}
+			// M36L0R8060T
+			else if (readBuffer[0] == 0x20 && readBuffer[1] == 0 && readBuffer[2] == 0x0E && readBuffer[3] == 0x88) {
+				bottomBootSector = 2;
+			}
 			printf("\nFlash ID: 0x%X,0x%X,0x%X,0x%X\n", readBuffer[0], readBuffer[1], readBuffer[2], readBuffer[3]);
 			
 			// Back to reading mode
@@ -3013,9 +3196,12 @@ int main(int argc, char **argv) {
 			set_number(currAddr, SET_START_ADDRESS);
 			uint32_t addressForManualWrite = 0x7FC0;
 			
-			while (currAddr < endAddr) {
+			while (currAddr < originalFileSize) {
 				// For chips with 4x 16K bottom boot sectors, after 0xFE8000, change to 0x8000 sector size
 				if (currAddr >= 0xFE8000 && bottomBootSector == 1) {
+					sectorEraseAddress = 0x8000;
+				}
+				else if (currAddr >= 0x1FE8000 && bottomBootSector == 2) {
 					sectorEraseAddress = 0x8000;
 				}
 				
@@ -3045,51 +3231,69 @@ int main(int argc, char **argv) {
 					delay_ms(5);
 				}
 				
-				// Standard buffered writing
-				if (flashCartType == 23) {
-					com_write_bytes_from_file(GBA_FLASH_WRITE_INTEL_64BYTE, romFile, 64);
-					com_wait_for_ack();
-					currAddr += 64;
-					readBytes += 64;
-				}
-				else {
-					// It seems that some carts don't allow us to use the buffered 32 byte programming mode for 0x7FC0 to 0x7FFF and 
-					// it also happens at 0xFFC0 to 0xFFFF and so on. We just write each of the 32 bytes one byte at a time.
-					if (currAddr > 0 && currAddr == addressForManualWrite) {
-						uint8_t localbuffer[64];
-						fread(&localbuffer, 1, 64, romFile);
-						
-						for (uint8_t x = 0; x < 64; x += 2) {
-							uint16_t combinedBytes = (uint16_t) localbuffer[x+1] << 8 | (uint16_t) localbuffer[x];
-							gba_flash_write_address_byte(currAddr, 0x40);
-							gba_flash_write_address_byte(currAddr, combinedBytes);
-							currAddr += 2;
-							readBytes += 2;
+				if (currAddr < endAddr) {
+					// Standard buffered writing
+					if (flashCartType == 23) {
+						if (com_write_bytes_from_file_skip_FFs(GBA_FLASH_WRITE_INTEL_64BYTE, romFile, 64)) {
+							com_wait_for_ack();
+							currAddr += 64;
+							readBytes += 64;
 						}
-						addressForManualWrite += 0x8000;
-						
-						// Set address again (seems to be needed at and after 0x27C0)
-						set_number(currAddr / 2, SET_START_ADDRESS); // Divide address by 2
-						delay_ms(5);
+						else {
+							currAddr += 64;
+							readBytes += 64;
+							set_number(currAddr / 2, SET_START_ADDRESS); // Divide address by 2
+							delay_ms(2);
+						}
 					}
 					else {
-						com_write_bytes_from_file(GBA_FLASH_WRITE_INTEL_64BYTE, romFile, 64);
-						com_wait_for_ack();
-						currAddr += 64;
-						readBytes += 64;
+						// It seems that some carts don't allow us to use the buffered 32 byte programming mode for 0x7FC0 to 0x7FFF and 
+						// it also happens at 0xFFC0 to 0xFFFF and so on. We just write each of the 32 bytes one byte at a time.
+						if (currAddr > 0 && currAddr == addressForManualWrite) {
+							uint8_t localbuffer[64];
+							fread(&localbuffer, 1, 64, romFile);
+							
+							for (uint8_t x = 0; x < 64; x += 2) {
+								uint16_t combinedBytes = (uint16_t) localbuffer[x+1] << 8 | (uint16_t) localbuffer[x];
+								gba_flash_write_address_byte(currAddr, 0x40);
+								gba_flash_write_address_byte(currAddr, combinedBytes);
+								currAddr += 2;
+								readBytes += 2;
+							}
+							addressForManualWrite += 0x8000;
+							
+							// Set address again (seems to be needed at and after 0x27C0)
+							set_number(currAddr / 2, SET_START_ADDRESS); // Divide address by 2
+							delay_ms(5);
+						}
+						else {
+							com_write_bytes_from_file(GBA_FLASH_WRITE_INTEL_64BYTE, romFile, 64);
+							com_wait_for_ack();
+							currAddr += 64;
+							readBytes += 64;
+						}
 					}
+					print_progress_percent(readBytes, endAddrAligned / 64);
+					led_progress_percent(readBytes, endAddrAligned / 28);
 				}
-				print_progress_percent(readBytes, endAddrAligned / 64);
-				led_progress_percent(readBytes, endAddrAligned / 28);
+				else { // Erase the rest of the sectors
+					currAddr += 64;
+				}
 			}
 			
 			// Back to reading mode
-			gba_flash_write_address_byte(currAddr, 0xFF);
-			delay_ms(5);
+			currAddr = 0;
+			while (currAddr < originalFileSize) {
+				set_number(currAddr / 2, SET_START_ADDRESS); // Divide address by 2
+				delay_ms(2);
+				gba_flash_write_address_byte(currAddr, 0xFF);
+				delay_ms(5);
+				currAddr += 0x8000;
+			}
 		}
 		else if (flashCartType == 25) {
 			printf("16 MByte GE28F128W30 Gameboy Advance Flash Cart\n");
-			printf("\nGoing to write to ROM (Flash cart) from %s\n", filenameOnly);
+			printf("\nGoing to write %s\n", filenameOnly);
 			
 			// Check file size
 			if (fileSize > 0x1000000) {
@@ -3238,7 +3442,7 @@ int main(int argc, char **argv) {
 		}
 		else if (flashCartType == 26) {
 			printf("4 MByte (MX29LV320) Gameboy Advance Flash Cart\n");
-			printf("\nGoing to write to ROM (Flash cart) from %s\n", filenameOnly);
+			printf("\nGoing to write %s\n", filenameOnly);
 			
 			// Check file size
 			if (fileSize > 0x400000) {
@@ -3305,7 +3509,7 @@ int main(int argc, char **argv) {
 		}
 		else if (flashCartType == 36) { // Thanks to lesserkuma for adding support
 			printf("32 MByte (Flash2Advance 256M)\n");
-			printf("\nGoing to write to ROM (Flash cart) from %s\n", filenameOnly);
+			printf("\nGoing to write %s\n", filenameOnly);
 			
 			if (gbxcartFirmwareVersion <= 17) {
 				printf("Firmware R18 or higher is required for this functionality.\n");
@@ -3442,7 +3646,7 @@ int main(int argc, char **argv) {
 		}
 		else if (flashCartType == 37) { // Thanks to lesserkuma for adding support
 			printf("16 MByte (Nintendo Development AGB Cartridge 128M Flash S, E201850)\n");
-			printf("\nGoing to write to ROM (Flash cart) from %s\n", filenameOnly);
+			printf("\nGoing to write %s\n", filenameOnly);
 			
 			if (gbxcartFirmwareVersion <= 17) {
 				printf("Firmware R18 or higher is required for this functionality.\n");
@@ -3536,7 +3740,7 @@ int main(int argc, char **argv) {
 		}
 		else if (flashCartType == 54) { 
 			printf("Generic GBA Flash Cart (Auto detect)\n");
-			printf("\nGoing to write to ROM (Flash cart) from %s\n", filenameOnly);
+			printf("\nGoing to write %s\n", filenameOnly);
 			
 			// Check file size
 			if (fileSize > 0x2000000) {
@@ -3706,29 +3910,31 @@ int main(int argc, char **argv) {
 					 "26. 4 MByte (S29GL032 CPLD cart) (3.3v)\n"\
 					 "27. 4 MByte (GB Smart 32M)\n"\
 					 "28. 8 MByte (BUNG Doctor GB Card 64M) (28F640J5)\n"\
-					 "29. 32 MByte (4x 8MB Banks) (256M29) (3.3v)\n"\
-					 "30. 32 MByte (4x 8MB Banks) (M29W256 / MX29GL256 / MSP55LV100) (3.3v)\n\n"\
+					 "29. 1/2/4/8 MByte (RetroStage GameBoy Blaster)\n"\
+					 "30. 32 MByte (4x 8MB Banks) (256M29) (3.3v)\n"\
+					 "31. 32 MByte (4x 8MB Banks) (M29W256 / MX29GL256 / MSP55LV100) (3.3v)\n\n"\
 					 
 					 "--- Gameboy Advance ---\n"\
-					 "31. insideGadgets 32MB (512Kbit/1Mbit Flash Save) or (256Kbit FRAM) Flash Cart\n"\
-					 "32. insideGadgets 32MB 4K/64K EEPROM Save Flash Cart\n"\
-					 "33. insideGadgets 32MB RTC 1Mbit Flash Save Flash Cart\n");
+					 "32. insideGadgets 32MB, (512Kbit/1Mbit Flash Save) or (256Kbit FRAM) Flash Cart\n"\
+					 "33. insideGadgets 32MB, 4K/64K EEPROM Save Flash Cart\n"\
+					 "34. insideGadgets 32MB, RTC 1Mbit Flash Save Flash Cart\n");
 			
 			printf("\nPress any key to see the next page or enter in a selection here.\n>");
 			fgets(optionString, 5, stdin);
 			optionSelected = atoi(optionString);
 			
 			if (optionSelected == 0) {
-				printf("\n34. insideGadgets 16MB 64K EEPROM Solar+RTC Flash Cart\n"\
-					 "35. 16 MByte (MSP55LV128 / 29LV128DTMC)\n"\
-					 "36. 16 MByte (MSP55LV128M / 29GL128EHMC / MX29GL128ELT / M29W128 / S29GL128) / 32MB (256M29EWH)\n"
-					 "37. 16 MByte M36L0R706 / 32 MByte 256L30B / 4455LLZBQO / 4000L0YBQ0\n"\
-					 "38. 16 MByte M36L0R706 (2) / 32 MByte 256L30B (2) / 4455LLZBQO (2) / 4000L0YBQ0 (2)\n"\
-					 "39. 16 MByte GE28F128W30\n"\
-					 "40. 4 MByte (MX29LV320)\n"\
-					 "41. 32 MByte (Flash2Advance 256M)\n"\
-					 "42. 16 MByte (Nintendo AGB Cartridge 128M Flash S, E201850)\n"\
-					 "43. Generic GBA Flash Cart (Auto detect)\n"\
+				printf("\n35. insideGadgets 16MB, 64K EEPROM Solar+RTC Flash Cart\n"\
+					 "36. insideGadgets 2MB, 512Kbit Flash Save, Homebrew Flash Cart\n"\
+					 "37. 16 MByte (MSP55LV128 / 29LV128DTMC)\n"\
+					 "38. 16 MByte (MSP55LV128M / 29GL128EHMC / MX29GL128ELT / M29W128 / S29GL128) / 32MB (256M29EWH)\n"
+					 "39. 16 MByte M36L0R706 / 32 MByte 256L30B / 4455LLZBQO / 4000L0YBQ0\n"\
+					 "40. 16 MByte M36L0R706 (2) / 32 MByte 256L30B (2) / 4455LLZBQO (2) / 4000L0YBQ0 (2)\n"\
+					 "41. 16 MByte GE28F128W30\n"\
+					 "42. 4 MByte (MX29LV320)\n"\
+					 "43. 32 MByte (Flash2Advance 256M)\n"\
+					 "44. 16 MByte (Nintendo AGB Cartridge 128M Flash S, E201850)\n"\
+					 "45. Generic GBA Flash Cart (Auto detect)\n"\
 					 "x. Exit\n>");
 				
 				fgets(optionString, 5, stdin);
@@ -3752,7 +3958,7 @@ int main(int argc, char **argv) {
 			return 0;
 		}
 		else if (optionSelected >= 1) {
-			if (optionSelected == 16 || optionSelected == 17 || optionSelected == 18 || optionSelected == 20 || optionSelected == 24 || optionSelected == 26 || optionSelected == 29 || optionSelected == 30) {
+			if (optionSelected == 16 || optionSelected == 17 || optionSelected == 18 || optionSelected == 20 || optionSelected == 24 || optionSelected == 26 || optionSelected == 30 || optionSelected == 31) {
 				printf("\nUse 5V mode instead of 3.3V mode? (y/n)\n");
 				printf("Usually not required, use at your own risk. Press enter for the defeault.\n");
 				printf(">");

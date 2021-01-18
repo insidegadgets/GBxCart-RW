@@ -42,7 +42,7 @@ extern "C" {
 
 
 
-#if defined(__linux__) || defined(__FreeBSD__)
+#if defined(__linux__) || defined(__FreeBSD__) || defined(__APPLE__)
 
 #include <termios.h>
 #include <sys/ioctl.h>
@@ -76,6 +76,7 @@ void RS232_disableRTS(int);
 void RS232_flushRX(int);
 void RS232_flushTX(int);
 void RS232_flushRXTX(int);
+void RS232_drain(int);
 int RS232_GetPortnr(const char *);
 
 #ifdef __cplusplus
@@ -83,5 +84,4 @@ int RS232_GetPortnr(const char *);
 #endif
 
 #endif
-
 

@@ -22,10 +22,18 @@
 #define EXE_SUFFIX ""
 #endif
 
-uint8_t miniFirmware = 22;
-uint8_t standardFirmware = 23;
+#if defined(__linux__) || defined(__FreeBSD__) || defined(__APPLE__)
+#define RS232_PORTNR  57
+#else
+#define RS232_PORTNR  30
+#endif
+extern char *comports[RS232_PORTNR];
+
+uint8_t miniFirmware = 23;
+uint8_t standardFirmware = 25;
 
 #include "setup.h" // See defines, variables, constants, functions here
+
 
 void watchdog_reset(int delayTime) {
 	// Break out of any existing functions on ATmega
@@ -86,6 +94,9 @@ int main(int argc, char **argv) {
 	
 	printf("Detected Firmware: %i\n\n", gbxcartFirmwareVersion);
 	
+	#if defined(__APPLE__)
+		printf("Please make sure you install Mono. You may need to close and re-open the terminal once installation is complete.\n\n");
+	#endif
 	
 	// Mini update
 	if (gbxcartPcbVersion == 100) {
@@ -108,9 +119,11 @@ int main(int argc, char **argv) {
 				
 				char tsbFirmware[200];
 				#ifdef _WIN32
-					sprintf(tsbFirmware, "tsb" DIR_SEPARATOR "tsbloader_adv" EXE_SUFFIX " -port=%s -fop=w -ffile=gbxcart_rw_mini_v1.0_pcb_r%i.hex", portname, standardFirmware);
+					sprintf(tsbFirmware, "tsb" DIR_SEPARATOR "tsbloader_adv" EXE_SUFFIX " -port=%s -fop=w -ffile=gbxcart_rw_mini_v1.0_pcb_r%i.hex", portname, miniFirmware);
+				#elif defined(__APPLE__)
+					sprintf(tsbFirmware, "mono tsb" DIR_SEPARATOR "tsbloader_adv.exe -port=%s -fop=w -ffile=gbxcart_rw_mini_v1.0_pcb_r%i.hex", comports[cport_nr], miniFirmware);
 				#else
-					sprintf(tsbFirmware, "tsb" DIR_SEPARATOR "tsb" EXE_SUFFIX " %s:57600 fw gbxcart_rw_mini_v1.0_pcb_r%i.hex", portname, miniFirmware);
+					sprintf(tsbFirmware, "tsb" DIR_SEPARATOR "tsb" EXE_SUFFIX " %s:57600 fw gbxcart_rw_mini_v1.0_pcb_r%i.hex", comports[cport_nr], miniFirmware);
 				#endif
 				system(tsbFirmware);
 				printf("Finished\n");
@@ -145,8 +158,10 @@ int main(int argc, char **argv) {
 					char tsbFirmware[200];
 					#ifdef _WIN32
 						sprintf(tsbFirmware, "tsb" DIR_SEPARATOR "tsbloader_adv" EXE_SUFFIX " -port=%s -fop=w -ffile=gbxcart_rw_v1.1-1.2_pcb_r%i.hex", portname, standardFirmware);
+					#elif defined(__APPLE__)
+						sprintf(tsbFirmware, "mono tsb" DIR_SEPARATOR "tsbloader_adv.exe -port=%s -fop=w -ffile=gbxcart_rw_v1.1-1.2_pcb_r%i.hex", comports[cport_nr], standardFirmware);
 					#else
-						sprintf(tsbFirmware, "tsb" DIR_SEPARATOR "tsb" EXE_SUFFIX " %s:57600 fw gbxcart_rw_v1.1-1.2_pcb_r%i.hex", portname, standardFirmware);
+						sprintf(tsbFirmware, "tsb" DIR_SEPARATOR "tsb" EXE_SUFFIX " %s:57600 fw gbxcart_rw_v1.1-1.2_pcb_r%i.hex", comports[cport_nr], standardFirmware);
 					#endif
 					system(tsbFirmware);
 					printf("Finished\n");
@@ -159,8 +174,10 @@ int main(int argc, char **argv) {
 					char tsbFirmware[200];
 					#ifdef _WIN32
 						sprintf(tsbFirmware, "tsb" DIR_SEPARATOR "tsbloader_adv" EXE_SUFFIX " -port=%s -fop=w -ffile=gbxcart_rw_v1.3_pcb_r%i.hex", portname, standardFirmware);
+					#elif defined(__APPLE__)
+						sprintf(tsbFirmware, "mono tsb" DIR_SEPARATOR "tsbloader_adv.exe -port=%s -fop=w -ffile=gbxcart_rw_v1.3_pcb_r%i.hex", comports[cport_nr], standardFirmware);
 					#else
-						sprintf(tsbFirmware, "tsb" DIR_SEPARATOR "tsb" EXE_SUFFIX " %s:57600 fw gbxcart_rw_v1.3_pcb_r%i.hex", portname, standardFirmware);
+						sprintf(tsbFirmware, "tsb" DIR_SEPARATOR "tsb" EXE_SUFFIX " %s:57600 fw gbxcart_rw_v1.3_pcb_r%i.hex", comports[cport_nr], standardFirmware);
 					#endif
 					system(tsbFirmware);
 					printf("Finished\n");
@@ -199,8 +216,10 @@ int main(int argc, char **argv) {
 				char tsbFirmware[200];
 				#ifdef _WIN32
 					sprintf(tsbFirmware, "tsb" DIR_SEPARATOR "tsbloader_adv" EXE_SUFFIX " -port=%s -fop=w -ffile=gbxmas_rw_v1.0_pcb_r%i.hex", portname, standardFirmware);
+				#elif defined(__APPLE__)
+					sprintf(tsbFirmware, "mono tsb" DIR_SEPARATOR "tsbloader_adv.exe -port=%s -fop=w -ffile=gbxmas_rw_v1.0_pcb_r%i.hex", comports[cport_nr], standardFirmware);
 				#else
-					sprintf(tsbFirmware, "tsb" DIR_SEPARATOR "tsb" EXE_SUFFIX " %s:57600 fw gbxmas_rw_v1.0_pcb_r%i.hex", portname, standardFirmware);
+					sprintf(tsbFirmware, "tsb" DIR_SEPARATOR "tsb" EXE_SUFFIX " %s:57600 fw gbxmas_rw_v1.0_pcb_r%i.hex", comports[cport_nr], standardFirmware);
 				#endif
 				system(tsbFirmware);
 				printf("Finished\n");

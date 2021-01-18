@@ -1,23 +1,20 @@
 /*
- GBxCart RW - Console Flasher
- Version: 1.41
+ GBxCart RW - Console Interface Flasher
+ Version: 1.16
  Author: Alex from insideGadgets (www.insidegadgets.com)
  Created: 26/08/2017
- Last Modified: 4/12/2020
- License: CC-BY-NC-SA
-  
+ Last Modified: 2/03/2019
+ 
  */
 
 #ifdef _WIN32
-#include <windows.h>
+#include <Windows.h>
 #else
 #include <unistd.h>
 #endif
 
 #include <stdint.h>
 #include <stdio.h>
-
-//#define TIMETEST 1
 
 #define LOW 0
 #define HIGH 1
@@ -28,7 +25,6 @@
 #include "rs232/rs232.h"
 extern int cport_nr;
 extern int bdrate;
-extern int pauseWhenCompleted;
 
 #define CART_MODE 'C'
 #define GB_MODE 1
@@ -84,32 +80,19 @@ extern int pauseWhenCompleted;
 	#define GB_FLASH_PROGRAM_555_BIT01_SWAPPED 2
 	#define GB_FLASH_PROGRAM_AAA_BIT01_SWAPPED 3
 	#define GB_FLASH_PROGRAM_5555 4
-	#define GB_FLASH_PROGRAM_7AAA_BIT01_SWAPPED 5
 	
 #define GB_FLASH_WRITE_BYTE 'F'
 #define GB_FLASH_WRITE_64BYTE 'T'
 #define GB_FLASH_WRITE_256BYTE 'X'
 #define GB_FLASH_WRITE_BUFFERED_32BYTE 'Y'
-#define GB_FLASH_WRITE_BUFFERED_256BYTE 'U'
+
 #define GB_FLASH_BANK_1_COMMAND_WRITES 'N'
-#define GB_FLASH_WRITE_64BYTE_PULSE_RESET 'J'
-#define GB_FLASH_WRITE_NP_128BYTE 'Z'
-#define GB_FLASH_WRITE_INTEL_BUFFERED_32BYTE 'y'
 
 #define GBA_FLASH_CART_WRITE_BYTE 'n'
 #define GBA_FLASH_WRITE_64BYTE_SWAPPED_D0D1 'q'
 #define GBA_FLASH_WRITE_256BYTE_SWAPPED_D0D1 't'
 #define GBA_FLASH_WRITE_256BYTE 'f'
-#define GBA_FLASH_WRITE_BUFFERED_256BYTE 'c'
-#define GBA_FLASH_WRITE_BUFFERED_256BYTE_SWAPPED_D0D1 'd'
 #define GBA_FLASH_WRITE_INTEL_64BYTE 'l'
-#define GBA_FLASH_WRITE_INTEL_64BYTE_WORD 'u'
-#define GBA_FLASH_WRITE_INTEL_INTERLEAVED_256BYTE 'v'
-#define GBA_FLASH_WRITE_SHARP_64BYTE 'x'
-
-#define GBA_FLASH_PROGRAM_AAA '0'
-#define GBA_FLASH_PROGRAM_AAA_BIT01_SWAPPED '1'
-#define GBA_FLASH_INTEL_90 '2'
 
 // General commands
 #define CART_MODE 'C'
@@ -127,15 +110,12 @@ extern int pauseWhenCompleted;
 
 #define RESET_AVR '*'
 #define RESET_VALUE 0x7E5E1
-#define XMAS_LEDS '#'
-#define XMAS_VALUE 0x7690FCD
 
 // PCB versions
 #define PCB_1_0 1
 #define PCB_1_1 2
 #define PCB_1_3 4
 #define GBXMAS 90
-#define MINI 100
 
 // Common vars
 #define READ_BUFFER 0
@@ -160,14 +140,6 @@ extern uint16_t eepromEndAddress;
 extern int hasFlashSave;
 extern uint8_t cartridgeMode;
 extern int flashCartType;
-extern uint8_t flashID[10];
-extern uint8_t mode5vOverride;
-extern int8_t detectedFlashWritingMethod;
-extern uint32_t lastAddrHash;
-
-extern uint32_t bytesReadPrevious;
-extern uint8_t ledBlinking;
-extern uint8_t ledProgress;
 
 // Read the config.ini file for the COM port to use and baud rate
 void read_config(void);
@@ -188,17 +160,6 @@ char read_one_letter(void);
 
 // Print progress
 void print_progress_percent(uint32_t bytesRead, uint32_t hashNumber);
-void print_progress_percent_addr (uint32_t bytesRead, uint32_t hashNumber);
-
-void led_progress_percent (uint32_t bytesRead, uint32_t hashNumber);
-void xmas_set_leds (uint32_t value);
-void xmas_blink_led (uint8_t value);
-void xmas_reset_values (void);
-void xmas_setup (uint32_t progressNumber);
-void xmas_idle_on (void);
-void xmas_idle_off (void);
-void xmas_chip_erase_animation (void);
-void xmas_wake_up (void);
 
 // Wait for a "1" acknowledgement from the ATmega
 void com_wait_for_ack (void);
@@ -215,11 +176,10 @@ uint8_t com_test_port(void);
 // Read 1 to 256 bytes from the COM port and write it to the global read buffer or to a file if specified. 
 // When polling the com port it return less than the bytes we want, keep polling and wait until we have all bytes requested. 
 // We expect no more than 256 bytes.
-uint8_t com_read_bytes(FILE *file, int count);
+void com_read_bytes(FILE *file, int count);
 
 // Read 1-128 bytes from the file (or buffer) and write it the COM port with the command given
 void com_write_bytes_from_file(uint8_t command, FILE *file, int count);
-uint8_t com_write_bytes_from_file_skip_FFs(uint8_t command, FILE *file, int count);
 
 // Send a single command byte
 void set_mode (char command);
@@ -293,7 +253,7 @@ void read_config_flash(void);
 void wait_for_flash_sector_ff(uint16_t address);
 
 // Wait for first byte of Flash to be 0xFF, that's when we know the sector has been erased
-void wait_for_flash_chip_erase_ff(uint8_t printProgress);
+void wait_for_flash_chip_erase_ff(void);
 
 // Select which pin need to pulse as WE (Audio or WR)
 void gb_flash_pin_setup(char pin);
@@ -304,19 +264,9 @@ void gb_flash_program_setup(uint8_t method);
 // Write address and byte to flash
 void gb_flash_write_address_byte (uint16_t address, uint8_t byte);
 
-void gb_check_change_flash_id (uint8_t flashMethod);
 
-void gb_check_stable_cart_data (void);
-
-int8_t gb_check_flash_id(void);
 
 // ****** GBA Cart Flasher functions ******
 
 // GBA Flash Cart, write address and byte
 void gba_flash_write_address_byte (uint32_t address, uint16_t byte);
-
-void wait_for_gba_flash_erase_ff(uint32_t address);
-
-void wait_for_gba_flash_sector_ff(uint32_t address, uint8_t byteOne,  uint8_t byteTwo);
-
-int8_t gba_check_flash_id(void);

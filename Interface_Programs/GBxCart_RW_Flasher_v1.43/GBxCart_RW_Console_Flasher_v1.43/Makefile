@@ -4,7 +4,7 @@ ifeq ($(OS),Windows_NT)
 else
 	EXE_EXT =
 endif
-CMDLINE = gbxcart_rw_flasher_v1.41$(EXE_EXT)
+CMDLINE = gbxcart_rw_flasher_v1.43$(EXE_EXT)
 
 # Timestamp fix for Linux
 ifeq ($(OS),Windows_NT)
@@ -20,7 +20,7 @@ endif
 all: $(CMDLINE)
 
 # One-liner to compile the command-line client
-$(CMDLINE): gbxcart_rw_flasher_v1.41.c setup.c rs232/rs232.c
+$(CMDLINE): gbxcart_rw_flasher_v1.43.c setup.c rs232/rs232.c
 	gcc -O -std=c99 -Wall $(TIMESTAMP_FIX) $^ -o $@ -lm
 	
 # Housekeeping if you want it
