@@ -1,9 +1,9 @@
 /*
  GBxCart RW - Console Interface
- Version: 1.31
+ Version: 1.32
  Author: Alex from insideGadgets (www.insidegadgets.com)
  Created: 7/11/2016
- Last Modified: 24/11/2020
+ Last Modified: 4/02/2021
  
  GBxCart RW allows you to dump your Gameboy/Gameboy Colour/Gameboy Advance games ROM, save the RAM and write to the RAM.
  
@@ -25,7 +25,7 @@
 
 int main(int argc, char **argv) {
 	
-	printf("GBxCart RW v1.31 by insideGadgets\n");
+	printf("GBxCart RW v1.32 by insideGadgets\n");
 	printf("#################################\n");
 	
 	read_config();
@@ -50,12 +50,12 @@ int main(int argc, char **argv) {
 	xmas_wake_up();
 	
 	// Check if OS can support fast COM port reading
-	if (gbxcartFirmwareVersion >= 19) {
+	/*if (gbxcartFirmwareVersion >= 19) {
 		fast_reading_check();
 		if (fastReadEnabled == 1) {
 			printf("Fast reading enabled\n");
 		}
-	}
+	}*/
 	
 	// Prompt for GB or GBA mode
 	if (gbxcartPcbVersion == PCB_1_3 || gbxcartPcbVersion == GBXMAS) {
@@ -538,7 +538,6 @@ int main(int argc, char **argv) {
 					printf("Cartridge has no RAM\n");
 				}
 			}
-			
 			else { // GBA mode
 				// Does cartridge have RAM
 				if (ramEndAddress > 0 || eepromEndAddress > 0) {
@@ -1910,6 +1909,8 @@ int main(int argc, char **argv) {
 		else {
 			printf("\nUnknown command\n\n");
 		}
+		
+		set_mode(SET_PINS_AS_INPUTS);
 	}
 	
 	return 0;

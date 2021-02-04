@@ -1,9 +1,9 @@
 /*
  GBxCart RW - Console Interface
- Version: 1.31
+ Version: 1.32
  Author: Alex from insideGadgets (www.insidegadgets.com)
  Created: 7/11/2016
- Last Modified: 24/11/2020
+ Last Modified: 4/02/2021
  
  */
 
@@ -103,6 +103,7 @@ extern int bdrate;
 #define SET_OUTPUT 'O'
 #define SET_OUTPUT_LOW 'L'
 #define SET_OUTPUT_HIGH 'H'
+#define SET_PINS_AS_INPUTS ':'
 #define READ_INPUT 'D'
 #define RESET_COMMON_LINES 'M'
 #define READ_FIRMWARE_VERSION 'V'

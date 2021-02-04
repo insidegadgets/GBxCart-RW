@@ -1,9 +1,9 @@
 /*
  GBxCart RW - Console Interface
- Version: 1.31
+ Version: 1.32
  Author: Alex from insideGadgets (www.insidegadgets.com)
  Created: 7/11/2016
- Last Modified: 24/11/2020
+ Last Modified: 4/02/2021
  
  */
 
@@ -312,19 +312,27 @@ uint8_t com_test_port(void) {
 	
 	// If port didn't get opened or responded wrong
 	for (uint8_t x = 0; x <= RS232_PORTNR; x++) {
+		printf("Trying port %i\n", x);
+		
 		if (RS232_OpenComport(x, bdrate, "8N1") == 0) { // Port opened
 			cport_nr = x;
+			printf("Port opened, setting mode\n");
 			
 			// See if device responds correctly
 			set_mode('0');
+			
+			printf("Requesting value\n");
 			uint8_t cartridgeMode = request_value(CART_MODE);
+			printf("Response received\n");
 			
 			// Responded ok, save the new port number
 			if (cartridgeMode == GB_MODE || cartridgeMode == GBA_MODE) {
+				printf("Responded ok\n");
 				write_config();
 				return 1;
 			}
 			else {
+				printf("Didn't response ok\n");
 				RS232_CloseComport(x);
 			}
 		}
@@ -488,6 +496,7 @@ uint8_t request_value (uint8_t command) {
 		
 		delay_ms(10);
 		timeoutCounter++;
+		printf(".");
 		if (timeoutCounter >= 25) { // After 250ms, timeout
 			return 0;
 		}
