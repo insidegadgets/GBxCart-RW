@@ -29,8 +29,8 @@
 #endif
 extern char *comports[RS232_PORTNR];
 
-uint8_t miniFirmware = 23;
-uint8_t standardFirmware = 25;
+uint8_t miniFirmware = 26;
+uint8_t standardFirmware = 29;
 
 #include "setup.h" // See defines, variables, constants, functions here
 
