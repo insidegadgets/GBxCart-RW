@@ -1,0 +1,2 @@
+If for any reason the game selector on the Gameboy cartridge isn't working or was somehow erased you can write
+the "32KBx15_Selection_0.gb" file to the cart. When asked to select a cart slot, enter in 0. 
