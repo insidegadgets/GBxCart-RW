@@ -4,4 +4,6 @@ A device for reading game ROMs, backing up & restoring saves and flashing re-wri
 
 No support provided, this is our old v1.3 device.
 
+Purchase the official version https://gbxcart.com
+
 Licensed under CC BY-NC-SA 4.0
